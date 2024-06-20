@@ -6,25 +6,27 @@ from datetime import datetime, timedelta, timezone
 from pydantic import ValidationError
 from jose import JWTError, jwt
 from typing import Annotated
-from jose import JWTError, jwt
+from dotenv import load_dotenv
+from os import getenv
 
 from backend.app.data import refresh_tokens, fake_users_db
 from backend.app.models import User
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Secret key for encoding and decoding JWT
-# NOTE: This should be stored in a .env file
-SECRET_KEY = "hdhfh5jdnb7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
+load_dotenv()
 
-def get_user(db, username: str):
-    for user in db:
+SECRET_KEY = getenv("SECRET_KEY")
+ALGORITHM = getenv("ALGORITHM")
+
+def get_user(database, username: str):
+    for user in database:
         if user["username"] == username:
             return User(**user)
-    return None  # Return None if the user is not found
+
+    return None
 
 
 def authenticate_user(database, username: str, plain_password: str):
@@ -81,30 +83,15 @@ async def get_current_active_user(current_user: UserDependency):
 
     return current_user
 
-# Dependency for current user
-CurrentUserDependency=Annotated[User, Depends(get_current_active_user)]
-
-class RoleChecker:
-    def __init__(self, allowed_roles):
-        self.allowed_roles = allowed_roles
-
-    def __call__(self, user: CurrentUserDependency):
-        if user.role in self.allowed_roles:
-            return True
-
-        raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, 
-                detail="You don't have enough permissions"
-            )
-
 
 # Dependency for checking the refresh token
-RefreshTokenDependency=Annotated[str, Depends(oauth2_scheme)]
+TokenValidatorDependency=Annotated[str, Depends(oauth2_scheme)]
 
-async def validate_refresh_token(token: RefreshTokenDependency):
+async def validate_refresh_token(token: TokenValidatorDependency):
     unauthorized_code=status.HTTP_401_UNAUTHORIZED
     credentials_exception = HTTPException(
-        status_code=unauthorized_code, detail="Could not validate credentials")
+        status_code=unauthorized_code, 
+        detail="Could not validate credentials")
 
     try:
         if token in refresh_tokens:
@@ -126,3 +113,19 @@ async def validate_refresh_token(token: RefreshTokenDependency):
         raise credentials_exception
 
     return user, token
+
+# Dependency for current user
+CurrentUserDependency=Annotated[User, Depends(get_current_active_user)]
+
+class RoleChecker:
+    def __init__(self, allowed_roles):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: CurrentUserDependency):
+        if user.role in self.allowed_roles:
+            return True
+
+        raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="You don't have enough permissions"
+            )
