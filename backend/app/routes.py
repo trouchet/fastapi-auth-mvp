@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordBearer
@@ -30,7 +30,7 @@ def hello_func():
 
 
 @router.get("/data")
-def get_data(_: Depends(RoleChecker(allowed_roles=["admin"]))]):
+def get_data(_: Depends(RoleChecker(allowed_roles=["admin"]))):
     return {"data": "This is important data"}
 
 
@@ -62,7 +62,7 @@ async def login_for_access_token(
 
 @router.post("/refresh")
 async def refresh_access_token(
-    token_data: Annotated[tuple[User, str], Depends(validate_refresh_token)]
+    token_data: Annotated[Tuple[User, str], Depends(validate_refresh_token)]
 ):
     user, token = token_data
     auth_data={
