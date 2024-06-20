@@ -42,8 +42,7 @@ async def login_for_access_token(
     
     if not user:
         raise HTTPException(
-            status_code=400, 
-            detail="Incorrect username or password"
+            status_code=400, detail="Incorrect username or password"
         )
     
     auth_data={"sub": user.username, "role": user.role}
@@ -58,8 +57,6 @@ async def login_for_access_token(
     
     return Token(access_token=access_token, refresh_token=refresh_token)
 
-# Dependency for checking the OAuth2 token
-
 @router.post("/refresh")
 async def refresh_access_token(
     token_data: Annotated[Tuple[User, str], Depends(validate_refresh_token)]
@@ -71,10 +68,12 @@ async def refresh_access_token(
     }
 
     access_token = create_token(
-        data=auth_data, expires_delta=access_token_expires
+        data=auth_data, 
+        expires_delta=access_token_expires
     )
     refresh_token = create_token(
-        data=auth_data, expires_delta=refresh_token_expires
+        data=auth_data, 
+        expires_delta=refresh_token_expires
     )
 
     refresh_tokens.remove(token)

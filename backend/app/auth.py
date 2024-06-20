@@ -9,18 +9,25 @@ from typing import Annotated
 from dotenv import load_dotenv
 from os import getenv
 
-from backend.app.data import refresh_tokens, fake_users_db
+from backend.app.exceptions import (
+    CredentialsException, 
+    PrivilegesException, 
+    InexistentUsernameException,
+)
 from backend.app.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Secret key for encoding and decoding JWT
-load_dotenv()
+load_dotenv('.env')
 
-SECRET_KEY = getenv("SECRET_KEY")
-ALGORITHM = getenv("ALGORITHM")
+SECRET_KEY = getenv("SECRET_KEY", 'secret12345')
+ALGORITHM = getenv("ALGORITHM", 'HS256')
 
+# Function to get the user from the database
+# NOTE: Provided database is a list of dictionaries. 
+# Change implementation to actual database call
 def get_user(database, username: str):
     for user in database:
         if user["username"] == username:
@@ -30,68 +37,67 @@ def get_user(database, username: str):
 
 
 def authenticate_user(database, username: str, plain_password: str):
-    user = get_user(database, username)    
-    hashed_password = user.hashed_password
+    user = get_user(database, username)
     
-    user_not_found=not user
-    is_password_wrong=not pwd_context.verify(plain_password, hashed_password)
+    if not user:
+        return False
     
-    invalid_authentication=user_not_found or is_password_wrong
+    is_password_correct = pwd_context.verify(plain_password, user.hashed_password)
+    if not is_password_correct:
+        return False 
     
-    return None if invalid_authentication else user
+    return user
 
 
 def create_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    current_time=datetime.now(timezone.utc)
+
+    # Set the expiration time
+    extra_time = expires_delta if expires_delta else timedelta(minutes=15)
+    expire = current_time + extra_time
+
+    to_encode.update(
+        {   
+            "exp": expire,
+            "iat": datetime.now()
+        }
+    )
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    
+
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+TokenDependency=Annotated[str, Depends(oauth2_scheme)]
+async def get_current_user(users_db, token: TokenDependency):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
         username: str = payload.get("sub")
+
         if username is None:
-            raise credentials_exception
+            raise CredentialsException()
+
     except JWTError:
-        raise credentials_exception
-    
-    user = get_user(fake_users_db, username=username)
-    
+        raise CredentialsException()
+
+    # Get the user from the database
+    user = get_user(users_db, username=username)
+
     if user is None:
-        raise credentials_exception
-    
+        raise InexistentUsernameException()
+
     return user
 
-# Dependency for checking the role
-UserDependency=Annotated[User, Depends(get_current_user)]
 
-async def get_current_active_user(current_user: UserDependency):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-
-    return current_user
-
-
-# Dependency for checking the refresh token
-TokenValidatorDependency=Annotated[str, Depends(oauth2_scheme)]
-
-async def validate_refresh_token(token: TokenValidatorDependency):
+async def validate_refresh_token(
+    users_db, refresh_tokens, 
+    token: TokenDependency):
     unauthorized_code=status.HTTP_401_UNAUTHORIZED
     credentials_exception = HTTPException(
         status_code=unauthorized_code, 
-        detail="Could not validate credentials")
+        detail="Could not validate credentials"
+    )
 
     try:
         if token in refresh_tokens:
@@ -99,24 +105,34 @@ async def validate_refresh_token(token: TokenValidatorDependency):
             username: str = payload.get("sub")
             role: str = payload.get("role")
             
-            if username is None or role is None:
-                raise credentials_exception
+            empty_entry=username is None or role is None
+            
+            if empty_entry:
+                raise CredentialsException()
         else:
-            raise credentials_exception
+            raise CredentialsException()
 
     except (JWTError, ValidationError):
-        raise credentials_exception
+        raise CredentialsException()
 
-    user = get_user(fake_users_db, username=username)
+    user = get_user(users_db, username=username)
 
     if user is None:
-        raise credentials_exception
+        raise CredentialsException()
 
     return user, token
 
+
+# Dependency for checking the role
+UserDependency=Annotated[User, Depends(get_current_user)]
+def get_current_active_user(current_user: UserDependency):
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    return current_user
+
 # Dependency for current user
 CurrentUserDependency=Annotated[User, Depends(get_current_active_user)]
-
 class RoleChecker:
     def __init__(self, allowed_roles):
         self.allowed_roles = allowed_roles
@@ -125,7 +141,4 @@ class RoleChecker:
         if user.role in self.allowed_roles:
             return True
 
-        raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, 
-                detail="You don't have enough permissions"
-            )
+        raise PrivilegesException()

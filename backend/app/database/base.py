@@ -1,17 +1,16 @@
 from os import getenv, path, getcwd
 from dotenv import load_dotenv
-from psycopg2 import OperationalError
-from sqlalchemy_utils import database_exists, create_database
-from sqlalchemy import pool, text
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import declarative_base
 
-from backend.logging import logger
-from backend.database.schemas import Base
+from psycopg2 import OperationalError
+
+from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy import create_engine, pool, text
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+from backend.app.logging import logger
+
 
 Base = declarative_base()
-
 
 def get_db_uri():
     env_path = path.join(getcwd(), ".env")
@@ -42,9 +41,9 @@ class Database:
         self.engine = create_engine(
             uri,
             poolclass=pool.QueuePool,  # Use connection pooling
-            pool_size=20,  # Adjust pool size based on your workload
-            max_overflow=10,  # Adjust maximum overflow connections
-            pool_recycle=3600,  # Periodically recycle connections (optional)
+            pool_size=20,              # Adjust pool size based on your workload
+            max_overflow=10,           # Adjust maximum overflow connections
+            pool_recycle=3600,         # Periodically recycle connections (optional)
         )
         self.session_maker = sessionmaker(
             autocommit=False, autoflush=False, bind=self.engine
@@ -141,3 +140,16 @@ async def get_db():
     database.init()
 
     yield database
+
+async def get_session():
+    """
+    Define a dependency to create a database session
+
+    Returns:
+        Database: A NamedTuple with engine and conn attributes for the database connection.
+        None: If there was an error connecting to the database.
+    """
+
+    database =  get_db()
+
+    yield database.get_session()

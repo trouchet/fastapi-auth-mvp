@@ -19,14 +19,6 @@ DEFAULT_PASSWORD = "postgres"
 POSTGRES_DSN_SCHEME = "postgresql+psycopg"
 
 
-def parse_cors(v: Any) -> Union[List[str], str]:
-    if isinstance(v, str) and not v.startswith("["):
-        return [i.strip() for i in v.split(",")]
-    elif isinstance(v, (list, str)):
-        return v
-    raise ValueError(v)
-
-
 # Project settings
 with open("pyproject.toml", "r") as f:
     config = toml.load(f)
@@ -49,11 +41,6 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: Literal["development"] = "development"
     DOMAIN: str = "localhost:8000"
-
-    # CORS
-    BACKEND_CORS_ORIGINS: Annotated[
-        Union[List[AnyUrl], str], BeforeValidator(parse_cors)
-    ] = []
 
     # 1 day
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1 * 24 * 60

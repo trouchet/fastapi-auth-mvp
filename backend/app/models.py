@@ -5,10 +5,10 @@ class BaseUser(BaseModel):
     hashed_password: str | None = None
     role: str | None = None
 
-    
+
 class User(BaseUser):
     email: str | None = None
-    disabled: bool| None = None
+    is_active: bool| None = None
 
 
 class Token(BaseModel):
