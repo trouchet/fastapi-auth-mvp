@@ -37,6 +37,7 @@ env: ## Creates a virtual environment. Usage: make env
 install: ## Installs the python requirements. Usage: make install
 	pip install uv
 	uv pip install -r requirements.txt
+	uv pip install -r requirements-dev.txt
 
 run: ## Run the application. Usage: make run
 	uvicorn backend.app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
