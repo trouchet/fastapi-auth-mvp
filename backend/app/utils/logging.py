@@ -55,10 +55,14 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         """
         self.base_dir = path.dirname(filename)  # Extract directory from filename
         
-        makedirs(self.base_dir, exist_ok=True)
+        makedirs(self.base_dir, exist_ok=True)  # Create directory if it doesn't exist
         
-        self.filename_base = path.splitext(filename)[0]  # Extract filename without extension
-        self.ext_style = "%Y-%m-%d"  # Extension format for daily rotation
+        # Extract filename without extension
+        self.filename_base = path.splitext(filename)[0]  
+        
+        # Extension format for daily rotation
+        self.ext_style = "%Y-%m-%d"  
+        
         super().__init__(filename, when, interval, backupCount, encoding, delay)
 
     def doRollover(self):
@@ -86,13 +90,15 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
                 suffix = self.extMatches[i + 1]
 
                 # Rotate older logs based on the new filename with folder structure
-                source = path.join(self.base_dir, \
-                        path.dirname(self.baseFilename), \
-                        self.baseFilename + s)
-                dest = path.join(
-                    self.base_dir, 
-                    path.dirname(self.baseFilename), 
-                    self.baseFilename + suffix
+                source = path.join( \
+                    self.base_dir, \
+                    path.dirname(self.baseFilename), \
+                    self.baseFilename + s
+                )
+                dest = path.join( \
+                    self.base_dir, \
+                    path.dirname(self.baseFilename), \
+                    self.baseFilename + suffix \
                 )
                 
                 if path.exists(source) and not path.exists(dest):
