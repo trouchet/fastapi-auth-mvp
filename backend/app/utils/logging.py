@@ -105,7 +105,7 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             raise ValueError(message)
 
         current_time = int(time())
-        filename = self.calculate_fileName(current_time)
+        filename = self.calculate_filename(current_time)
         
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
 
@@ -114,10 +114,16 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
 
         self.rolloverAt = self.computeRollover(current_time)
 
-    def calculate_fileName(self, current_time):
+    def calculate_filename(self, current_time):
         timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
+        now = datetime.datetime.fromtimestamp(current_time)        
+        
+        base_folder = os.path.join(self.folderName, now.strftime("%Y/%m/%d"))
+        
+        makedirs(base_folder, exist_ok=True)
+        
         new_filename=self.origFileName + "." + strftime(self.suffix, timeTuple) + self.postfix
-        new_filepath = os.path.join(self.folderName, new_filename)
+        new_filepath = os.path.join(base_folder, new_filename)
 
         return new_filepath
 
@@ -155,7 +161,7 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             self.stream = None
 
         currentTime = self.rolloverAt
-        newFileName = self.calculate_fileName(currentTime)
+        newFileName = self.calculate_filename(currentTime)
         newBaseFileName = os.path.abspath(newFileName)
         self.baseFilename = newBaseFileName
         self.mode = 'a'
