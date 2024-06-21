@@ -21,3 +21,10 @@ class InexistentUsernameException(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username does not exist. Token may be forged.",
         )
+
+class ExpiredTokenException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This token has expired",
+        )
