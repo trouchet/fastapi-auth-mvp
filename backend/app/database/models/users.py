@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, UUID, JSON
+    Column, String, Boolean, DateTime, UUID, JSON
 )
 
 from datetime import datetime
@@ -15,7 +15,7 @@ class UserDB(Base):
     user_username = Column(String, unique=True, index=True)
     user_email = Column(String, unique=True, index=True)
     user_hashed_password = Column(String)
-    user_role = Column(JSON, default=["user"])
+    user_roles = Column(JSON, default=["user"])
     user_is_active = Column(Boolean, default=True)
     user_access_token = Column(String, nullable=True)
     user_refresh_token = Column(String, nullable=True)

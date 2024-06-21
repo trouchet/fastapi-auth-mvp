@@ -1,4 +1,3 @@
-import pytest
 
 from backend.app.utils.security import (
     is_email_valid,
@@ -11,12 +10,10 @@ from backend.app.utils.security import (
     has_min_length,
     without_space,
     password_must_have_str,
-    password_cannot_have_str,
     get_password_validity_metadict,
     apply_password_validity_dict,
     get_invalid_password_conditions,
     is_password_valid,
-    MIN_PASSWORD_LENGTH,
     CONDITION_LIST,
 )
 
@@ -31,7 +28,8 @@ def test_is_email_valid_with_invalid_email():
 
 def test_password_validity_obj_creation():
     invalid_message = "Password is too short"
-    validity_map = lambda password: len(password) >= 8
+    def validity_map(password):
+        return len(password) >= 8
     result = password_validity_obj(invalid_message, validity_map)
     assert result["invalidation_message"] == invalid_message
     assert result["validity_map"] is validity_map
@@ -117,3 +115,13 @@ def test_get_invalid_password_conditions_with_invalid_password():
     invalid_conditions = get_invalid_password_conditions(password)
     assert len(invalid_conditions) > 0
 
+def test_is_password_valid_with_valid_password():
+    password = "ThisIsAValid!P@ssw0rd"
+
+    assert is_password_valid(password)
+
+def test_is_password_valid_with_invalid_password():
+    password = "short123"
+    assert not is_password_valid(password)
+
+    

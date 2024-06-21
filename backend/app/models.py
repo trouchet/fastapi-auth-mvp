@@ -1,9 +1,10 @@
+from typing import Set
 from pydantic import BaseModel
 
 class BaseUser(BaseModel):
     username: str | None = None
     hashed_password: str | None = None
-    role: str | None = None
+    roles: Set[str] | None = None
 
 
 class User(BaseUser):
