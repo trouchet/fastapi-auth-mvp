@@ -13,6 +13,7 @@ from backend.app.exceptions import (
     CredentialsException, 
     PrivilegesException, 
     InexistentUsernameException,
+    ExpiredTokenException,
 )
 from backend.app.models import User
 
@@ -43,6 +44,7 @@ def authenticate_user(database, username: str, plain_password: str):
         return False
     
     is_password_correct = pwd_context.verify(plain_password, user.hashed_password)
+    
     if not is_password_correct:
         return False 
     
@@ -72,9 +74,8 @@ TokenDependency=Annotated[str, Depends(oauth2_scheme)]
 async def get_current_user(users_db, token: TokenDependency):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
         username: str = payload.get("sub")
-
+        
         if username is None:
             raise CredentialsException()
 
@@ -91,29 +92,27 @@ async def get_current_user(users_db, token: TokenDependency):
 
 
 async def validate_refresh_token(
-    users_db, refresh_tokens, 
-    token: TokenDependency):
-    unauthorized_code=status.HTTP_401_UNAUTHORIZED
-    credentials_exception = HTTPException(
-        status_code=unauthorized_code, 
-        detail="Could not validate credentials"
-    )
-
+    users_db, refresh_tokens, token: TokenDependency
+):
     try:
         if token in refresh_tokens:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            
             username: str = payload.get("sub")
             role: str = payload.get("role")
             
             empty_entry=username is None or role is None
-            
+
             if empty_entry:
                 raise CredentialsException()
         else:
             raise CredentialsException()
 
-    except (JWTError, ValidationError):
+    except JWTError:
+        raise ExpiredTokenException()  # Create a more specific exception
+    except ValidationError as e:
         raise CredentialsException()
+
 
     user = get_user(users_db, username=username)
 
