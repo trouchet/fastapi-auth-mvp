@@ -11,12 +11,10 @@ from backend.app.utils.security import (
     has_min_length,
     without_space,
     password_must_have_str,
-    password_cannot_have_str,
     get_password_validity_metadict,
     apply_password_validity_dict,
     get_invalid_password_conditions,
     is_password_valid,
-    MIN_PASSWORD_LENGTH,
     CONDITION_LIST,
 )
 
@@ -117,3 +115,13 @@ def test_get_invalid_password_conditions_with_invalid_password():
     invalid_conditions = get_invalid_password_conditions(password)
     assert len(invalid_conditions) > 0
 
+def test_is_password_valid_with_valid_password():
+    password = "ThisIsAValid!P@ssw0rd"
+
+    assert is_password_valid(password)
+
+def test_is_password_valid_with_invalid_password():
+    password = "short123"
+    assert not is_password_valid(password)
+
+    
