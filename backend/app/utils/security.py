@@ -1,5 +1,4 @@
 import re
-from functools import reduce
 
 def is_email_valid(email: str):
     return re.match(r"[^@]+@[^@]+\.[^@]+", email) is not None
@@ -28,7 +27,8 @@ def has_digit(password: str):
     return any_on_string(password, str.isdigit)
 
 def has_special(password: str):
-    is_special_map=lambda char: not (char.isalnum() or char.isspace())
+    def is_special_map(char):
+        return not (char.isalnum() or char.isspace())
     return any_on_string(password, is_special_map)
 
 def has_min_length(password: str, min_length: int = MIN_PASSWORD_LENGTH):

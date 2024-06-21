@@ -1,5 +1,5 @@
 from os import (
-    remove, scandir, path, makedirs, rename,
+    remove, scandir, path, makedirs,
 )
 from shutil import rmtree
 
@@ -7,8 +7,6 @@ from logging.handlers import (
     TimedRotatingFileHandler, 
     BaseRotatingHandler,
 )
-import logging
-import logging.handlers
 import os
 from time import (
     time, gmtime, localtime, strftime,

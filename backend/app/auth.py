@@ -1,5 +1,5 @@
 #auth.py
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer 
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
@@ -113,7 +113,7 @@ async def validate_refresh_token(
 
     except JWTError:
         raise ExpiredTokenException()  # Create a more specific exception
-    except ValidationError as e:
+    except ValidationError:
         raise CredentialsException()
 
     user = get_user(users_db, username=username)

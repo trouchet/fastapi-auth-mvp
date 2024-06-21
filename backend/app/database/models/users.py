@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, UUID, JSON
+    Column, String, Boolean, DateTime, UUID, JSON
 )
 
 from datetime import datetime

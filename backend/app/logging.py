@@ -1,9 +1,7 @@
-import datetime
 import logging
 import sys
-from datetime import datetime
 from dotenv import load_dotenv
-from os import getenv, makedirs, path
+from os import getenv
 from pythonjsonlogger import jsonlogger
 from backend.app.config import settings
 
@@ -25,7 +23,8 @@ fields = [
 
 # makedirs('/logs', exist_ok=True)
 
-field_map=lambda field_name: f"%({field_name})s"
+def field_map(field_name):
+    return f"%({field_name})s"
 logging_format = " ".join(map(field_map, fields))
 formatter = jsonlogger.JsonFormatter(logging_format)
 

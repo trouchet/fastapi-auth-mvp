@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 
 class CredentialsException(HTTPException):
     def __init__(self):

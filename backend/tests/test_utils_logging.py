@@ -1,13 +1,8 @@
 import os
-from os import path
 import time
 from shutil import rmtree
 
 import pytest
-import datetime
-from datetime import timedelta, timezone
-from pathlib import Path
-from unittest.mock import patch
 
 from backend.app.logging import DailyHierarchicalFileHandler
 
@@ -104,7 +99,7 @@ def test_get_files_to_delete_excess_backups(mocker, logs_foldername):
 def test_do_rollover_calculates_new_filename(mocker, logs_foldername):
     rmtree(logs_foldername)
     
-    current_time = int(time.time())
+    int(time.time())
     
     time_tuple=(2024, 6, 21, 12, 0, 0, 0, 0, 0)
     mocker.patch.object(time, "localtime", return_value=time_tuple)

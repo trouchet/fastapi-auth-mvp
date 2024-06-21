@@ -1,14 +1,11 @@
 import pytest
 
-from datetime import datetime, timedelta, timezone
-from passlib.context import CryptContext
-from fastapi import HTTPException, Depends
+from datetime import datetime, timedelta
+from fastapi import HTTPException
 from jose import jwt, JWTError
 from unittest.mock import patch
 
 
-from backend.app.models import User
-from backend.app.exceptions import CredentialsException
 from backend.app.auth import (
     get_user, 
     get_current_user,
@@ -18,7 +15,6 @@ from backend.app.auth import (
     create_token,
     ALGORITHM, SECRET_KEY,
 )
-from backend.app.auth import get_current_active_user
 
 def test_get_user_existing(test_users_db, test_user):
     username=test_user['username']

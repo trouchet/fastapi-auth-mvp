@@ -1,5 +1,5 @@
-from typing import Annotated, List, Optional, Set
-from fastapi import Depends, HTTPException, status
+from typing import Set
+from fastapi import Depends
 
 from backend.app.auth import RoleChecker
 from backend.app.constants import POSSIBLE_ROLES_SET

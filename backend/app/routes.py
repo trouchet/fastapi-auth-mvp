@@ -1,21 +1,16 @@
 from datetime import timedelta
 from typing import Annotated, Tuple
 
-from fastapi import Depends, FastAPI, HTTPException, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends, HTTPException, APIRouter
+from fastapi.security import OAuth2PasswordRequestForm
 
 from backend.app.auth import (
     create_token, 
-    authenticate_user, 
-    RoleChecker,
+    authenticate_user,
 )
 from backend.app.data import fake_users_db, refresh_tokens
 from backend.app.models import User, Token
 from backend.app.auth import validate_refresh_token
-from backend.app.exceptions import (
-    IncorrectPasswordException,
-    InexistentUsernameException,
-)
 from backend.app.utils.dependencies import (
     AdminDependency, 
     UserDependency,
