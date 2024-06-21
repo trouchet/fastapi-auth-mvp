@@ -52,11 +52,11 @@ class Settings(BaseSettings):
         protocol = "http" if self.ENVIRONMENT == "development" else "https"
         return f"{protocol}://{self.DOMAIN}"
 
-    POSTGRES_HOST: str
+    POSTGRES_HOST: str = 'localhost'
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DBNAME: str = ""
+    POSTGRES_USER: str = 'postgres'
+    POSTGRES_PASSWORD: str = 'postgres'
+    POSTGRES_DBNAME: str = "my_db"
 
     def _check_default_secret(self, var_name: str, value: Union[str, None]) -> None:
         if value == DEFAULT_PASSWORD:
