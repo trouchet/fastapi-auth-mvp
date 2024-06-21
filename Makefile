@@ -1,6 +1,6 @@
 .PHONY: build run stop ps host
 
-OMIT_PATHS := "*/__init__.py,tests/*"
+OMIT_PATHS := "*/__init__.py,backend/tests/*"
 
 define PRINT_HELP_PYSCRIPT
 import re, sys
@@ -28,11 +28,7 @@ clean-test: # Remove test and coverage artifacts
 clean-cache: # remove test and coverage artifacts
 	find . -name '*cache*' -exec rm -rf {} +
 
-sanitize: # Remove dangling images and volumes
-	docker system prune --volumes -f
-	docker images --filter 'dangling=true' -q --no-trunc | xargs -r docker rmi
-
-clean: clean-logs clean-test clean-cache sanitize ## Add a rule to remove unnecessary assets. Usage: make clean
+clean: clean-logs clean-test clean-cache ## Add a rule to remove unnecessary assets. Usage: make clean
 
 env: ## Creates a virtual environment. Usage: make env
 	pip install virtualenv
@@ -43,7 +39,7 @@ install: ## Installs the python requirements. Usage: make install
 	uv pip install -r requirements.txt
 
 run: ## Run the application. Usage: make run
-	uvicorn backend.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+	uvicorn backend.app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
 
 search: ## Searchs for a token in the code. Usage: make search token=your_token
 	grep -rnw . \
