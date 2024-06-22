@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from jose import JWTError, jwt
 from typing import Annotated
 from dotenv import load_dotenv
+from functools import wraps
 from os import getenv
 
 from backend.app.exceptions import (
@@ -130,8 +131,20 @@ def get_current_active_user(current_user: UserDependency):
 
     return current_user
 
+def role_checker(allowed_roles):
+  def wrapper(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+      # Access user information from your authentication system (e.g., session)
+      current_user = get_current_active_user()
+      if current_user.role not in allowed_roles:
+        return unauthorized_response()  # Handle unauthorized access
+      return func(*args, **kwargs)
+    return decorated_view
+  return wrapper
+
 # Dependency for current user
-CurrentUserDependency=Annotated[User, Depends(get_current_active_user)]
+CurrentUserDependency=Annotated[User, Depends()]
 class RoleChecker:
     def __init__(self, allowed_roles):
         self.allowed_roles = allowed_roles
