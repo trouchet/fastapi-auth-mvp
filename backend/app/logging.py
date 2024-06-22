@@ -1,9 +1,9 @@
 import datetime
 import logging
 import sys
+from os import getenv
 from datetime import datetime
 from dotenv import load_dotenv
-from os import getenv, makedirs, path
 from pythonjsonlogger import jsonlogger
 
 from backend.app.utils.logging import DailyHierarchicalFileHandler
