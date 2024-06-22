@@ -24,15 +24,6 @@ REFRESH_TOKEN_EXPIRE_MINUTES = 120
 access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)   
 
-@router.get("/hello")
-def hello_func():
-    return "Hello World"
-
-
-@router.get("/data")
-def get_data(_: Depends(RoleChecker(allowed_roles=["admin"]))):
-    return {"data": "This is important data"}
-
 
 @router.post("/token")
 async def login_for_access_token(
