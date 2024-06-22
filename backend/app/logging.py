@@ -1,10 +1,9 @@
-import datetime
 import logging
 import sys
-from os import getenv
-from datetime import datetime
 from dotenv import load_dotenv
+from os import getenv
 from pythonjsonlogger import jsonlogger
+from backend.app.config import settings
 
 from backend.app.utils.logging import DailyHierarchicalFileHandler
 
@@ -22,7 +21,10 @@ fields = [
     "pathname", "module","filename","funcName","levelno","levelname", "message",
 ]
 
-field_map=lambda field_name: f"%({field_name})s"
+# makedirs('/logs', exist_ok=True)
+
+def field_map(field_name):
+    return f"%({field_name})s"
 logging_format = " ".join(map(field_map, fields))
 formatter = jsonlogger.JsonFormatter(logging_format)
 
@@ -40,7 +42,9 @@ if ENVIRONMENT == "development":
 
 
 # Create daily rotating file handler with hierarchy
-handler = DailyHierarchicalFileHandler("logs/my_app.log", when="midnight")
+project_name=settings.PROJECT_NAME
+environment=settings.ENVIRONMENT
+handler = DailyHierarchicalFileHandler('logs', f"{project_name}.log", when="midnight")
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)

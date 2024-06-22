@@ -1,9 +1,19 @@
 from os import (
-    remove, scandir, path, makedirs, rename,
+    remove, scandir, path, makedirs,
 )
 from shutil import rmtree
 
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import (
+    TimedRotatingFileHandler, 
+    BaseRotatingHandler,
+)
+import os
+from time import (
+    time, gmtime, localtime, strftime,
+) 
+import re
+
+
 import datetime
 
 # Function to clear the latest 'n' items (files or folders)
@@ -41,71 +51,148 @@ def clear_folder_items(
 
 
 class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
-    def __init__(self, filename, when='midnight', interval=1, backupCount=0, encoding=None, delay=False):
-        """
-        Custom TimedRotatingFileHandler that creates logs with a daily hierarchy in '{year}/{month}/{day}' format.
+    def __init__(
+        self, 
+        foldername: str, filename: str, when='h', interval=1, backupCount=0, 
+        encoding=None, delay=False, utc=False, atTime=None, postfix = ".log"
+    ):
 
-        Args:
-            filename (str): The base filename for the log files.
-            when (str, optional): Defines the rollover schedule. Defaults to 'midnight'.
-            interval (int, optional): The rollover interval in units defined by 'when'. Defaults to 1.
-            backupCount (int, optional): The number of old log files to keep. Defaults to 0 (keep none).
-            encoding (str, optional): The encoding of the log file. Defaults to None.
-            delay (bool, optional): Whether to delay opening the file until it is needed. Defaults to False.
-        """
-        self.base_dir = path.dirname(filename)  # Extract directory from filename
+        self.folderName = foldername
+        makedirs(foldername, exist_ok=True)
         
-        makedirs(self.base_dir, exist_ok=True)  # Create directory if it doesn't exist
+        self.origFileName = filename
+        self.when = when.upper()
+        self.interval = interval
+        self.backupCount = backupCount
+        self.utc = utc
+        self.atTime = atTime
+        self.postfix = postfix
+
+        if self.when == 'S':
+            self.interval = 1 # one second
+            self.suffix = "%Y-%m-%d_%H-%M-%S"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$"
+
+        elif self.when == 'M':
+            self.interval = 60 # one minute
+            self.suffix = "%Y-%m-%d_%H-%M"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}$"
+
+        elif self.when == 'H':
+            self.interval = 60 * 60 # one hour
+            self.suffix = "%Y-%m-%d_%H"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}$"
+
+        elif self.when == 'D' or self.when == 'MIDNIGHT':
+            self.interval = 60 * 60 * 24 # one day
+            self.suffix = "%Y-%m-%d"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
+
+        elif self.when.startswith('W'):
+            self.interval = 60 * 60 * 24 * 7 # one week
+            
+            if len(self.when) != 2:
+                message=f"Invalid weekly rollover from 0 to 6 (0 is Monday): {self.when}"
+                raise ValueError(message)
+            
+            if self.when[1] < '0' or self.when[1] > '6':
+                message="Invalid day specified for weekly rollover: {self.when}"
+                raise ValueError(message)
+            
+            self.dayOfWeek = int(self.when[1])
+            self.suffix = "%Y-%m-%d"
+            self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
+        else:
+            message="Invalid rollover interval specified: {self.when}"
+            raise ValueError(message)
+
+        current_time = int(time())
+
+        filename = self.calculate_filename(current_time)
         
-        # Extract filename without extension
-        self.filename_base = path.splitext(filename)[0]  
+        BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
+
+        self.extMatch = re.compile(self.extMatch)
+        self.interval = self.interval * interval
+
+        self.rolloverAt = self.computeRollover(current_time)
+
+
+    def calculate_filename(self, current_time):
+        timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
+
+        now = datetime.datetime.fromtimestamp(current_time)        
         
-        # Extension format for daily rotation
-        self.ext_style = "%Y-%m-%d"  
+        base_folder = os.path.join(self.folderName, now.strftime("%Y/%m/%d"))
         
-        super().__init__(filename, when, interval, backupCount, encoding, delay)
+        makedirs(base_folder, exist_ok=True)
+        
+        new_filename=self.origFileName + "." + strftime(self.suffix, timeTuple) + self.postfix
+        new_filepath = os.path.join(base_folder, new_filename)
+
+        return new_filepath
+
+    def get_files_to_delete(self, newFileName):
+        dirName, fName = os.path.split(self.origFileName)
+        dName, newFileName = os.path.split(newFileName)
+
+        fileNames = os.listdir(dirName)
+        result = []
+        prefix = fName + "."
+        postfix = self.postfix
+        prelen = len(prefix)
+        postlen = len(postfix)
+        for fileName in fileNames:
+            is_new = fileName[:prelen] == prefix and \
+                fileName[-postlen:] == postfix and \
+                len(fileName)-postlen > prelen and \
+                fileName != newFileName
+            
+            if is_new:
+                suffix = fileName[prelen:len(fileName)-postlen]
+                if self.extMatch.match(suffix):
+                    result.append(os.path.join(dirName, fileName))
+        
+        result.sort()
+        if len(result) < self.backupCount:
+            result = []
+        else:
+            result = result[:len(result) - self.backupCount]
+        
+        return result
 
     def doRollover(self):
-        """
-        Override default behavior to create a new log file with date in path and filename.
-        """
-        self.stream.close()
-        now = datetime.datetime.now()
+        if self.stream:
+            self.stream.close()
+            self.stream = None
 
-        # Create year/month/day folders
-        new_folder = path.join(self.base_dir, now.strftime("%Y/%m/%d"))
-        makedirs(new_folder, exist_ok=True)  # Create folders if they don't exist
+        currentTime = self.rolloverAt
+        newFileName = self.calculate_filename(currentTime)
+        self.baseFilename = os.path.abspath(newFileName)
+        self.mode = 'a'
+        self.stream = self._open()
 
-        new_filename = path.join(new_folder, f"{self.filename_base}.{now.strftime(self.ext_style)}.{self.ext}")
-        self.baseFilename = new_filename
-        self.stream = self._open_stream()
-        self.extMatches = [f".{now.strftime(self.ext_style)}"]
-        self.dfn = self.baseFilename
-
+        # Delete old log files
         if self.backupCount > 0:
-            for s in self.suffixes[::-1]:
-                if s in self.extMatches:
-                    break
-                i = self.extMatches.index(s)
-                suffix = self.extMatches[i + 1]
+            for s in self.get_files_to_delete(newFileName):
+                try:
+                    os.remove(s)
+                except:
+                    pass
+        
+        # Calculate the next rollover time
+        newRolloverAt = self.computeRollover(currentTime)
+        while newRolloverAt <= currentTime:
+            newRolloverAt = newRolloverAt + self.interval
 
-                # Rotate older logs based on the new filename with folder structure
-                source = path.join( \
-                    self.base_dir, \
-                    path.dirname(self.baseFilename), \
-                    self.baseFilename + s
-                )
-                dest = path.join( \
-                    self.base_dir, \
-                    path.dirname(self.baseFilename), \
-                    self.baseFilename + suffix \
-                )
-                
-                if path.exists(source) and not path.exists(dest):
-                    try:
-                        rename(source, dest)
-                    except Exception as e:
-                        print(f"Error moving archive file: {source} - {dest} ({e})")
-
-        self.rolloverAt = self.rolloverAt + self.interval * self.intervalFactor
-
+        # If DST changes and midnight or weekly rollover, adjust for this.
+        is_when_dst=self.when == 'MIDNIGHT' or self.when.startswith('W')
+        is_dst=is_when_dst and not self.utc
+        if is_dst:
+            dstNow = time.localtime(currentTime)[-1]
+            dstAtRollover = time.localtime(newRolloverAt)[-1]
+            if dstNow != dstAtRollover:
+                # if DST kicks in before next rollover, we deduct an hour. Otherwise, add an hour 
+                newRolloverAt = newRolloverAt - 3600 if not dstNow else newRolloverAt + 3600
+        
+        self.rolloverAt = newRolloverAt

@@ -1,4 +1,3 @@
-import pytest
 
 from backend.app.utils.security import (
     is_email_valid,
@@ -29,7 +28,8 @@ def test_is_email_valid_with_invalid_email():
 
 def test_password_validity_obj_creation():
     invalid_message = "Password is too short"
-    validity_map = lambda password: len(password) >= 8
+    def validity_map(password):
+        return len(password) >= 8
     result = password_validity_obj(invalid_message, validity_map)
     assert result["invalidation_message"] == invalid_message
     assert result["validity_map"] is validity_map

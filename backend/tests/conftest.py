@@ -1,9 +1,10 @@
 import pytest
 from passlib.context import CryptContext
-
-from backend.app.auth import RoleChecker
+from typing import Set
+from os import getcwd 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 @pytest.fixture
 def test_users_db():
@@ -16,36 +17,18 @@ def test_refresh_tokens():
 
 
 @pytest.fixture
-def test_roles():
-    return {
-        "admin": 1,
-        "user": 2
-    }
-
-
-@pytest.fixture
-def test_allowed_roles():
-    return ["admin"]
-
-
-@pytest.fixture
-def test_user_checker():
-    return RoleChecker(['user'])
-
-
-@pytest.fixture
-def test_admin_checker():
-    return RoleChecker(['admin'])
+def logs_foldername():
+    return 'logs'
 
 
 def user_dict(
-    username, password, email, role: str = "user", is_active: bool = True
+    username, password, email, roles: Set[str] = {"user"}, is_active: bool = True
 ):
     return {
         "username": username,
         "hashed_password": pwd_context.hash(password),
         "email": email,
-        "role": role,
+        "roles": roles,
         "is_active": is_active
     }
 
@@ -63,13 +46,16 @@ def test_admin_password():
 @pytest.fixture
 def test_user(test_user_password):
     return user_dict(
-        'user name', test_user_password, 'user@mail.com', 'user'
+        'user name', test_user_password, 'user@mail.com', {'user'}
     )
 
 
 @pytest.fixture
 def test_admin(test_admin_password):
     return user_dict(
-        'admin name', test_admin_password, 'admin@mail.com', 'admin'
+        'admin name', test_admin_password, 'admin@mail.com', {'admin'}
     )
 
+@pytest.fixture
+def tmp_path():
+    return getcwd()

@@ -1,18 +1,20 @@
 from datetime import timedelta
 from typing import Annotated, Tuple
 
-from fastapi import Depends, FastAPI, HTTPException, APIRouter
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 
 from backend.app.auth import (
     create_token, 
-    authenticate_user, 
-    RoleChecker,
+    authenticate_user,
 )
 from backend.app.data import fake_users_db, refresh_tokens
 from backend.app.models import User, Token
 from backend.app.auth import validate_refresh_token
+from backend.app.utils.dependencies import (
+    AdminDependency, 
+    UserDependency,
+)
 
 # Create an instance of the FastAPI class
 router=APIRouter()
@@ -24,17 +26,30 @@ REFRESH_TOKEN_EXPIRE_MINUTES = 120
 access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)   
 
+@router.get("/hello")
+def hello_func():
+    return "Hello World"
+
+
+@router.get("/user/data")
+def get_user_data(_: UserDependency):
+    return {"data": "This is user-accessible data"}
+
+
+@router.get("/admin/data")
+def get_admin_data(_: AdminDependency):
+    return {"data": "This is admin-accessible data"}
+
 
 @router.post("/token")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
     
-    if not user:
-        raise HTTPException(
-            status_code=400, detail="Incorrect username or password"
-        )
+    try: 
+        user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     
     auth_data={"sub": user.username, "role": user.role}
     access_token = create_token(
@@ -59,12 +74,10 @@ async def refresh_access_token(
     }
 
     access_token = create_token(
-        data=auth_data, 
-        expires_delta=access_token_expires
+        data=auth_data, expires_delta=access_token_expires
     )
     refresh_token = create_token(
-        data=auth_data, 
-        expires_delta=refresh_token_expires
+        data=auth_data, expires_delta=refresh_token_expires
     )
 
     refresh_tokens.remove(token)

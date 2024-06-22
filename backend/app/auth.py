@@ -15,6 +15,7 @@ from backend.app.exceptions import (
     PrivilegesException, 
     InexistentUsernameException,
     ExpiredTokenException,
+    IncorrectPasswordException,
 )
 from backend.app.models import User
 
@@ -42,13 +43,13 @@ def authenticate_user(database, username: str, plain_password: str):
     user = get_user(database, username)
     
     if not user:
-        return False
-    
+        raise InexistentUsernameException()
+
     is_password_correct = pwd_context.verify(plain_password, user.hashed_password)
-    
+
     if not is_password_correct:
-        return False 
-    
+        raise IncorrectPasswordException()
+
     return user
 
 
@@ -100,8 +101,8 @@ async def validate_refresh_token(
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             
             username: str = payload.get("sub")
-            role: str = payload.get("role")
-            
+            role: str = payload.get("roles")
+
             empty_entry=username is None or role is None
 
             if empty_entry:
@@ -131,26 +132,18 @@ def get_current_active_user(current_user: UserDependency):
 
     return current_user
 
+
 def role_checker(allowed_roles):
-  def wrapper(func):
-    @wraps(func)
-    def decorated_view(*args, **kwargs):
-      # Access user information from your authentication system (e.g., session)
-      current_user = get_current_active_user()
-      if current_user.role not in allowed_roles:
-        return unauthorized_response()  # Handle unauthorized access
-      return func(*args, **kwargs)
-    return decorated_view
-  return wrapper
+    def wrapper(func):
+      @wraps(func)
+      def decorated_view(*args, **kwargs):
+        # Access user information from your authentication system (e.g., session)
+        current_user = get_current_active_user()
+        if current_user.role not in allowed_roles:
+            raise PrivilegesException()
+        return func(*args, **kwargs)
+      return decorated_view
+    
+    return wrapper
 
-# Dependency for current user
-CurrentUserDependency=Annotated[User, Depends()]
-class RoleChecker:
-    def __init__(self, allowed_roles):
-        self.allowed_roles = allowed_roles
 
-    def __call__(self, user: CurrentUserDependency):
-        if user.role in self.allowed_roles:
-            return True
-
-        raise PrivilegesException()
