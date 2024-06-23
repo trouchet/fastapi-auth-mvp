@@ -2,7 +2,9 @@ from fastapi import APIRouter
 
 from backend.app.auth import role_checker
 
-router=APIRouter()
+router=APIRouter(
+    tags=["data"],
+)
 
 @router.get("/data/admin")
 @role_checker(["admin"])

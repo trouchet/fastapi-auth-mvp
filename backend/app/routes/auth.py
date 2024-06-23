@@ -13,7 +13,9 @@ from backend.app.models import User, Token
 from backend.app.auth import validate_refresh_token
 
 # Create an instance of the FastAPI class
-router=APIRouter()
+router=APIRouter(
+    tags=["auth"],
+)
 
 # Token expiration times
 ACCESS_TOKEN_EXPIRE_MINUTES = 20

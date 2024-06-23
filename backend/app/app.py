@@ -19,6 +19,12 @@ app = FastAPI(
     redoc_url=f"{settings.API_V1_STR}/redoc",
 )
 
+# Include the router in the app
+app.include_router(auth_router, prefix=f"{settings.API_V1_STR}")
+app.include_router(misc_router, prefix=f"{settings.API_V1_STR}")
+app.include_router(data_router, prefix=f"{settings.API_V1_STR}")
+
+
 # Add static files
 obj = StaticFiles(directory="static")
 app.mount("/static", obj, name="static")
@@ -46,7 +52,3 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-# Include the router in the app
-app.include_router(auth_router)
-app.include_router(misc_router)
-app.include_router(data_router)

@@ -6,7 +6,9 @@ from backend.app.utils.misc import (
     get_cat_image_url, fetch_image,
 )
 
-router = APIRouter()
+router = APIRouter(
+    tags=["misc"],
+)
 
 
 @router.get("/hello")
