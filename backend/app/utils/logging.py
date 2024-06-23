@@ -52,11 +52,9 @@ def clear_folder_items(
 
 class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
     def __init__(
-        self, 
-        foldername: str, filename: str, when='h', interval=1, backupCount=0, 
+        self, foldername: str, filename: str, when='h', interval=1, backupCount=0, 
         encoding=None, delay=False, utc=False, atTime=None, postfix = ".log"
     ):
-
         self.folderName = foldername
         makedirs(foldername, exist_ok=True)
         
@@ -118,21 +116,21 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         self.rolloverAt = self.computeRollover(current_time)
 
 
-    def calculate_filename(self, current_time):
+    def calculate_filename(self, current_time: int):
         timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
-
         now = datetime.datetime.fromtimestamp(current_time)        
-        
+
         base_folder = os.path.join(self.folderName, now.strftime("%Y/%m/%d"))
-        
+
         makedirs(base_folder, exist_ok=True)
-        
+
         new_filename=self.origFileName + "." + strftime(self.suffix, timeTuple) + self.postfix
+        
         new_filepath = os.path.join(base_folder, new_filename)
 
         return new_filepath
 
-    def get_files_to_delete(self, newFileName):
+    def get_files_to_delete(self, newFileName: str):
         dirName, fName = os.path.split(self.origFileName)
         dName, newFileName = os.path.split(newFileName)
 
@@ -157,7 +155,8 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         if len(result) < self.backupCount:
             result = []
         else:
-            result = result[:len(result) - self.backupCount]
+            until=len(result) - self.backupCount
+            result = result[:until]
         
         return result
 
@@ -179,7 +178,7 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
                     os.remove(s)
                 except:
                     pass
-        
+
         # Calculate the next rollover time
         newRolloverAt = self.computeRollover(currentTime)
         while newRolloverAt <= currentTime:
@@ -196,3 +195,12 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
                 newRolloverAt = newRolloverAt - 3600 if not dstNow else newRolloverAt + 3600
         
         self.rolloverAt = newRolloverAt
+
+    def __repr__(self):
+        from reprlib import repr
+        args_1=f"{self.baseFilename!r}, '{self.when}', {self.interval},"
+        args_2=f"{self.backupCount}, '{self.encoding}', {self.utc},"
+        args_3=f"{self.atTime!r}, '{self.postfix}'"
+
+        args_str=f"{args_1} {args_2} {args_3}"
+        return repr(f"{self.__class__.__name__}({args_str})")

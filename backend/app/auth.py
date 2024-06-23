@@ -16,6 +16,7 @@ from backend.app.exceptions import (
     InexistentUsernameException,
     ExpiredTokenException,
     IncorrectPasswordException,
+    InactiveUserException,
 )
 from backend.app.models import User
 
@@ -111,24 +112,27 @@ async def validate_refresh_token(
             raise CredentialsException()
 
     except JWTError:
-        raise ExpiredTokenException()  # Create a more specific exception
-    except ValidationError as e:
-        raise CredentialsException()
+        raise ExpiredTokenException()
 
+    try:
+        current_user = get_user(users_db, username=username)
 
-    user = get_user(users_db, username=username)
+        if current_user is None:
+            raise CredentialsException()
+    
+    except HTTPException as e:
+        raise e
 
-    if user is None:
-        raise CredentialsException()
+    active_user=get_current_active_user(current_user)
 
-    return user, token
+    return active_user, token
 
 
 # Dependency for checking the role
 UserDependency=Annotated[User, Depends(get_current_user)]
 def get_current_active_user(current_user: UserDependency):
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise InactiveUserException()
 
     return current_user
 
@@ -139,7 +143,7 @@ def role_checker(allowed_roles):
       def decorated_view(*args, **kwargs):
         # Access user information from your authentication system (e.g., session)
         current_user = get_current_active_user()
-        if current_user.role not in allowed_roles:
+        if not set(current_user.roles).issubset(allowed_roles):
             raise PrivilegesException()
         return func(*args, **kwargs)
       return decorated_view

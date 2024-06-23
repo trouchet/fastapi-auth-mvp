@@ -3,11 +3,16 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 from pydantic import (
+    AnyUrl,
+    BeforeValidator,
     computed_field,
     model_validator,
 )
 
-from typing import Literal, Union
+
+from typing import (
+    Literal, Union, Annotated, Any, List,
+)
 from typing_extensions import Self
 
 from warnings import warn
@@ -20,6 +25,13 @@ POSTGRES_DSN_SCHEME = "postgresql+psycopg"
 # Project settings
 with open("pyproject.toml", "r") as f:
     config = toml.load(f)
+
+def parse_cors(v: Any) -> Union[List[str], str]:
+    if isinstance(v, str) and not v.startswith("["):
+        return [i.strip() for i in v.split(",")]
+    elif isinstance(v, (list, str)):
+        return v
+    raise ValueError(v)
 
 
 # Settings class
@@ -42,6 +54,11 @@ class Settings(BaseSettings):
 
     # 1 day
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1 * 24 * 60
+
+    # CORS
+    BACKEND_CORS_ORIGINS: Annotated[
+        Union[List[AnyUrl], str], BeforeValidator(parse_cors)
+    ] = []
 
     @computed_field  # type: ignore[misc]
     @property

@@ -1,10 +1,15 @@
 import pytest
+from typing import List
 
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import jwt, JWTError
 from unittest.mock import patch
 
+from backend.app.exceptions import (
+    PrivilegesException, 
+    ExpiredTokenException,
+)
 
 from backend.app.auth import (
     get_user, 
@@ -13,6 +18,7 @@ from backend.app.auth import (
     get_current_active_user,
     authenticate_user, 
     create_token,
+    role_checker,
     ALGORITHM, SECRET_KEY,
 )
 
@@ -385,3 +391,85 @@ async def test_validate_refresh_token_nonexistent_user(
         await validate_refresh_token(test_users_db, test_refresh_tokens, token)
 
     assert "Could not validate credentials" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_expired_token(mocker):
+  """Tests if ExpiredTokenException is raised for an expired token."""
+  # Mock dependencies
+  users_db = "mocked_users_db"
+  token = "expired_token"
+  refresh_tokens = [token]
+
+  # Mock jwt.decode to raise for specific token
+  def mock_decode(token, secret_key, algorithms):
+    if token == "expired_token":
+      raise jwt.ExpiredSignatureError("Token is expired")
+    # Handle other tokens if needed (e.g., valid token)
+    return {"sub": "user name", "roles": ["user"]}  # Example return for valid token
+  
+  mocker.patch("backend.app.auth.jwt.decode", side_effect=mock_decode)
+
+  # Mock get_user (not called in this scenario, but avoids potential errors)
+  mocker.patch("backend.app.auth.get_user", return_value=None)
+
+  # Call the function with dependency injection
+  with pytest.raises(ExpiredTokenException):
+    await validate_refresh_token(users_db, refresh_tokens, token)
+
+
+
+def test_role_checker_allows_authorized_role(mocker):
+    """Tests if the decorator allows access with an authorized role."""
+    # Mock get_current_active_user to return a user with an allowed role
+    allowed_roles = ["admin"]
+    mocker.patch(
+        "backend.app.auth.get_current_active_user", 
+        return_value=MockUser(roles=["admin"])
+    )
+
+    @role_checker(allowed_roles)
+    def protected_view():
+      return "Success"
+  
+    # Call the decorated view and assert no exception is raised
+    assert protected_view() == "Success"
+
+def test_role_checker_denies_unauthorized_role(mocker):
+    """Tests if the decorator denies access with an unauthorized role."""
+    # Mock get_current_active_user to return a user with an unauthorized role
+    allowed_roles = ["admin"]
+    mocker.patch(
+        "backend.app.auth.get_current_active_user", 
+        return_value=MockUser(roles=["editor"])
+    )
+  
+    @role_checker(allowed_roles)
+    def protected_view():
+        return "Success"
+  
+    # Call the decorated view and assert PrivilegesException is raised
+    with pytest.raises(PrivilegesException):
+        protected_view()
+
+def test_role_checker_multiple_allowed_roles(mocker):
+    """Tests if the decorator allows access with one of multiple allowed roles."""
+    # Mock get_current_active_user to return a user with one of the allowed roles
+    allowed_roles = ["admin", "editor"]
+    mocker.patch(
+        "backend.app.auth.get_current_active_user", 
+        return_value=MockUser(roles=["editor"])
+    )
+  
+    @role_checker(allowed_roles)
+    def protected_view():
+        return "Success"
+
+    # Call the decorated view and assert no exception is raised
+    assert protected_view() == "Success"
+
+# Helper class to represent a mock user object
+class MockUser:
+    def __init__(self, roles: List[str]):
+        self.roles = roles
+
