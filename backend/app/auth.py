@@ -1,9 +1,8 @@
 #auth.py
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer 
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
-from pydantic import ValidationError
 from jose import JWTError, jwt
 from typing import Annotated
 from dotenv import load_dotenv

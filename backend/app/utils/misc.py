@@ -1,6 +1,5 @@
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.requests import Request
-from fastapi.responses import JSONResponse
 from httpx import AsyncClient as HTTPClient
 
 async def get_status_code(request: Request):

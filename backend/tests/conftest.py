@@ -1,10 +1,9 @@
 import pytest
 from passlib.context import CryptContext
 from typing import Set, Tuple
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from os import getcwd 
 from time import mktime
-from datetime import datetime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

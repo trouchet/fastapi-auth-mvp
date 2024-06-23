@@ -1,7 +1,7 @@
 import os
 import time
 from shutil import rmtree
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 import shutil 
