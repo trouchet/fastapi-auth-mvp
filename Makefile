@@ -26,7 +26,7 @@ clean-test: # Remove test and coverage artifacts
 	rm -fr .tox/ .testmondata* .coverage coverage.* htmlcov/ .pytest_cache
 
 clean-cache: # remove test and coverage artifacts
-	find . -name '*cache*' -exec rm -rf {} +
+	find . -name '*pycache*' -exec rm -rf {} +
 
 clean: clean-logs clean-test clean-cache ## Add a rule to remove unnecessary assets. Usage: make clean
 
