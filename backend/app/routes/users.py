@@ -2,14 +2,13 @@ from fastapi import APIRouter, Depends
 from typing import List, Dict
 
 from backend.app.repositories.users import get_user_repo
-from backend.app.auth import authenticate_user
 from backend.app.database.models.users import UserDB
 from backend.app.repositories.users import UsersRepository
 from backend.app.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
 )
-from backend.app.models.users import UpdateUser, User
+from backend.app.models.users import UpdateUser
 
 router=APIRouter(tags=["users"])
 

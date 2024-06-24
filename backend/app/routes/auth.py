@@ -4,10 +4,7 @@ from typing import Annotated, Tuple
 from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.auth import (
-    create_token, 
-    authenticate_user,
-)
+from backend.app.auth import create_token
 from backend.app.data import refresh_tokens
 from backend.app.models.users import User, Token
 from backend.app.auth import validate_refresh_token
