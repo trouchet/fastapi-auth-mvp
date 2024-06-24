@@ -6,10 +6,6 @@ from fastapi import HTTPException
 from jose import jwt, JWTError
 from unittest.mock import patch
 
-from backend.app.exceptions import (
-    PrivilegesException, 
-    ExpiredTokenException,
-)
 
 from backend.app.utils.database import model_to_dict
 
@@ -110,7 +106,6 @@ async def test_get_current_user_valid_token(
 @pytest.mark.asyncio
 async def test_get_current_user_inexistent_user(
     test_user_repository, test_user, test_user_password):
-    username = test_user.user_username
 
     unknown_username = "unknown_user"
     auth_dict={
@@ -128,7 +123,6 @@ async def test_get_current_user_inexistent_user(
 async def test_get_current_user_incomplete_data(
     test_user_repository, test_user, test_user_password
 ):
-    username = test_user.user_username
 
     auth_dict={} # inexistent claim
     token = create_token(auth_dict)
@@ -384,7 +378,6 @@ async def test_validate_refresh_token_missing_role_in_token(test_user):
 @pytest.mark.asyncio
 async def test_vaildate_refresh_token_inexistent_user(test_user):
     # Create a refresh token for a user
-    username=test_user.user_username
 
     
     user_dict={

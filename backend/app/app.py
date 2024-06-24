@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Form
+from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import Request, HTTPException, status
@@ -11,10 +11,7 @@ from backend.app.routes import (
 )
 from backend.app.config import settings
 from backend.app.models.auth import CsrfSettings
-from backend.app.database.core import Database
 
-from backend.app.database.initial_data import insert_initial_users
-from backend.app.database.instance import database
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

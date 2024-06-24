@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Annotated, Tuple
 
 from fastapi import Depends, HTTPException, APIRouter

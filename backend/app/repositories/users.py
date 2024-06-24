@@ -1,14 +1,12 @@
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
 from sqlalchemy import or_, func
-from jose import jwt, JWTError
 from typing import List
 from datetime import datetime
 
 from backend.app.database.models.users import UserDB
-from backend.app.config import settings
 from backend.app.database.instance import get_session
 
 

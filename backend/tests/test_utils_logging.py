@@ -88,11 +88,6 @@ def test_get_files_to_delete_no_backups(mocker, logs_foldername):
 @patch("backend.app.utils.logging.os.listdir")
 def test_get_files_to_delete_excess_backups(listdit_mocker, logs_foldername):
     handler = DailyHierarchicalFileHandler(logs_foldername, "test.log", when="D", backupCount=1)
-    listdit_mocker=[
-        "test.log.2000-01-02.log", 
-        "test.log.2000-01-01.log", 
-        "other.log"
-    ]
     new_filename = "test.log.2000-01-03.log"
     files_to_delete = handler.get_files_to_delete(new_filename)
     assert files_to_delete == ["test.log.2000-01-01.log"]

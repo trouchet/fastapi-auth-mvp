@@ -1,16 +1,11 @@
-from os import getenv, path, getcwd
-from dotenv import load_dotenv
 
-from psycopg2 import OperationalError
 
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy import create_engine, pool, text
 from sqlalchemy.orm import sessionmaker
 
 
-from backend.app.database.initial_data import insert_initial_users
 from backend.app.logging import logger
-from backend.app.config import settings
 from backend.app.database.models.base import Base
 from backend.app.utils.misc import try_do
 

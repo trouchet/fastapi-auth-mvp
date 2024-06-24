@@ -1,13 +1,11 @@
 #auth.py
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer 
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
-from dotenv import load_dotenv
 from functools import wraps
-from os import getenv
 
 from backend.app.constants import (
     DEFAULT_ACCESS_TIMEOUT_MINUTES
@@ -25,7 +23,6 @@ from backend.app.repositories.users import (
 )
 from backend.app.models.users import User
 from backend.app.database.models.users import UserDB
-from backend.app.repositories.users import get_user_repo
 
 from backend.app.config import settings
 

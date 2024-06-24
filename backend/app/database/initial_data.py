@@ -1,7 +1,6 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 
