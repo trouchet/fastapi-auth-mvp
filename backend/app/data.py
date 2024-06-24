@@ -6,14 +6,14 @@ fake_users_db = [
     {
         "username": "johndoe",
         "email": "john@emaik.com",
-        "role": "user",
+        "roles": ["user"],
         "hashed_password": pwd_context.hash('Secret_password_shh123!'),
         "is_active": True
     },
     {
         "username": "alice",
         "email": "al8ce@emaik.com",
-        "role": "admin",
+        "roles": ["admin", "user"],
         "hashed_password": pwd_context.hash("Another_password_shh123!"),
         "is_active": True
     }

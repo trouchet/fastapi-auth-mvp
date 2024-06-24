@@ -9,9 +9,9 @@ router=APIRouter(
 @router.get("/data/admin")
 @role_checker(["admin"])
 def admin_endpoint():
-    return {"data": "This is admin data"}
+    return {"message": "admin data"}
 
 @router.get("/data/user")
-@role_checker(["user"])
+@role_checker(["admin", "user"])
 def admin_endpoint():
-    return {"data": "This is user data"}
+    return {"message": "user data"}

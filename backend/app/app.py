@@ -1,14 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Form
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_csrf_protect import CsrfProtect
 
 from backend.app.routes import (
-    auth_router, data_router, misc_router,
+    auth_router, data_router, misc_router, users_router,
 )
 from backend.app.config import settings
+from backend.app.models.auth import CsrfSettings
+from backend.app.database.core import Database
+
+from backend.app.database.initial_data import insert_initial_users
+from backend.app.database.instance import database
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -19,11 +25,17 @@ app = FastAPI(
     redoc_url=f"{settings.API_V1_STR}/redoc",
 )
 
-# Include the router in the app
-app.include_router(auth_router, prefix=f"{settings.API_V1_STR}")
-app.include_router(misc_router, prefix=f"{settings.API_V1_STR}")
-app.include_router(data_router, prefix=f"{settings.API_V1_STR}")
+# Include routers in the app
+prefix=f"{settings.API_V1_STR}"
 
+app.include_router(auth_router, prefix=prefix)
+app.include_router(misc_router, prefix=prefix)
+app.include_router(data_router, prefix=prefix)
+app.include_router(users_router, prefix=prefix)
+
+@CsrfProtect.load_config
+def get_csrf_config():
+  return CsrfSettings()
 
 # Add static files
 obj = StaticFiles(directory="static")

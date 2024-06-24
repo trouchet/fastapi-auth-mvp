@@ -10,7 +10,6 @@ router = APIRouter(
     tags=["misc"],
 )
 
-
 @router.get("/hello")
 def hello_func():
     return "Hello World"

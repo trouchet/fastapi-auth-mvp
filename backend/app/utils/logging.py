@@ -1,20 +1,19 @@
 from os import (
-    remove, scandir, path, makedirs,
+    remove, scandir, path, makedirs, getpid, listdir
 )
 from shutil import rmtree
+from time import (
+    time, gmtime, localtime, strftime,
+) 
+import datetime
+import re
+
 
 from logging.handlers import (
     TimedRotatingFileHandler, 
     BaseRotatingHandler,
 )
-import os
-from time import (
-    time, gmtime, localtime, strftime,
-) 
-import re
 
-
-import datetime
 
 # Function to clear the latest 'n' items (files or folders)
 def clear_folder_items(
@@ -120,21 +119,23 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
         now = datetime.datetime.fromtimestamp(current_time)        
 
-        base_folder = os.path.join(self.folderName, now.strftime("%Y/%m/%d"))
+        base_folder = path.join(self.folderName, now.strftime("%Y/%m/%d"))
 
         makedirs(base_folder, exist_ok=True)
 
-        new_filename=self.origFileName + "." + strftime(self.suffix, timeTuple) + self.postfix
+        pid_hash = str(getpid())
+        basename=self.origFileName + "." + strftime(self.suffix, timeTuple) + '.' + pid_hash
+        new_filename= basename + self.postfix
         
-        new_filepath = os.path.join(base_folder, new_filename)
+        new_filepath = path.join(base_folder, new_filename)
 
         return new_filepath
 
     def get_files_to_delete(self, newFileName: str):
-        dirName, fName = os.path.split(self.origFileName)
-        dName, newFileName = os.path.split(newFileName)
+        dirName, fName = path.split(self.origFileName)
+        dName, newFileName = path.split(newFileName)
 
-        fileNames = os.listdir(dirName)
+        fileNames = listdir(dirName)
         result = []
         prefix = fName + "."
         postfix = self.postfix
@@ -149,7 +150,8 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             if is_new:
                 suffix = fileName[prelen:len(fileName)-postlen]
                 if self.extMatch.match(suffix):
-                    result.append(os.path.join(dirName, fileName))
+                    filepath=path.join(dirName, fileName)
+                    result.append(filepath)
         
         result.sort()
         if len(result) < self.backupCount:
@@ -167,7 +169,7 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
 
         currentTime = self.rolloverAt
         newFileName = self.calculate_filename(currentTime)
-        self.baseFilename = os.path.abspath(newFileName)
+        self.baseFilename = path.abspath(newFileName)
         self.mode = 'a'
         self.stream = self._open()
 
@@ -175,7 +177,7 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         if self.backupCount > 0:
             for s in self.get_files_to_delete(newFileName):
                 try:
-                    os.remove(s)
+                    remove(s)
                 except:
                     pass
 
