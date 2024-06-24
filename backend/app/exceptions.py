@@ -36,6 +36,20 @@ class InexistentUsernameException(HTTPException):
             detail=f"Username {username} does not exist",
         )
 
+class ExistentUsernameException(HTTPException):
+    def __init__(self, username):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Username {username} already exists",
+        )
+
+class ExistentEmailException(HTTPException):
+    def __init__(self, email):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Email {email} already exists",
+        )
+
 class InexistentUserIDException(HTTPException):
     def __init__(self, user_id):
         super().__init__(
@@ -50,6 +64,13 @@ class IncorrectPasswordException(HTTPException):
             detail="Incorrect password",
         )
 
+
+class IncorrectCurrentPasswordException(IncorrectPasswordException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The current password is incorrect",
+        )
 
 class ExpiredTokenException(HTTPException):
     def __init__(self):
@@ -66,4 +87,12 @@ class ExpiredRefreshTokenException(ExpiredTokenException):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
+        )
+
+
+class LastAdminRemovalException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You can't remove the last admin",
         )
