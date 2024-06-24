@@ -43,6 +43,8 @@ if ENVIRONMENT == "development":
 project_name=settings.PROJECT_NAME
 environment=settings.ENVIRONMENT
 handler = DailyHierarchicalFileHandler('logs', f"{project_name}.log", when="midnight")
+
+
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)

@@ -8,7 +8,6 @@ from time import (
 import datetime
 import re
 
-
 from logging.handlers import (
     TimedRotatingFileHandler, 
     BaseRotatingHandler,
@@ -64,6 +63,8 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         self.utc = utc
         self.atTime = atTime
         self.postfix = postfix
+        
+        self.base_folder = ''
 
         if self.when == 'S':
             self.interval = 1 # one second
@@ -114,20 +115,22 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
 
         self.rolloverAt = self.computeRollover(current_time)
 
+    def calculate_base_folder(self, current_time):
+        now = datetime.datetime.fromtimestamp(current_time)
+        ymd_tree=now.strftime("%Y/%m/%d")
+        return path.join(self.folderName, ymd_tree)
 
     def calculate_filename(self, current_time: int):
         timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
-        now = datetime.datetime.fromtimestamp(current_time)        
+        self.base_folder = self.calculate_base_folder(current_time)
 
-        base_folder = path.join(self.folderName, now.strftime("%Y/%m/%d"))
-
-        makedirs(base_folder, exist_ok=True)
+        makedirs(self.base_folder, exist_ok=True)
 
         pid_hash = str(getpid())
         basename=self.origFileName + "." + strftime(self.suffix, timeTuple) + '.' + pid_hash
         new_filename= basename + self.postfix
         
-        new_filepath = path.join(base_folder, new_filename)
+        new_filepath = path.join(self.base_folder, new_filename)
 
         return new_filepath
 
@@ -173,6 +176,9 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
         self.mode = 'a'
         self.stream = self._open()
 
+        self.base_folder=self.calculate_base_folder(currentTime)
+        clear_folder_items(self.base_folder, self.backupCount)
+    
         # Delete old log files
         if self.backupCount > 0:
             for s in self.get_files_to_delete(newFileName):
