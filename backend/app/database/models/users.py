@@ -1,10 +1,9 @@
-from sqlalchemy import (
-    Column, String, Boolean, DateTime, UUID, JSON
-)
+from sqlalchemy import Column, String, Boolean, DateTime, UUID, JSON
 
 from datetime import datetime
 
 from . import Base
+
 
 class UserDB(Base):
     __tablename__ = "users"
@@ -20,7 +19,7 @@ class UserDB(Base):
     user_is_active = Column(Boolean, default=True)
     user_access_token = Column(String, nullable=True)
     user_refresh_token = Column(String, nullable=True)
-    
+
     def __repr__(self):
         return f"<User {self.user_username}>"
 
@@ -29,4 +28,3 @@ class UserDB(Base):
 
     def __eq__(self, other):
         return self.user_username == other.user_username
-

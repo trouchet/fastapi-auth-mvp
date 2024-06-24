@@ -10,6 +10,7 @@ database.init()
 
 insert_initial_users(database)
 
+
 def get_session():
     """
     Define a dependency to create a database session

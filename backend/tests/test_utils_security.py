@@ -1,4 +1,3 @@
-
 from backend.app.utils.security import (
     is_email_valid,
     password_validity_obj,
@@ -28,8 +27,10 @@ def test_is_email_valid_with_invalid_email():
 
 def test_password_validity_obj_creation():
     invalid_message = "Password is too short"
+
     def validity_map(password):
         return len(password) >= 8
+
     result = password_validity_obj(invalid_message, validity_map)
     assert result["invalidation_message"] == invalid_message
     assert result["validity_map"] is validity_map
@@ -78,7 +79,7 @@ def test_without_space():
 
 
 def test_password_must_have_str():
-    message="Password must have lowercase characters"
+    message = "Password must have lowercase characters"
     assert password_must_have_str("lowercase characters") == message
 
 
@@ -115,13 +116,13 @@ def test_get_invalid_password_conditions_with_invalid_password():
     invalid_conditions = get_invalid_password_conditions(password)
     assert len(invalid_conditions) > 0
 
+
 def test_is_password_valid_with_valid_password():
     password = "ThisIsAValid!P@ssw0rd"
 
     assert is_password_valid(password)
 
+
 def test_is_password_valid_with_invalid_password():
     password = "short123"
     assert not is_password_valid(password)
-
-    

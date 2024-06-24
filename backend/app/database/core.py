@@ -1,5 +1,3 @@
-
-
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy import create_engine, pool, text
 from sqlalchemy.orm import sessionmaker
@@ -8,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from backend.app.logging import logger
 from backend.app.database.models.base import Base
 from backend.app.utils.misc import try_do
+
 
 class Database:
     """
@@ -23,9 +22,9 @@ class Database:
         self.engine = create_engine(
             uri,
             poolclass=pool.QueuePool,  # Use connection pooling
-            pool_size=20,              # Adjust pool size based on your workload
-            max_overflow=10,           # Adjust maximum overflow connections
-            pool_recycle=3600,         # Periodically recycle connections (optional)
+            pool_size=20,  # Adjust pool size based on your workload
+            max_overflow=10,  # Adjust maximum overflow connections
+            pool_recycle=3600,  # Periodically recycle connections (optional)
         )
         self.session_maker = sessionmaker(
             autocommit=False, autoflush=False, bind=self.engine
@@ -40,7 +39,7 @@ class Database:
             if not database_exists(self.uri):
                 # Create the database engine and session maker
                 create_database(self.uri)
-        
+
         try_do(create_database_alias, "creating database")
 
     def test_connection(self):
@@ -52,7 +51,7 @@ class Database:
                 conn.execute(query)
 
                 logger.info("Connection to the database established!")
-        
+
         try_do(test_connection, "testing connection")
 
     def create_tables(self):
@@ -64,6 +63,7 @@ class Database:
             None: If there was an error connecting to the database.
 
         """
+
         def create_tables_alias():
             Base.metadata.create_all(self.engine)
 
@@ -84,5 +84,3 @@ class Database:
         self.create_database()
         self.test_connection()
         self.create_tables()
-
-

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 
+
 class CredentialsException(HTTPException):
     def __init__(self):
         super().__init__(
@@ -8,12 +9,14 @@ class CredentialsException(HTTPException):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+
 class CSRFProtectException(HTTPException):
     def __init__(self, error: str):
         super().__init__(
             status_code=status.HTTP_403_UNAUTHORIZED,
             detail="CSRF token is invalid",
         )
+
 
 class InactiveUserException(HTTPException):
     def __init__(self, username):
@@ -22,12 +25,14 @@ class InactiveUserException(HTTPException):
             detail=f"User {username} is inactive ",
         )
 
+
 class PrivilegesException(HTTPException):
     def __init__(self):
         super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="You don't have enough permissions",
         )
+
 
 class InexistentUsernameException(HTTPException):
     def __init__(self, username):
@@ -36,12 +41,14 @@ class InexistentUsernameException(HTTPException):
             detail=f"Username {username} does not exist",
         )
 
+
 class InexistentUserIDException(HTTPException):
     def __init__(self, user_id):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"User ID {user_id} does not exist",
         )
+
 
 class IncorrectPasswordException(HTTPException):
     def __init__(self):
@@ -61,8 +68,8 @@ class ExpiredTokenException(HTTPException):
 
 class ExpiredRefreshTokenException(ExpiredTokenException):
     def __init__(self):
-        detail=super().detail+" Please log in again to obtain a new token."
-        
+        detail = super().detail + " Please log in again to obtain a new token."
+
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,

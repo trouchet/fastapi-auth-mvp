@@ -16,13 +16,30 @@ load_dotenv()
 ENVIRONMENT = getenv("ENVIRONMENT", "development")
 
 fields = [
-    "name", "process","processName","threadName","thread","taskName",
-    "asctime","created","relativeCreated","msecs",
-    "pathname", "module","filename","funcName","levelno","levelname", "message",
+    "name",
+    "process",
+    "processName",
+    "threadName",
+    "thread",
+    "taskName",
+    "asctime",
+    "created",
+    "relativeCreated",
+    "msecs",
+    "pathname",
+    "module",
+    "filename",
+    "funcName",
+    "levelno",
+    "levelname",
+    "message",
 ]
+
 
 def field_map(field_name):
     return f"%({field_name})s"
+
+
 logging_format = " ".join(map(field_map, fields))
 formatter = jsonlogger.JsonFormatter(logging_format)
 
@@ -40,12 +57,11 @@ if ENVIRONMENT == "development":
 
 
 # Create daily rotating file handler with hierarchy
-project_name=settings.PROJECT_NAME
-environment=settings.ENVIRONMENT
-handler = DailyHierarchicalFileHandler('logs', f"{project_name}.log", when="midnight")
+project_name = settings.PROJECT_NAME
+environment = settings.ENVIRONMENT
+handler = DailyHierarchicalFileHandler("logs", f"{project_name}.log", when="midnight")
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)
 
 logger.info("Logging started.")
-

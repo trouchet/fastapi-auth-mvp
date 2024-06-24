@@ -1,19 +1,17 @@
-#auth.py
+# auth.py
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer 
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
 from functools import wraps
 
-from backend.app.constants import (
-    DEFAULT_ACCESS_TIMEOUT_MINUTES
-)
+from backend.app.constants import DEFAULT_ACCESS_TIMEOUT_MINUTES
 
 from backend.app.exceptions import (
-    CredentialsException, 
-    PrivilegesException, 
+    CredentialsException,
+    PrivilegesException,
     InexistentUsernameException,
     ExpiredTokenException,
     InactiveUserException,
@@ -29,13 +27,11 @@ from backend.app.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-JWT_ALGORITHM=settings.JWT_ALGORITHM
-JWT_SECRET_KEY=settings.JWT_SECRET_KEY
+JWT_ALGORITHM = settings.JWT_ALGORITHM
+JWT_SECRET_KEY = settings.JWT_SECRET_KEY
 
 
-async def validate_refresh_token(
-        token: Annotated[str, Depends(oauth2_scheme)]
-    ):
+async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         user_repo = get_user_repo()
 
@@ -43,7 +39,7 @@ async def validate_refresh_token(
 
         if user_has_token:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            
+
             username: str = payload.get("sub")
             roles: str = payload.get("roles")
             expiration_date_int = payload.get("exp")
@@ -53,7 +49,7 @@ async def validate_refresh_token(
             if expiration_date < datetime.now():
                 raise ExpiredTokenException()
 
-            empty_entry=username is None or roles is None
+            empty_entry = username is None or roles is None
 
             if empty_entry or user.user_username != username:
                 raise CredentialsException()
@@ -89,31 +85,26 @@ def create_token(
     data: dict, expires_delta: timedelta | None = DEFAULT_ACCESS_TIMEOUT_MINUTES
 ):
     to_encode = data.copy()
-    current_time=datetime.now(timezone.utc)
+    current_time = datetime.now(timezone.utc)
 
     # Set the expiration time
     expire = current_time + expires_delta
 
-    time_data={   
-        "exp": expire,
-        "iat": datetime.now()
-    }
+    time_data = {"exp": expire, "iat": datetime.now()}
     to_encode.update(time_data)
-    
+
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
     return encoded_jwt
 
 
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)]
-) -> User:
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
     user_repo = get_user_repo()
-    
+
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         username: str = payload.get("sub")
-        
+
         if username is None:
             raise CredentialsException()
 
@@ -125,7 +116,7 @@ async def get_current_user(
 
     if user is None:
         raise InexistentUsernameException(username)
-    
+
     if not user.user_is_active:
         raise InactiveUserException(user.user_username)
 
@@ -140,18 +131,17 @@ def role_checker(allowed_roles):
             *args, current_user: User = Depends(get_current_user), **kwargs
         ):
             current_user = await get_current_user()
-            
-            user_roles_set=set(current_user.roles)
-            allowed_roles_set=set(allowed_roles)
-            
-            user_has_permission=not user_roles_set.isdisjoint(allowed_roles_set)
-            
+
+            user_roles_set = set(current_user.roles)
+            allowed_roles_set = set(allowed_roles)
+
+            user_has_permission = not user_roles_set.isdisjoint(allowed_roles_set)
+
             if not user_has_permission:
                 raise PrivilegesException()
-            
+
             return await func(*args, **kwargs)
+
         return decorated_view
-    
+
     return wrapper
-
-

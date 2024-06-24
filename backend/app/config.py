@@ -11,7 +11,11 @@ from pydantic import (
 
 
 from typing import (
-    Literal, Union, Annotated, Any, List,
+    Literal,
+    Union,
+    Annotated,
+    Any,
+    List,
 )
 from typing_extensions import Self
 
@@ -26,6 +30,7 @@ POSTGRES_DSN_SCHEME = "postgresql+psycopg2"
 with open("pyproject.toml", "r") as f:
     config = toml.load(f)
 
+
 def parse_cors(v: Any) -> Union[List[str], str]:
     if isinstance(v, str) and not v.startswith("["):
         return [i.strip() for i in v.split(",")]
@@ -39,9 +44,7 @@ class Settings(BaseSettings):
     """App settings."""
 
     model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_ignore_empty=True, 
-        extra="ignore"
+        env_file=".env", env_ignore_empty=True, extra="ignore"
     )
 
     VERSION: str = config["tool"]["poetry"]["version"]
@@ -49,9 +52,9 @@ class Settings(BaseSettings):
     DESCRIPTION: str = config["tool"]["poetry"]["description"]
     API_V1_STR: str = "/api"
 
-    COOKIE_SECRET_KEY: str = 'change_me'
-    JWT_SECRET_KEY: str = 'change_me'
-    JWT_ALGORITHM: str = 'HS256'
+    COOKIE_SECRET_KEY: str = "change_me"
+    JWT_SECRET_KEY: str = "change_me"
+    JWT_ALGORITHM: str = "HS256"
 
     ENVIRONMENT: Literal["development"] = "development"
     DOMAIN: str = "localhost:8000"
@@ -72,10 +75,10 @@ class Settings(BaseSettings):
         return f"{protocol}://{self.DOMAIN}"
 
     # Database settings
-    POSTGRES_HOST: str = 'localhost'
+    POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str = 'postgres'
-    POSTGRES_PASSWORD: str = 'postgres'
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DBNAME: str = "my_db"
 
     def database_uri(self) -> str:

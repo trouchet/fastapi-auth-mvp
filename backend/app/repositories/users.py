@@ -14,31 +14,32 @@ from backend.app.database.instance import get_session
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-TokenDependency=Annotated[str, Depends(oauth2_scheme)]
+TokenDependency = Annotated[str, Depends(oauth2_scheme)]
+
 
 class UsersRepository:
     def __init__(self, session):
         self.session = session
 
     def get_user(self, username: str) -> UserDB:
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         return query.filter(UserDB.user_username == username).first()
 
     def get_user_by_id(self, user_id: str) -> UserDB:
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         return query.filter(UserDB.user_id == user_id).first()
 
     def get_user_by_email(self, email: str) -> UserDB:
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         return query.filter(UserDB.user_email == email).first()
-    
+
     def get_user_by_username(self, username: str) -> UserDB:
         print(self.session)
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         return query.filter(UserDB.user_username == username).first()
 
     def create_user(self, user: UserDB):
@@ -46,171 +47,171 @@ class UsersRepository:
         self.session.commit()
 
     def update_user(self, user: UserDB):
-        query=self.session.query(UserDB)
-        
-        user_to_update=query.filter(UserDB.user_id == user.id).first()
-        
-        user_to_update.user_username=user.user_username
-        user_to_update.user_email=user.user_email
-        user_to_update.user_hashed_password=user.user_hashed_password
-        user_to_update.user_roles=user.user_roles
-        user_to_update.user_is_active=user.user_is_active
+        query = self.session.query(UserDB)
 
-        self.session.commit()        
+        user_to_update = query.filter(UserDB.user_id == user.id).first()
+
+        user_to_update.user_username = user.user_username
+        user_to_update.user_email = user.user_email
+        user_to_update.user_hashed_password = user.user_hashed_password
+        user_to_update.user_roles = user.user_roles
+        user_to_update.user_is_active = user.user_is_active
+
+        self.session.commit()
 
     def delete_user_by_id(self, user_id: str):
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         query.filter(UserDB.user_id == user_id).delete()
         self.session.commit()
 
     def delete_user_by_username(self, username: str):
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         query.filter(UserDB.user_username == username).delete()
         self.session.commit()
 
     def activate_user(self, user_id: str):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        user.is_active=True
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+        user.is_active = True
         self.session.commit()
 
         return user
 
     def deactivate_user(self, user_id: str):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        user.is_active=False
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+        user.is_active = False
         self.session.commit()
 
         return user
 
     def get_users(self, limit: int = 10, offset: int = 0):
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         return query.limit(limit).offset(offset).all()
-    
+
     def get_all_roles(self):
-        query=self.session.query(UserDB)
-        
+        query = self.session.query(UserDB)
+
         return query.with_entities(UserDB.roles).distinct().all()
-    
+
     def get_users_by_role(self, role: str):
         query = self.session.query(UserDB)
-        has_role=or_(func.jsonb_contains(UserDB.user_roles, role))
-        
+        has_role = or_(func.jsonb_contains(UserDB.user_roles, role))
+
         return query.filter(has_role).all()
-    
+
     def update_user_email(self, user_id: str, email: str):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        user.email=email
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+        user.email = email
         self.session.commit()
 
         return user
-    
+
     def update_user_password(self, user_id: str, password: str):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        user.hashed_password=pwd_context.hash(password)
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+        user.hashed_password = pwd_context.hash(password)
         self.session.commit()
 
         return user
-    
+
     def update_user_username(self, user_id: str, username: str):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        user.username=username
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+        user.username = username
         self.session.commit()
 
         return user
 
     def update_user_roles(self, user_id: str, roles: list):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        user.user_roles=roles
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+        user.user_roles = roles
         self.session.commit()
 
         return user
-    
+
     def update_user_active_status(self, username: str, is_active: bool):
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_username == username).first()
-        user.is_active=is_active
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_username == username).first()
+        user.is_active = is_active
         self.session.commit()
 
         return user
 
     def is_user_active_by_id(self, user_id: str) -> bool:
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_id == user_id).first()
-        
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_id == user_id).first()
+
         return user.is_active
-    
+
     def is_user_active_by_username(self, user_name: str) -> bool:
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_username == user_name).first()
-        
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_username == user_name).first()
+
         return user.is_active
-    
+
     def is_user_credentials_authentic(
         self, username: str, plain_password: str
     ) -> UserDB:
-        user=self.get_user(username)
-        hashed_password=user.user_hashed_password
-        
-        user_not_found=not user
-        is_password_wrong=not pwd_context.verify(plain_password, hashed_password)
-        
-        invalid_authentication=user_not_found or is_password_wrong
-        
+        user = self.get_user(username)
+        hashed_password = user.user_hashed_password
+
+        user_not_found = not user
+        is_password_wrong = not pwd_context.verify(plain_password, hashed_password)
+
+        invalid_authentication = user_not_found or is_password_wrong
+
         return not invalid_authentication
-    
+
     def has_user_roles(self, username: str, roles: List[str]) -> bool:
-        user=self.get_user(username)
-        
+        user = self.get_user(username)
+
         return set(roles).issubset(set(user.user_roles))
-    
+
     def refresh_token_exists(self, token: str) -> Tuple[bool | None, UserDB | None]:
-        query=self.session.query(UserDB)
-        
-        user=query.filter(UserDB.user_refresh_token == token).first()
-        
+        query = self.session.query(UserDB)
+
+        user = query.filter(UserDB.user_refresh_token == token).first()
+
         return user is not None, user
 
     def update_user_last_login(self, username: str):
         user = self.get_user_by_username(username)
-        
-        user.user_last_login_at=datetime.now()
+
+        user.user_last_login_at = datetime.now()
         self.session.commit()
 
         return user
 
     def update_user_access_token(self, username: str, access_token: str):
         user = self.get_user_by_username(username)
-        user.user_access_token=access_token
+        user.user_access_token = access_token
         self.session.commit()
 
         return user
 
     def update_user_refresh_token(self, username: str, refresh_token: str):
         user = self.get_user_by_username(username)
-        user.user_refresh_token=refresh_token
+        user.user_refresh_token = refresh_token
         self.session.commit()
 
         return user
 
-    
+
 def get_user_repo():
-    session=get_session()
+    session = get_session()
     return UsersRepository(session)

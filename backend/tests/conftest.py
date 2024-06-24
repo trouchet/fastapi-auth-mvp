@@ -2,7 +2,7 @@ import pytest
 from passlib.context import CryptContext
 from typing import Set, Tuple
 from unittest.mock import patch
-from os import getcwd 
+from os import getcwd
 from time import mktime
 from uuid import uuid4
 
@@ -12,22 +12,26 @@ from backend.app.database.models.users import UserDB
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 @pytest.fixture
 def uri():
     return "postgresql://postgres:postgres@localhost:5432/auth_db"
+
 
 @pytest.fixture
 def test_database(uri):
     # Connect to your database
     database = Database(uri)
     yield database
-    database.engine.dispose() # Teardown logic to close all connections
+    database.engine.dispose()  # Teardown logic to close all connections
+
 
 @pytest.fixture
 def test_user_repository(test_database):
     session = test_database.session_maker()
-    
+
     yield UsersRepository(session)
+
 
 @pytest.fixture
 def session(test_database):
@@ -51,11 +55,11 @@ def test_user(session, test_user_password):
     # Generate and insert test data
     user = UserDB(
         user_id=uuid4(),
-        user_username="test_", 
-        user_email="test_@example.com", 
+        user_username="test_",
+        user_email="test_@example.com",
         user_roles=["user"],
         user_hashed_password=pwd_context.hash(test_user_password),
-        user_is_active=True
+        user_is_active=True,
     )
     session.add(user)
     session.commit()
@@ -63,16 +67,17 @@ def test_user(session, test_user_password):
     session.delete(user)
     session.commit()
 
+
 @pytest.fixture
 def test_inactive_user(session, test_user_password):
     # Generate and insert test data
     inactive_user = UserDB(
         user_id=uuid4(),
-        user_username="inactive_", 
+        user_username="inactive_",
         user_email="inactive@example.com",
         user_roles=["user"],
         user_hashed_password=pwd_context.hash(test_user_password),
-        user_is_active=False
+        user_is_active=False,
     )
     session.add(inactive_user)
     session.commit()
@@ -86,15 +91,15 @@ def test_admin(session, test_admin_password):
     # Generate and insert test data
     admin = UserDB(
         user_id=uuid4(),
-        user_username="admin_", 
-        user_email="admin_@example.com", 
+        user_username="admin_",
+        user_email="admin_@example.com",
         user_roles=["admin", "user"],
         user_hashed_password=pwd_context.hash(test_admin_password),
-        user_is_active=True
+        user_is_active=True,
     )
     session.add(admin)
     session.commit()
-    yield admin  
+    yield admin
     session.delete(admin)
     session.commit()
 
@@ -111,7 +116,7 @@ def test_refresh_tokens():
 
 @pytest.fixture
 def logs_foldername():
-    return 'logs'
+    return "logs"
 
 
 def user_dict(
@@ -122,7 +127,7 @@ def user_dict(
         "hashed_password": pwd_context.hash(password),
         "email": email,
         "roles": roles,
-        "is_active": is_active
+        "is_active": is_active,
     }
 
 
@@ -148,16 +153,10 @@ def mock_time_functions(test_time_tuple):
     def time():
         return mktime(test_time_tuple)
 
-    with \
-        patch("backend.app.utils.logging.time", side_effect=time) as mock_time, \
-        patch("backend.app.utils.logging.localtime", side_effect=localtime), \
-        patch("backend.app.utils.logging.gmtime", side_effect=gmtime):
+    with patch("backend.app.utils.logging.time", side_effect=time) as mock_time, patch(
+        "backend.app.utils.logging.localtime", side_effect=localtime
+    ), patch("backend.app.utils.logging.gmtime", side_effect=gmtime):
         yield mock_time
-
-
-@pytest.fixture
-def test_time_tuple():
-    return (2000, 1, 1, 0, 0, 0, 0, 0, 0)
 
 
 @pytest.fixture
@@ -170,11 +169,10 @@ def test_current_time(test_time_tuple):
 def mock_strftime():
     def strftime(suffix: str, time_tuple: Tuple[int]):
         from time import strftime
+
         return strftime("%Y-%m-%d", time_tuple)
 
-    with patch(\
-        "backend.app.utils.logging.strftime", \
-        side_effect=strftime \
+    with patch(
+        "backend.app.utils.logging.strftime", side_effect=strftime
     ) as mock_strftime:
         yield mock_strftime
-

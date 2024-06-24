@@ -31,6 +31,7 @@ user_user = UserDB(
 
 initial_users = [admin_user, user_user]
 
+
 def insert_initial_users(database_):
     session = database_.session_maker()
     try:
