@@ -9,7 +9,7 @@ from fastapi_csrf_protect import CsrfProtect
 from backend.app.routes import (
     auth_router, data_router, misc_router, users_router,
 )
-from backend.app.config import settings
+from backend.app.core.config import settings
 from backend.app.models.auth import CsrfSettings
 
 
@@ -32,15 +32,15 @@ app.include_router(users_router, prefix=prefix)
 
 @CsrfProtect.load_config
 def get_csrf_config():
-  return CsrfSettings()
+    return CsrfSettings()
 
 # Add static files
-obj = StaticFiles(directory="static")
+obj = StaticFiles(directory="backend/static")
 app.mount("/static", obj, name="static")
 
 @app.get("/favicon.ico")
 async def get_favicon():
-    return FileResponse("static/fastapi.svg")
+    return FileResponse("backend/static/fastapi.svg")
 
 @app.exception_handler(status.HTTP_404_NOT_FOUND)
 async def not_found_handler(request: Request, exc: HTTPException):

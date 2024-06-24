@@ -1,7 +1,4 @@
-from pydantic_settings import (
-    BaseSettings,
-    SettingsConfigDict,
-)
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -9,21 +6,25 @@ from pydantic import (
     model_validator,
 )
 
-
 from typing import (
     Literal, Union, Annotated, Any, List,
 )
 from typing_extensions import Self
+from datetime import timedelta
 
 from warnings import warn
 import toml
 
-DEFAULT_PASSWORD = "change_me"
 POSTGRES_DSN_SCHEME = "postgresql+psycopg2"
 
+DEFAULT_POSTGRES_PASSWORD = "postgres"
+DEFAULT_SECRET_KEY="secret_key_123"
 DEFAULT_FIRST_ADMIN_USERNAME="admin"
 DEFAULT_FIRST_ADMIN_PASSWORD="admin"
-DEFAULT_FIRST_ADMIN_MAIL="admin@example.com"
+DEFAULT_FIRST_ADMIN_EMAIL="admin@example.com"
+
+DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 60
+DEFAULT_REFRESH_TOKEN_EXPIRE_MINUTES = 120
 
 # Project settings
 with open("pyproject.toml", "r") as f:
@@ -67,19 +68,20 @@ class Settings(BaseSettings):
     
     APP_PORT: int = 8000
 
-    COOKIE_SECRET_KEY: str = 'change_me'
-    JWT_SECRET_KEY: str = 'change_me'
+    COOKIE_SECRET_KEY: str = DEFAULT_SECRET_KEY
+    JWT_SECRET_KEY: str = DEFAULT_SECRET_KEY
     JWT_ALGORITHM: str = 'HS256'
     
-    FIRST_ADMIN_USERNAME: str = "admin"
-    FIRST_ADMIN_PASSWORD: str = "admin"
-    FIRST_ADMIN_EMAIL: str = "admin@example.com"
+    FIRST_ADMIN_USERNAME: str = DEFAULT_FIRST_ADMIN_USERNAME
+    FIRST_ADMIN_PASSWORD: str = DEFAULT_FIRST_ADMIN_PASSWORD
+    FIRST_ADMIN_EMAIL: str = DEFAULT_FIRST_ADMIN_EMAIL
 
-    ENVIRONMENT: Literal["development"] = "development"
+    ENVIRONMENT: str = "development"
     DOMAIN: str = f"localhost:{APP_PORT}"
 
     # 1 day
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1 * 24 * 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    REFRESH_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=DEFAULT_REFRESH_TOKEN_EXPIRE_MINUTES)
 
     # CORS
     BACKEND_CORS_ORIGINS: Annotated[
@@ -98,7 +100,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = 'postgres'
     POSTGRES_PASSWORD: str = 'postgres'
-    POSTGRES_DBNAME: str = "my_db"
+    POSTGRES_DBNAME: str = "auth_db"
 
     def database_uri(self) -> str:
         return (
@@ -107,26 +109,23 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DBNAME}"
         )
 
-    def _check_default_first_admin(self, var_name: str, value: Union[str, None]) -> None:
-        if value == DEFAULT_FIRST_ADMIN_USERNAME:
-            warn_default_value(self.ENVIRONMENT, var_name, value)
-        
-        elif value == DEFAULT_FIRST_ADMIN_PASSWORD:
-            warn_default_value(self.ENVIRONMENT, var_name, value)
-            
-        elif value == DEFAULT_FIRST_ADMIN_MAIL:
-            warn_default_value(self.ENVIRONMENT, var_name, value)
-
-    def _check_default_secret(self, var_name: str, value: Union[str, None]) -> None:
-        if value == DEFAULT_PASSWORD:
+    def _check_default_value(
+        self, 
+        var_name: str, 
+        value: Union[str, None],
+        default_value: str
+    ) -> None:
+        if value == default_value:
             warn_default_value(self.ENVIRONMENT, var_name, value)
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
-        self._check_default_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
-        self._check_default_secret("FIRST_ADMIN_USERNAME", self.FIRST_ADMIN_USERNAME)
-        self._check_default_secret("FIRST_ADMIN_PASSWORD", self.FIRST_ADMIN_USERNAME)
-        self._check_default_secret("FIRST_ADMIN_MAIL", self.FIRST_ADMIN_USERNAME)
+        self._check_default_value("JWT_SECRET_KEY", self.JWT_SECRET_KEY, DEFAULT_SECRET_KEY)
+        self._check_default_value("COOKIE_SECRET_KEY", self.COOKIE_SECRET_KEY, DEFAULT_SECRET_KEY)
+        self._check_default_value("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD)
+        self._check_default_value("FIRST_ADMIN_USERNAME", self.FIRST_ADMIN_USERNAME, DEFAULT_FIRST_ADMIN_USERNAME)
+        self._check_default_value("FIRST_ADMIN_PASSWORD", self.FIRST_ADMIN_PASSWORD, DEFAULT_FIRST_ADMIN_PASSWORD)
+        self._check_default_value("FIRST_ADMIN_EMAIL", self.FIRST_ADMIN_EMAIL, DEFAULT_FIRST_ADMIN_EMAIL)
 
         return self
 

@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from os import getenv
 from pythonjsonlogger import jsonlogger
-from backend.app.config import settings
+from backend.app.core.config import settings
 
 from backend.app.utils.logging import DailyHierarchicalFileHandler
 

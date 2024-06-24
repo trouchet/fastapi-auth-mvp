@@ -7,11 +7,7 @@ from jose import JWTError, jwt
 from typing import Annotated
 from functools import wraps
 
-from backend.app.constants import (
-    DEFAULT_ACCESS_TIMEOUT_MINUTES
-)
-
-from backend.app.exceptions import (
+from backend.app.core.exceptions import (
     CredentialsException, 
     PrivilegesException, 
     InexistentUsernameException,
@@ -24,13 +20,14 @@ from backend.app.repositories.users import (
 from backend.app.models.users import User
 from backend.app.database.models.users import UserDB
 
-from backend.app.config import settings
+from backend.app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 JWT_ALGORITHM=settings.JWT_ALGORITHM
 JWT_SECRET_KEY=settings.JWT_SECRET_KEY
+ACCESS_TOKEN_EXPIRE_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 async def validate_refresh_token(
@@ -86,7 +83,8 @@ async def get_user(username: str) -> UserDB | None:
 
 
 def create_token(
-    data: dict, expires_delta: timedelta | None = DEFAULT_ACCESS_TIMEOUT_MINUTES
+    data: dict, 
+    expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES
 ):
     to_encode = data.copy()
     current_time=datetime.now(timezone.utc)

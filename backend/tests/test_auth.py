@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from backend.app.utils.database import model_to_dict
 
-from backend.app.auth import (
+from backend.app.core.auth import (
     get_current_user,
     validate_refresh_token,
     create_token,
@@ -218,7 +218,7 @@ async def test_validate_refresh_token_valid_token(
 
 
 @pytest.mark.asyncio
-@patch('backend.app.auth.jwt.decode')
+@patch('backend.app.core.auth.jwt.decode')
 async def test_validate_refresh_token_JWT_error(
     mock_jwt_decode, test_user_repository
 ):
@@ -317,7 +317,7 @@ async def test_validate_refresh_token_valid_token(
 
 
 @pytest.mark.asyncio
-@patch('backend.app.auth.jwt.decode')
+@patch('backend.app.core.auth.jwt.decode')
 async def test_validate_refresh_token_JWT_error(
     mock_jwt_decode, test_users_db, test_refresh_tokens
 ):

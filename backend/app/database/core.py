@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, pool, text
 from sqlalchemy.orm import sessionmaker
 
 
-from backend.app.logging import logger
+from backend.app.core.logging import logger
 from backend.app.database.models.base import Base
 from backend.app.utils.misc import try_do
 

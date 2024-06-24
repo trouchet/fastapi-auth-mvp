@@ -6,8 +6,8 @@ from passlib.context import CryptContext
 from psycopg2.errors import UniqueViolation
 
 from backend.app.database.models.users import UserDB
-from backend.app.config import settings
-from backend.app.logging import logger
+from backend.app.core.config import settings
+from backend.app.core.logging import logger
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

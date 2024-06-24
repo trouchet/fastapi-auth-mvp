@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from backend.app.config import settings
+from backend.app.core.config import settings
 
 # Set cookie_secure to True if using HTTPS
 is_cookie_secure = (not settings.ENVIRONMENT == "development")

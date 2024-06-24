@@ -6,6 +6,7 @@ from sqlalchemy import or_, func
 from typing import List
 from datetime import datetime
 
+from backend.app.models.users import UpdateUser
 from backend.app.database.models.users import UserDB
 from backend.app.database.instance import get_session
 
@@ -36,27 +37,31 @@ class UsersRepository:
         return query.filter(UserDB.user_email == email).first()
     
     def get_user_by_username(self, username: str) -> UserDB:
-        print(self.session)
         query=self.session.query(UserDB)
-        
         return query.filter(UserDB.user_username == username).first()
 
     def create_user(self, user: UserDB):
+
         self.session.add(user)
         self.session.commit()
 
-    def update_user(self, user: UserDB):
+    def update_user(self, user_id: str, update_user: UpdateUser):
         query=self.session.query(UserDB)
         
-        user_to_update=query.filter(UserDB.user_id == user.id).first()
+        user_to_update=query.filter(UserDB.user_id == user_id).first()
         
-        user_to_update.user_username=user.user_username
-        user_to_update.user_email=user.user_email
-        user_to_update.user_hashed_password=user.user_hashed_password
-        user_to_update.user_roles=user.user_roles
-        user_to_update.user_is_active=user.user_is_active
+        if not user_to_update:
+            return None
+        
+        # Iterate over the fields in the Pydantic model and update the SQLAlchemy model
+        update_data = update_user.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(user_to_update, key, value)
 
-        self.session.commit()        
+        self.session.commit()
+        self.session.refresh()
+        
+        return user_to_update  
 
     def delete_user_by_id(self, user_id: str):
         query=self.session.query(UserDB)
@@ -74,7 +79,9 @@ class UsersRepository:
         query=self.session.query(UserDB)
         
         user=query.filter(UserDB.user_id == user_id).first()
+        
         user.is_active=True
+        
         self.session.commit()
 
         return user
@@ -97,11 +104,16 @@ class UsersRepository:
         query=self.session.query(UserDB)
         
         return query.with_entities(UserDB.roles).distinct().all()
+
+    def get_user_roles(self, user_id: str):
+        query=self.session.query(UserDB)
+        
+        return query.filter(UserDB.user_id == user_id).first().user_roles
     
     def get_users_by_role(self, role: str):
         query = self.session.query(UserDB)
-        has_role=or_(func.jsonb_contains(UserDB.user_roles, role))
-        
+        has_role = UserDB.user_roles.contains([role])
+
         return query.filter(has_role).all()
     
     def update_user_email(self, user_id: str, email: str):
@@ -126,7 +138,7 @@ class UsersRepository:
         query=self.session.query(UserDB)
         
         user=query.filter(UserDB.user_id == user_id).first()
-        user.username=username
+        user.user_username=username
         self.session.commit()
 
         return user
@@ -144,7 +156,7 @@ class UsersRepository:
         query=self.session.query(UserDB)
         
         user=query.filter(UserDB.user_username == username).first()
-        user.is_active=is_active
+        user.user_is_active=is_active
         self.session.commit()
 
         return user
@@ -154,14 +166,14 @@ class UsersRepository:
         
         user=query.filter(UserDB.user_id == user_id).first()
         
-        return user.is_active
+        return user.user_is_active
     
     def is_user_active_by_username(self, user_name: str) -> bool:
         query=self.session.query(UserDB)
         
         user=query.filter(UserDB.user_username == user_name).first()
         
-        return user.is_active
+        return user.user_is_active
     
     def is_user_credentials_authentic(
         self, username: str, plain_password: str
@@ -179,7 +191,7 @@ class UsersRepository:
     def has_user_roles(self, username: str, roles: List[str]) -> bool:
         user=self.get_user(username)
         
-        return set(roles).issubset(set(user.user_roles))
+        return set(roles).isdisjoint(set(user.user_roles)) is False
     
     def refresh_token_exists(self, token: str) -> Tuple[bool | None, UserDB | None]:
         query=self.session.query(UserDB)
