@@ -132,24 +132,33 @@ async def get_current_user(
     return user
 
 
+async def is_async(func):
+    """
+    Checks if a function is asynchronous by looking for the presence of the '__await__' attribute.
+    """
+    return hasattr(func, "__await__")
+
+
 # Decorator to check the role
 def role_checker(allowed_roles):
     def wrapper(func):
         @wraps(func)
         async def decorated_view(
-            *args, current_user: User = Depends(get_current_user), **kwargs
+            *args, current_user: User, **kwargs
         ):
-            current_user = await get_current_user()
-            
-            user_roles_set=set(current_user.roles)
+            user_roles_set=set(current_user.user_roles)
             allowed_roles_set=set(allowed_roles)
-            
-            user_has_permission=not user_roles_set.isdisjoint(allowed_roles_set)
-            
+
+            user_has_permission=user_roles_set.isdisjoint(allowed_roles_set) is False
+
             if not user_has_permission:
                 raise PrivilegesException()
+
+            if await is_async(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
             
-            return await func(*args, **kwargs)
         return decorated_view
     
     return wrapper
