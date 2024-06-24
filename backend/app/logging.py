@@ -21,8 +21,6 @@ fields = [
     "pathname", "module","filename","funcName","levelno","levelname", "message",
 ]
 
-# makedirs('/logs', exist_ok=True)
-
 def field_map(field_name):
     return f"%({field_name})s"
 logging_format = " ".join(map(field_map, fields))

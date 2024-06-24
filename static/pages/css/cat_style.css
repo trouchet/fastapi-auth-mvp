@@ -1,0 +1,25 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  
+  .container {
+    text-align: center;
+  }
+  
+  h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+  }
+  
+  img {
+    max-width: 500px;
+    display: block;
+    margin: 10px auto;
+  }
+  
+  .message {
+    font-style: italic;
+  }
+  

@@ -1,20 +1,19 @@
 from os import (
-    remove, scandir, path, makedirs,
+    remove, scandir, path, makedirs, getpid, listdir
 )
 from shutil import rmtree
+from time import (
+    time, gmtime, localtime, strftime,
+) 
+import datetime
+import re
+
 
 from logging.handlers import (
     TimedRotatingFileHandler, 
     BaseRotatingHandler,
 )
-import os
-from time import (
-    time, gmtime, localtime, strftime,
-) 
-import re
 
-
-import datetime
 
 # Function to clear the latest 'n' items (files or folders)
 def clear_folder_items(
@@ -52,11 +51,9 @@ def clear_folder_items(
 
 class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
     def __init__(
-        self, 
-        foldername: str, filename: str, when='h', interval=1, backupCount=0, 
+        self, foldername: str, filename: str, when='h', interval=1, backupCount=0, 
         encoding=None, delay=False, utc=False, atTime=None, postfix = ".log"
     ):
-
         self.folderName = foldername
         makedirs(foldername, exist_ok=True)
         
@@ -72,28 +69,32 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             self.interval = 1 # one second
             self.suffix = "%Y-%m-%d_%H-%M-%S"
             self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$"
+
         elif self.when == 'M':
             self.interval = 60 # one minute
             self.suffix = "%Y-%m-%d_%H-%M"
             self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}$"
+
         elif self.when == 'H':
             self.interval = 60 * 60 # one hour
             self.suffix = "%Y-%m-%d_%H"
             self.extMatch = r"^\d{4}-\d{2}-\d{2}_\d{2}$"
+
         elif self.when == 'D' or self.when == 'MIDNIGHT':
             self.interval = 60 * 60 * 24 # one day
             self.suffix = "%Y-%m-%d"
             self.extMatch = r"^\d{4}-\d{2}-\d{2}$"
+
         elif self.when.startswith('W'):
             self.interval = 60 * 60 * 24 * 7 # one week
             
             if len(self.when) != 2:
-                message=f"You must specify a day for weekly rollover from 0 to 6 (0 is Monday): {self.when}"
+                message=f"Invalid weekly rollover from 0 to 6 (0 is Monday): {self.when}"
                 raise ValueError(message)
             
             if self.when[1] < '0' or self.when[1] > '6':
                 message="Invalid day specified for weekly rollover: {self.when}"
-                raise ValueError()
+                raise ValueError(message)
             
             self.dayOfWeek = int(self.when[1])
             self.suffix = "%Y-%m-%d"
@@ -103,6 +104,7 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             raise ValueError(message)
 
         current_time = int(time())
+
         filename = self.calculate_filename(current_time)
         
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
@@ -112,24 +114,28 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
 
         self.rolloverAt = self.computeRollover(current_time)
 
-    def calculate_filename(self, current_time):
+
+    def calculate_filename(self, current_time: int):
         timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
         now = datetime.datetime.fromtimestamp(current_time)        
-        
-        base_folder = os.path.join(self.folderName, now.strftime("%Y/%m/%d"))
-        
+
+        base_folder = path.join(self.folderName, now.strftime("%Y/%m/%d"))
+
         makedirs(base_folder, exist_ok=True)
+
+        pid_hash = str(getpid())
+        basename=self.origFileName + "." + strftime(self.suffix, timeTuple) + '.' + pid_hash
+        new_filename= basename + self.postfix
         
-        new_filename=self.origFileName + "." + strftime(self.suffix, timeTuple) + self.postfix
-        new_filepath = os.path.join(base_folder, new_filename)
+        new_filepath = path.join(base_folder, new_filename)
 
         return new_filepath
 
-    def get_files_to_delete(self, newFileName):
-        dirName, fName = os.path.split(self.origFileName)
-        dName, newFileName = os.path.split(newFileName)
+    def get_files_to_delete(self, newFileName: str):
+        dirName, fName = path.split(self.origFileName)
+        dName, newFileName = path.split(newFileName)
 
-        fileNames = os.listdir(dirName)
+        fileNames = listdir(dirName)
         result = []
         prefix = fName + "."
         postfix = self.postfix
@@ -144,13 +150,16 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             if is_new:
                 suffix = fileName[prelen:len(fileName)-postlen]
                 if self.extMatch.match(suffix):
-                    result.append(os.path.join(dirName, fileName))
+                    filepath=path.join(dirName, fileName)
+                    result.append(filepath)
         
         result.sort()
         if len(result) < self.backupCount:
             result = []
         else:
-            result = result[:len(result) - self.backupCount]
+            until=len(result) - self.backupCount
+            result = result[:until]
+        
         return result
 
     def doRollover(self):
@@ -160,24 +169,26 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
 
         currentTime = self.rolloverAt
         newFileName = self.calculate_filename(currentTime)
-        newBaseFileName = os.path.abspath(newFileName)
-        self.baseFilename = newBaseFileName
+        self.baseFilename = path.abspath(newFileName)
         self.mode = 'a'
         self.stream = self._open()
 
+        # Delete old log files
         if self.backupCount > 0:
             for s in self.get_files_to_delete(newFileName):
                 try:
-                    os.remove(s)
+                    remove(s)
                 except:
                     pass
 
+        # Calculate the next rollover time
         newRolloverAt = self.computeRollover(currentTime)
         while newRolloverAt <= currentTime:
             newRolloverAt = newRolloverAt + self.interval
 
         # If DST changes and midnight or weekly rollover, adjust for this.
-        is_dst=(self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc
+        is_when_dst=self.when == 'MIDNIGHT' or self.when.startswith('W')
+        is_dst=is_when_dst and not self.utc
         if is_dst:
             dstNow = time.localtime(currentTime)[-1]
             dstAtRollover = time.localtime(newRolloverAt)[-1]
@@ -186,3 +197,12 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
                 newRolloverAt = newRolloverAt - 3600 if not dstNow else newRolloverAt + 3600
         
         self.rolloverAt = newRolloverAt
+
+    def __repr__(self):
+        from reprlib import repr
+        args_1=f"{self.baseFilename!r}, '{self.when}', {self.interval},"
+        args_2=f"{self.backupCount}, '{self.encoding}', {self.utc},"
+        args_3=f"{self.atTime!r}, '{self.postfix}'"
+
+        args_str=f"{args_1} {args_2} {args_3}"
+        return repr(f"{self.__class__.__name__}({args_str})")

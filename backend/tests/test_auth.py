@@ -1,285 +1,326 @@
 import pytest
+from typing import List
 
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import jwt, JWTError
 from unittest.mock import patch
 
-
-from backend.app.auth import (
-    get_user, 
-    get_current_user,
-    validate_refresh_token,
-    get_current_active_user,
-    authenticate_user, 
-    create_token,
-    ALGORITHM, SECRET_KEY,
+from backend.app.exceptions import (
+    PrivilegesException, 
+    ExpiredTokenException,
 )
 
-def test_get_user_existing(test_users_db, test_user):
-    username=test_user['username']
-    test_users_db.append(test_user)
+from backend.app.utils.database import model_to_dict
+
+from backend.app.auth import (
+    get_current_user,
+    validate_refresh_token,
+    create_token,
+    role_checker,
+    JWT_ALGORITHM, JWT_SECRET_KEY,
+)
+
+def test_get_user_existing(test_user_repository, test_user):
+    username=test_user.user_username
+    user = test_user_repository.get_user_by_username(username)
     
-    user = get_user(test_users_db, username)
-    
-    assert user.username == username
+    assert user.user_username == username
 
 
-def test_get_user_nonexistent(test_users_db, test_user):
-    username = "janedoe"
-    user = get_user(test_users_db, username)
+def test_get_user_nonexistent(test_user_repository):
+    username = "unknown_user"
+    user = test_user_repository.get_user_by_username(username)
     
     assert user is None
 
-
 def test_authenticate_user_correct_credentials(
-    test_users_db, test_user, test_user_password
+    test_user_repository, test_user, test_user_password
 ):
-    username=test_user['username']
+    username=test_user.user_username
 
-    test_users_db.append(test_user)
-    is_user = authenticate_user(test_users_db, username, test_user_password)
-
-    assert is_user
+    is_authentic=test_user_repository.is_user_credentials_authentic(
+        username, test_user_password
+    )
+    
+    assert is_authentic
 
 
 def test_authenticate_user_incorrect_password(
-    test_users_db, test_user
+    test_user_repository, test_user
 ):
-    username=test_user['username']
+    username=test_user.user_username
     incorrect_password='any_password'
 
-    test_users_db.append(test_user)
-
-    with pytest.raises(HTTPException) as excinfo:
-        authenticate_user(test_users_db, username, incorrect_password)
+    is_authentic=test_user_repository.is_user_credentials_authentic(
+        username, incorrect_password
+    )
     
-    assert "Incorrect password" in str(excinfo.value)
+    assert not is_authentic
 
 
-def test_authenticate_user_nonexistent_user(
-    test_users_db, 
-    test_user, test_user_password, 
-    test_admin, test_admin_password
-):   
-    username=test_user['username']    
-    test_users_db.append(test_admin)
-
-    with pytest.raises(HTTPException) as excinfo:
-        authenticate_user(test_users_db, username, test_user_password)
-
-    assert "Username does not exist" in str(excinfo.value)
-
-
-def test_create_token_with_custom_expiry(test_users_db, test_user):
+def test_create_token_with_custom_expiry(test_user):
     custom_expiry = timedelta(minutes=30)
-
-    test_user['roles']=list(test_user['roles'])
-    token = create_token(test_user, custom_expiry)
+    user_dict=model_to_dict(test_user)
+    
+    auth_dict={
+        'sub': user_dict['user_username'], 
+        'roles': user_dict['user_roles']
+    }
+    token = create_token(auth_dict, custom_expiry)
 
     # decode the token and check expiration
-    decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    decoded_token = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
 
     expire_time = datetime.fromtimestamp(decoded_token["exp"])
     
     assert expire_time > datetime.now() + timedelta(minutes=25)
 
-
-def test_create_token_default_expiry(test_users_db, test_user):
-    test_user['roles']=list(test_user['roles'])
-    token = create_token(test_user)
+def test_create_token_default_expiry(test_user):    
+    auth_data={
+        'sub': test_user.user_username, 
+        'roles': test_user.user_roles
+    }
+    
+    token = create_token(auth_data)
     
     # decode the token and check expiration (should be 15 minutes)
-    decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    decoded_token = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
     expire_time = datetime.fromtimestamp(decoded_token["exp"])
     
     assert expire_time > datetime.now() + timedelta(minutes=12)
 
 @pytest.mark.asyncio
-async def test_get_current_user_valid_token(test_users_db, test_user, test_user_password):
-    username = test_user['username']
-    test_users_db.append(test_user)
+async def test_get_current_user_valid_token(
+    test_user_repository, test_user, test_user_password
+):
+    username = test_user.user_username
 
-    user = authenticate_user(test_users_db, username, test_user_password)
-
-    user.roles=list(user.roles)
     user_dict={
-        'sub': user.username
+        'sub': username,
+        'roles': test_user.user_roles
     }
-    user_dict.update(dict(user))
     token = create_token(user_dict)
 
-    current_user = await get_current_user(test_users_db, token)
+    current_user = await get_current_user(token)
 
-    assert current_user.username == username
+    assert current_user.user_username == username
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_inexistent_user(test_users_db, test_user, test_user_password):
-    username = test_user['username']
-    test_users_db.append(test_user)
+async def test_get_current_user_inexistent_user(
+    test_user_repository, test_user, test_user_password):
+    username = test_user.user_username
 
-    user = authenticate_user(test_users_db, username, test_user_password)
-
-    user.roles=list(user.roles)
-    user_dict={
-        'sub': "inexistent user"
+    unknown_username = "unknown_user"
+    auth_dict={
+        'sub': unknown_username
     }
-    user_dict.update(dict(user))
-    token = create_token(user_dict)
+    token = create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(test_users_db, token)
+        await get_current_user(token)
 
-    assert "Username does not exist" in str(excinfo.value)
+    assert f"Username {unknown_username} does not exist" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_incomplete_data(test_users_db, test_user, test_user_password):
-    username = test_user['username']
-    test_users_db.append(test_user)
+async def test_get_current_user_incomplete_data(
+    test_user_repository, test_user, test_user_password
+):
+    username = test_user.user_username
 
-    user = authenticate_user(test_users_db, username, test_user_password)
-
-    user.roles=list(user.roles)
-    user_dict={} # inexistent claim
-    user_dict.update(dict(user))
-    token = create_token(user_dict)
+    auth_dict={} # inexistent claim
+    token = create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(test_users_db, token)
+        await get_current_user(token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
-
 @pytest.mark.asyncio
-async def test_get_current_user_invalid_token(test_users_db):
+async def test_get_current_user_invalid_token():
     invalid_token = "invalid_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(test_users_db, invalid_token)
+        await get_current_user(invalid_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_missing_username_in_token(test_users_db, test_user):
-    test_user['roles']=list(test_user['roles'])
-    
-    token = create_token(test_user)
+async def test_get_current_user_missing_username_in_token(test_user):
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
 
     # modify token to remove username claim
-    user_len=len(f".username:{test_user['username']}")
+    user_len=len(f".username:{test_user.user_username}")
     modified_token = token[:-user_len]
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(test_users_db, modified_token)
+        await get_current_user(modified_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_get_current_active_user(test_users_db, test_user, test_user_password):
+async def test_get_current_active_user(test_user):
     # Use a valid token for an active user
-    username = test_user['username']
+    username = test_user.user_username
 
-    test_users_db.append(test_user)
-
-    user = authenticate_user(test_users_db, username, test_user_password)
-    
-    user.roles=list(user.roles)
-    user_dict={
-        'sub': user.username
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
     }
-    user_dict.update(dict(user))
-    token = create_token(user_dict)
+    token = create_token(auth_dict)
 
-    current_user = await get_current_user(test_users_db, token)
-    active_user = get_current_active_user(current_user)
+    current_user = await get_current_user(token)
 
-    assert active_user.username == username
+    assert current_user.user_username == username
+
 
 @pytest.mark.asyncio
 async def test_get_current_active_user_inactive_user(
-    test_users_db, test_user, test_user_password
+    test_user_repository, test_inactive_user
 ):
     # Use a valid token for an inactive user
-    username = test_user['username']
-    test_users_db.append(test_user)
-
-    # Create copy with modified is_active
-    inactive_user = {**test_users_db[0], "is_active": False}  
-
-    # Temporarily modify fake_db for test
-    test_users_db[0] = inactive_user
-
-    user = authenticate_user(test_users_db, username, test_user_password)
-
-    user.roles=list(user.roles)
-    user_dict={
-        'sub': user.username
+    username = test_inactive_user.user_username
+    
+    auth_dict={
+        'sub': test_inactive_user.user_username,
+        'roles': test_inactive_user.user_roles
     }
-    user_dict.update(dict(user))
-    token = create_token(user_dict)
-
-    current_user = await get_current_user(test_users_db, token)
+    
+    token = create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        get_current_active_user(current_user)
+        await get_current_user(token)
 
-    assert "Inactive user" in str(excinfo.value)
-
-
-def test_user_checker_authorized_role(
-    test_users_db, test_user, test_user_checker
-):
-    username=test_user['username']
-    test_users_db.append(test_user)
-    
-    user = get_user(test_users_db, username)
-    
-    # User has the allowed role
-    assert test_user_checker(user) is True
-
-def test_user_checker_unauthorized_role(
-    test_users_db, test_user, test_admin_checker
-):
-    username=test_user['username']
-    
-    test_users_db.append(test_user)
-    
-    user = get_user(test_users_db, username)
-    
-    with pytest.raises(HTTPException) as excinfo:
-        test_admin_checker(user)
-    
-    assert "You don't have enough permissions" in str(excinfo.value)
+    assert f"User {username} is inactive" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
 async def test_validate_refresh_token_valid_token(
-    test_users_db, test_user, test_user_password, test_refresh_tokens
+    test_user_repository, test_user, test_user_password
 ):
     # Create a refresh token for a user
-    username=test_user['username']
-    test_users_db.append(test_user)
+    username=test_user.user_username
 
-    user = authenticate_user(test_users_db, username, test_user_password)
-
-    user.roles=list(user.roles)
-    user_dict={
-        'sub': user.username
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
     }
-    user_dict.update(dict(user))
+    refresh_token = create_token(auth_dict)
+
+    validated_user = test_user_repository.update_user_refresh_token(username, refresh_token)
+    
+    # Add token to the list
+    validated_user, _ = await validate_refresh_token(refresh_token)
+
+    assert validated_user.user_username == username
+
+
+@pytest.mark.asyncio
+@patch('backend.app.auth.jwt.decode')
+async def test_validate_refresh_token_JWT_error(
+    mock_jwt_decode, test_user_repository
+):
+    # Mock jwt.decode to raise JWTError
+    mock_jwt_decode.side_effect = JWTError
+
+    token = "invalid_token"
+    
+    with pytest.raises(HTTPException) as excinfo:
+        await validate_refresh_token(token)
+    
+    assert "Could not validate credentials" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_invalid_token(test_user_repository):
+    invalid_token = "invalid_refresh_token"
+
+    with pytest.raises(HTTPException) as excinfo:
+        await validate_refresh_token(invalid_token)
+
+    assert "Could not validate credentials" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_missing_username_in_token(test_user):
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
+
+    # modify token to remove username claim
+    user_len=len(f".username:{test_user.user_username}")
+    modified_token = token[:-user_len]
+
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user(modified_token)
+
+    assert "Could not validate credentials" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_get_current_active_user(
+    test_user_repository, test_user, test_user_password
+):
+    # Use a valid token for an active user
+    username = test_user.user_username
+
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
+
+    current_user = await get_current_user(token)
+    
+    assert current_user.user_username == username
+
+
+@pytest.mark.asyncio
+async def test_get_current_active_user_inactive_user(
+    test_user_repository, test_inactive_user, test_user_password
+):
+    auth_dict={
+        'sub': test_inactive_user.user_username,
+        'roles': test_inactive_user.user_roles
+    }
+    token = create_token(auth_dict)
+
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user(token)
+
+    assert "is inactive" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_valid_token(
+    test_user_repository, test_user
+):
+    # Create a refresh token for a user
+    username=test_user.user_username
+    
+    user_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
     refresh_token = create_token(user_dict)
 
-    # Add token to the list
-    test_refresh_tokens.append(refresh_token)  
-    validated_user, _ = await validate_refresh_token(
-        test_users_db, test_refresh_tokens, refresh_token 
-    )
+    test_user_repository.update_user_refresh_token(username, refresh_token)
 
-    assert validated_user.username == username
+    # Add token to the list  
+    validated_user, _ = await validate_refresh_token(refresh_token)
+
+    assert validated_user.user_username == username
+
 
 @pytest.mark.asyncio
 @patch('backend.app.auth.jwt.decode')
@@ -292,7 +333,7 @@ async def test_validate_refresh_token_JWT_error(
     token = "invalid_token"
     
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, token)
+        await validate_refresh_token(token)
     
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -302,7 +343,7 @@ async def test_validate_refresh_token_invalid_token(test_users_db, test_refresh_
     invalid_token = "invalid_refresh_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, invalid_token)
+        await validate_refresh_token(invalid_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -310,104 +351,114 @@ async def test_validate_refresh_token_invalid_token(test_users_db, test_refresh_
 @pytest.mark.asyncio
 async def test_validate_refresh_token_missing_username_in_token(test_users_db, test_refresh_tokens, test_user):
     # Assuming this creates a refresh token (modify for your implementation)
-    test_user['roles']=list(test_user['roles'])
-    token = create_token(test_user)
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
 
-    username=test_user["username"]
+    username=test_user.user_username
     user_len=len(f".username:{username}")
     modified_token = token[:-user_len]
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, modified_token)
+        await validate_refresh_token(modified_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_validate_refresh_token_missing_role_in_token(
-    test_users_db, test_refresh_tokens, test_user
-):
-    test_user['roles']=list(test_user['roles'])
-    token = create_token(test_user)
-    modified_token = token[:-len(f".roles:{test_user['roles']}")]
+async def test_validate_refresh_token_missing_role_in_token(test_user):
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
+    modified_token = token[:-len(f".roles:{test_user.user_roles}")]
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, modified_token)
+        await validate_refresh_token(modified_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_vaildate_refresh_token_inexistent_user(
-    test_users_db, test_user, test_user_password, test_refresh_tokens
-):
+async def test_vaildate_refresh_token_inexistent_user(test_user):
     # Create a refresh token for a user
-    username=test_user['username']
-    test_users_db.append(test_user)
+    username=test_user.user_username
 
-    user = authenticate_user(test_users_db, username, test_user_password)
-
-    user.roles=list(user.roles)
+    
     user_dict={
-        'sub': 'inexistent user'
+        'sub': 'inexistent user',
+        'roles': test_user.user_roles
     }
-    user_dict.update(dict(user))
     refresh_token = create_token(user_dict)
 
-    # Add token to the list
-    test_refresh_tokens.append(refresh_token)  
     
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(
-            test_users_db, test_refresh_tokens, refresh_token 
-        )
+        await validate_refresh_token(refresh_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
+
 
 @pytest.mark.asyncio
 async def test_validate_refresh_token_expired_token(
-    test_users_db, test_refresh_tokens, test_user
+    test_user_repository, test_user
 ):
-    test_user['roles']=list(test_user['roles'])
-    
     # Simulate an expired refresh token by modifying the expiry in the payload
     custom_expiry = timedelta(seconds=0)
-    token = create_token(test_user, custom_expiry)
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict, custom_expiry)
+
+    test_user_repository.update_user_refresh_token(test_user.user_username, token)
     
-    test_refresh_tokens.append(token)
+    with pytest.raises(HTTPException) as excinfo:
+        await validate_refresh_token(token)
+
+    assert "This token has expired" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_nonexistent_user(test_user):
+    # Create a refresh token with a username not in the test_users_db
+    auth_dict={
+        'sub': 'unknown_user',
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, token)
+        await validate_refresh_token(token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_validate_refresh_token_nonexistent_user(
-    test_users_db, test_refresh_tokens, test_user
-):
-    test_user['roles']=list(test_user['roles'])
+async def test_role_checker_allows_authorized_role():
+    """Tests if the decorator allows access with an authorized role."""
+    # Mock get_current_active_user to return a user with an allowed role
+    allowed_roles = ["admin"]
+
+    with patch(
+        "backend.app.auth.get_current_user", 
+        return_value=MockUser(roles=["admin"])
+    ):
+        @role_checker(allowed_roles)
+        async def protected_view():
+            return "Success"
     
-    # Create a refresh token with a username not in the test_users_db
-    token = create_token(test_user)
-    test_refresh_tokens.append(token)
-
-    with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, token)
-
-    assert "Could not validate credentials" in str(excinfo.value)
+        # Call the decorated view and assert no exception is raised
+        assert await protected_view() == "Success"
 
 
-@pytest.mark.asyncio
-async def test_validate_refresh_token_nonexistent_user(
-    test_users_db, test_refresh_tokens, test_user
-):
-    test_user['roles']=list(test_user['roles'])
-    
-    # Create a refresh token with a username not in the test_users_db
-    token = create_token(test_user)
-    test_refresh_tokens.append(token)
+# Helper class to represent a mock user object
+class MockUser:
+    def __init__(self, roles: List[str]):
+        self.roles = roles
 
-    with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(test_users_db, test_refresh_tokens, token)
 
-    assert "Could not validate credentials" in str(excinfo.value)
+
+
+

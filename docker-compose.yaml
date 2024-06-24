@@ -1,0 +1,33 @@
+services:
+  auth-db:
+    container_name: auth-db
+    image: postgres:14
+    restart: always
+    env_file: .env
+    # networks:
+    #   - CNPJ_net
+    expose:
+      - "$POSTGRES_PORT"
+    ports:
+      - "$POSTGRES_PORT:$POSTGRES_PORT"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
+  web:
+    container_name: auth-app
+    depends_on:
+      - auth-db
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    # networks:
+    #   - CNPJ_net
+    restart: unless-stopped
+    volumes:
+      - .:/app
+
+networks:
+  CNPJ_net:
+
+volumes:
+  postgres_data:

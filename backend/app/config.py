@@ -3,23 +3,35 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 from pydantic import (
+    AnyUrl,
+    BeforeValidator,
     computed_field,
     model_validator,
 )
 
-from typing import Literal, Union
+
+from typing import (
+    Literal, Union, Annotated, Any, List,
+)
 from typing_extensions import Self
 
 from warnings import warn
 import toml
 
-DEFAULT_PASSWORD = "postgres"
-POSTGRES_DSN_SCHEME = "postgresql+psycopg"
+DEFAULT_PASSWORD = "change_me"
+POSTGRES_DSN_SCHEME = "postgresql+psycopg2"
 
 
 # Project settings
 with open("pyproject.toml", "r") as f:
     config = toml.load(f)
+
+def parse_cors(v: Any) -> Union[List[str], str]:
+    if isinstance(v, str) and not v.startswith("["):
+        return [i.strip() for i in v.split(",")]
+    elif isinstance(v, (list, str)):
+        return v
+    raise ValueError(v)
 
 
 # Settings class
@@ -37,24 +49,41 @@ class Settings(BaseSettings):
     DESCRIPTION: str = config["tool"]["poetry"]["description"]
     API_V1_STR: str = "/api"
 
+    COOKIE_SECRET_KEY: str = 'change_me'
+    JWT_SECRET_KEY: str = 'change_me'
+    JWT_ALGORITHM: str = 'HS256'
+
     ENVIRONMENT: Literal["development"] = "development"
     DOMAIN: str = "localhost:8000"
 
     # 1 day
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1 * 24 * 60
 
-    @computed_field  # type: ignore[misc]
+    # CORS
+    BACKEND_CORS_ORIGINS: Annotated[
+        Union[List[AnyUrl], str], BeforeValidator(parse_cors)
+    ] = []
+
+    @computed_field
     @property
     def server_host(self) -> str:
         # Use HTTPS for anything other than local development
         protocol = "http" if self.ENVIRONMENT == "development" else "https"
         return f"{protocol}://{self.DOMAIN}"
 
+    # Database settings
     POSTGRES_HOST: str = 'localhost'
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = 'postgres'
     POSTGRES_PASSWORD: str = 'postgres'
     POSTGRES_DBNAME: str = "my_db"
+
+    def database_uri(self) -> str:
+        return (
+            f"{POSTGRES_DSN_SCHEME}://{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/{self.POSTGRES_DBNAME}"
+        )
 
     def _check_default_secret(self, var_name: str, value: Union[str, None]) -> None:
         if value == DEFAULT_PASSWORD:
