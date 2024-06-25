@@ -3,10 +3,10 @@ from typing import Annotated, Tuple
 from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.auth import create_token
+from backend.app.core.auth import create_token
 from backend.app.data import refresh_tokens
 from backend.app.models.users import User, Token
-from backend.app.auth import validate_refresh_token
+from backend.app.core.auth import validate_refresh_token
 from backend.app.constants import (
     DEFAULT_ACCESS_TIMEOUT_MINUTES,
     DEFAULT_REFRESH_TIMEOUT_MINUTES,

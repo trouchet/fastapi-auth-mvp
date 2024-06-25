@@ -98,6 +98,17 @@ class UsersRepository:
 
         return query.with_entities(UserDB.roles).distinct().all()
 
+    def get_user_roles(self, user_id: str):
+        query=self.session.query(UserDB)
+
+        user=query.filter(UserDB.user_id == user_id).first()
+        
+        if not user:
+            return None
+        else:
+            return user.user_roles
+            
+
     def get_users_by_role(self, role: str):
         query = self.session.query(UserDB)
         has_role = or_(func.jsonb_contains(UserDB.user_roles, role))

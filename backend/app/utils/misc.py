@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.requests import Request
-from httpx import AsyncClient as HTTPClient
+from httpx import AsyncClient
 
-from backend.app.logging import logger
+from backend.app.core.logging import logger
 
 
 async def get_status_code(request: Request):
@@ -21,11 +21,11 @@ async def get_cat_image_url(status_code: int = Depends(get_status_code)):
 
 
 async def fetch_image(image_url: str):
-    async with HTTPClient() as client:
+    async with AsyncClient() as client:
         response = await client.get(image_url)
 
     # Raise exception for non-200 status codes
-    response.raise_for_status()  
+    await response.raise_for_status()  
 
     return await response.aread()
 

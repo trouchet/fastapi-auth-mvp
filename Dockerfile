@@ -18,7 +18,7 @@ COPY .env .
 # Command to run the FastAPI application
 CMD [\
     "uvicorn", \
-    "backend.main:app", "--reload", \
+    "backend.app.main:app", "--reload", \
     "--workers", "1", \
     "--host", "0.0.0.0", \
     "--port", "8000" \

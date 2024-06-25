@@ -74,3 +74,12 @@ pylint:
 report: test ## Generate coverage report. Usage: make report
 	coverage report --omit=$(OMIT_PATHS) --show-missing
 
+
+build: ## Build the application. Usage: make build
+	docker-compose build
+
+down: ## Down the application. Usage: make down
+	docker-compose down
+
+up: ## Up the application. Usage: make up
+	docker-compose up

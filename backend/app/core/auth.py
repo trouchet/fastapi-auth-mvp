@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
 from functools import wraps
+from time import time
+import inspect
 
 from backend.app.constants import DEFAULT_ACCESS_TIMEOUT_MINUTES
 
@@ -15,6 +17,8 @@ from backend.app.exceptions import (
     InexistentUsernameException,
     ExpiredTokenException,
     InactiveUserException,
+    MalformedTokenException,
+    MissingRequiredClaimException,
 )
 from backend.app.repositories.users import (
     get_user_repo,
@@ -103,13 +107,20 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
 
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        username: str = payload.get("sub")
-
+        
+        if payload['exp'] <= time():
+            raise ExpiredTokenException()
+        
+        if 'sub' in payload:
+            username: str = payload.get("sub")
+        else:
+            raise MissingRequiredClaimException("sub")
+        
         if username is None:
             raise CredentialsException()
 
     except JWTError:
-        raise CredentialsException()
+        raise MalformedTokenException()
 
     # Get the user from the database
     user = user_repo.get_user_by_username(username=username)
@@ -121,6 +132,17 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         raise InactiveUserException(user.user_username)
 
     return user
+
+
+async def is_async(func):
+    """
+    Checks if a function is asynchronous using multiple methods.
+    """
+    return (
+        inspect.iscoroutinefunction(func)
+        or inspect.isasyncgenfunction(func)
+        or hasattr(func, "__await__")
+    )
 
 
 # Decorator to check the role
@@ -140,7 +162,14 @@ def role_checker(allowed_roles):
             if not user_has_permission:
                 raise PrivilegesException()
 
-            return await func(*args, **kwargs)
+            if await is_async(func):
+                return await func(*args, current_user, **kwargs)
+            else:
+                return func(*args, current_user=current_user, **kwargs)
+            
+        return decorated_view
+    
+    return wrapper
 
         return decorated_view
 

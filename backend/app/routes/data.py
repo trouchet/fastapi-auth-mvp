@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from backend.app.auth import role_checker
+from backend.app.core.auth import role_checker
+from backend.app.core.auth import get_current_user
+from backend.app.models.users import User
 
 router = APIRouter(
     tags=["data"],
@@ -15,5 +17,7 @@ def admin_endpoint():
 
 @router.get("/data/user")
 @role_checker(["admin", "user"])
-def user_endpoint():
-    return {"message": "user data"}
+def admin_endpoint(
+    current_user: User = Depends(get_current_user)
+):
+    return {"message": "This is user data"}

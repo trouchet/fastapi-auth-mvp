@@ -1,5 +1,6 @@
 import pytest
 from typing import List
+from fastapi import Depends
 
 from datetime import datetime, timedelta
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ from unittest.mock import patch
 
 from backend.app.utils.database import model_to_dict
 
-from backend.app.auth import (
+from backend.app.core.auth import (
     get_current_user,
     validate_refresh_token,
     create_token,
@@ -123,7 +124,7 @@ async def test_get_current_user_incomplete_data(
     with pytest.raises(HTTPException) as excinfo:
         await get_current_user(token)
 
-    assert "Could not validate credentials" in str(excinfo.value)
+    assert "Token is missing required claim: sub" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
@@ -133,7 +134,25 @@ async def test_get_current_user_invalid_token():
     with pytest.raises(HTTPException) as excinfo:
         await get_current_user(invalid_token)
 
-    assert "Could not validate credentials" in str(excinfo.value)
+    assert "This token is malformed." in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_missing_username_in_token(test_user):
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
+
+    # modify token to remove username claim
+    user_len=len(f".username:{test_user.user_username}")
+    modified_token = token[:-user_len]
+
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user(modified_token)
+
+    assert "This token is malformed" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
@@ -223,7 +242,7 @@ async def test_get_current_user_missing_username_in_token(test_user):
     with pytest.raises(HTTPException) as excinfo:
         await get_current_user(modified_token)
 
-    assert "Could not validate credentials" in str(excinfo.value)
+    assert "This token is malformed" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
@@ -300,20 +319,23 @@ async def test_role_checker_allows_authorized_role():
     """Tests if the decorator allows access with an authorized role."""
     # Mock get_current_active_user to return a user with an allowed role
     allowed_roles = ["admin"]
-
-    with patch(
-        "backend.app.auth.get_current_user", return_value=MockUser(roles=["admin"])
-    ):
-
+    mock_user = MockUserDB(roles=["admin"])
+    
+    with patch("backend.app.core.auth.get_current_user", return_value=mock_user):
         @role_checker(allowed_roles)
-        async def protected_view():
+        async def protected_view(current_user: Depends(get_current_user)):
             return "Success"
 
         # Call the decorated view and assert no exception is raised
-        assert await protected_view() == "Success"
+        assert await protected_view(current_user=mock_user) == "Success"
 
 
 # Helper class to represent a mock user object
-class MockUser:
+class MockUserDB:
     def __init__(self, roles: List[str]):
-        self.roles = roles
+        self.user_roles = roles
+
+
+
+
+
