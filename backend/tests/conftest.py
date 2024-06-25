@@ -7,17 +7,17 @@ from time import mktime
 from uuid import uuid4
 
 from backend.app.database.core import Database
-from backend.app.repositories.users import UsersRepository
 from backend.app.database.models.users import UserDB
+from backend.app.repositories.users import UsersRepository
+from backend.app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-@pytest.fixture
-def uri():
-    return "postgresql://postgres:postgres@localhost:5432/auth_db"
 
 @pytest.fixture
-def test_database(uri):
+def test_database():
+    uri = settings.test_database_uri
+    
     # Connect to your database
     database = Database(uri)
     yield database

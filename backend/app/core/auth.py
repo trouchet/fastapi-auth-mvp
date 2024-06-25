@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
 from functools import wraps
+from time import time
+import inspect
 
 from backend.app.core.exceptions import (
     CredentialsException, 
@@ -13,6 +15,8 @@ from backend.app.core.exceptions import (
     InexistentUsernameException,
     ExpiredTokenException,
     InactiveUserException,
+    MalformedTokenException,
+    MissingRequiredClaimException,
 )
 from backend.app.repositories.users import (
     get_user_repo,
@@ -110,13 +114,20 @@ async def get_current_user(
     
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        username: str = payload.get("sub")
+        
+        if payload['exp'] <= time():
+            raise ExpiredTokenException()
+        
+        if 'sub' in payload:
+            username: str = payload.get("sub")
+        else:
+            raise MissingRequiredClaimException("sub")
         
         if username is None:
             raise CredentialsException()
 
     except JWTError:
-        raise CredentialsException()
+        raise MalformedTokenException()
 
     # Get the user from the database
     user = user_repo.get_user_by_username(username=username)
@@ -132,9 +143,13 @@ async def get_current_user(
 
 async def is_async(func):
     """
-    Checks if a function is asynchronous by looking for the presence of the '__await__' attribute.
+    Checks if a function is asynchronous using multiple methods.
     """
-    return hasattr(func, "__await__")
+    return (
+        inspect.iscoroutinefunction(func)
+        or inspect.isasyncgenfunction(func)
+        or hasattr(func, "__await__")
+    )
 
 
 # Decorator to check the role
@@ -153,9 +168,9 @@ def role_checker(allowed_roles):
                 raise PrivilegesException()
 
             if await is_async(func):
-                return await func(*args, **kwargs)
+                return await func(*args, current_user, **kwargs)
             else:
-                return func(*args, **kwargs)
+                return func(*args, current_user=current_user, **kwargs)
             
         return decorated_view
     

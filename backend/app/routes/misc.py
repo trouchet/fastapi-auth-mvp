@@ -42,6 +42,10 @@ async def cat_by_status(status_code: int):
 async def cat_page(request: Request, status_code: int):
     cat_image_url = get_cat_image_url(status_code)
 
-    context = {"request": request, "cat_image_url": cat_image_url}
+    context = {
+        "request": request, 
+        "cat_image_url": cat_image_url, 
+        "status_code": status_code
+    }
     return templates.TemplateResponse("cat_page.html", context=context)
 

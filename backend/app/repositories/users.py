@@ -106,9 +106,15 @@ class UsersRepository:
 
     def get_user_roles(self, user_id: str):
         query=self.session.query(UserDB)
+
+        user=query.filter(UserDB.user_id == user_id).first()
         
-        return query.filter(UserDB.user_id == user_id).first().user_roles
-    
+        if not user:
+            return None
+        else:
+            return user.user_roles
+            
+
     def get_users_by_role(self, role: str):
         query = self.session.query(UserDB)
         has_role = UserDB.user_roles.contains([role])

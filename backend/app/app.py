@@ -4,7 +4,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_csrf_protect import CsrfProtect
 
 from backend.app.routes import (
     auth_router, data_router, misc_router, users_router,
@@ -25,14 +24,10 @@ app = FastAPI(
 # Include routers in the app
 prefix=f"{settings.API_V1_STR}"
 
-app.include_router(auth_router, prefix=prefix)
 app.include_router(misc_router, prefix=prefix)
+app.include_router(auth_router, prefix=prefix)
 app.include_router(data_router, prefix=prefix)
 app.include_router(users_router, prefix=prefix)
-
-@CsrfProtect.load_config
-def get_csrf_config():
-    return CsrfSettings()
 
 # Add static files
 obj = StaticFiles(directory="backend/static")

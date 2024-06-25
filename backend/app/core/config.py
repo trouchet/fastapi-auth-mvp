@@ -6,14 +6,13 @@ from pydantic import (
     model_validator,
 )
 
-from typing import (
-    Union, Annotated, Any, List,
-)
+from typing import Union, Annotated, Any, List
 from typing_extensions import Self
 from datetime import timedelta
-
+import re
 from warnings import warn
 import toml
+
 
 POSTGRES_DSN_SCHEME = "postgresql+psycopg2"
 
@@ -40,13 +39,25 @@ def parse_cors(v: Any) -> Union[List[str], str]:
     
     raise ValueError(v)
 
+def string_has_token(string: str, token: str):
+    # Regular expression to match 'docker' case-insensitively
+    pattern = rf"(?i){token}"  # 'i' flag for case-insensitive matching
 
-def warn_default_value(environment, var_name, default_value):
+    # Check if the pattern matches anywhere in the string
+    match = re.search(pattern, string)
+
+    return match is not None
+
+def warn_default_value(environment: str, var_name: str, default_value: Any):
     message = (
         f'The value of {var_name} is "{default_value}", '
         "for security, please change it, at least for deployments."
     )
-    if environment == "development":
+    
+    is_default_safe=string_has_token(environment, 'dev') or \
+        string_has_token(environment, 'testing')
+    
+    if is_default_safe:
         warn(message, stacklevel=1)
     else:
         raise ValueError(message)
@@ -55,11 +66,7 @@ def warn_default_value(environment, var_name, default_value):
 class Settings(BaseSettings):
     """App settings."""
 
-    model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_ignore_empty=True, 
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
     VERSION: str = config["tool"]["poetry"]["version"]
     PROJECT_NAME: str = config["tool"]["poetry"]["name"]
@@ -96,18 +103,38 @@ class Settings(BaseSettings):
         return f"{protocol}://{self.DOMAIN}"
 
     # Database settings
+    POSTGRES_DSN_SCHEME: str = POSTGRES_DSN_SCHEME
+    
     POSTGRES_HOST: str = 'localhost'
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = 'postgres'
     POSTGRES_PASSWORD: str = 'postgres'
     POSTGRES_DBNAME: str = "auth_db"
+    
+    POSTGRES_HOST_TEST: str = 'localhost'
+    POSTGRES_PORT_TEST: int = 5433
+    POSTGRES_USER_TEST: str = 'postgres'
+    POSTGRES_PASSWORD_TEST: str = 'postgres'
+    POSTGRES_DBNAME_TEST: str = "auth_db"
 
+    @computed_field
+    @property
     def database_uri(self) -> str:
         return (
             f"{POSTGRES_DSN_SCHEME}://{self.POSTGRES_USER}:"
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DBNAME}"
         )
+        
+    @computed_field
+    @property
+    def test_database_uri(self) -> str:
+        return (
+            f"{POSTGRES_DSN_SCHEME}://"
+            f"{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@"
+            f"{self.POSTGRES_HOST_TEST}:{self.POSTGRES_PORT_TEST}/{self.POSTGRES_DBNAME_TEST}"
+        )
+    
 
     def _check_default_value(
         self, 
@@ -131,3 +158,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Set postgres host as 'auth-db' if environment has '*docker*'
+if string_has_token(settings.ENVIRONMENT, 'docker'):
+    settings.POSTGRES_HOST = 'auth-db'

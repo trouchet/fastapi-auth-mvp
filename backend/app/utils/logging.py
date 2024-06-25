@@ -50,11 +50,11 @@ def clear_folder_items(
 
 class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
     def __init__(
-        self, foldername: str, filename: str, when='h', interval=1, backupCount=0, 
+        self, root_foldername: str, filename: str, when='h', interval=1, backupCount=0, 
         encoding=None, delay=False, utc=False, atTime=None, postfix = ".log"
     ):
-        self.folderName = foldername
-        makedirs(foldername, exist_ok=True)
+        self.foldername = root_foldername
+        makedirs(root_foldername, exist_ok=True)
         
         self.origFileName = filename
         self.when = when.upper()
@@ -105,38 +105,36 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
             raise ValueError(message)
 
         current_time = int(time())
-
         filename = self.calculate_filename(current_time)
         
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
 
         self.extMatch = re.compile(self.extMatch)
-        self.interval = self.interval * interval
-
         self.rolloverAt = self.computeRollover(current_time)
 
     def calculate_base_folder(self, current_time):
         now = datetime.datetime.fromtimestamp(current_time)
         ymd_tree=now.strftime("%Y/%m/%d")
-        return path.join(self.folderName, ymd_tree)
+        return path.join(self.foldername, ymd_tree)
 
     def calculate_filename(self, current_time: int):
-        timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
+        time_tuple = gmtime(current_time) if self.utc else localtime(current_time)
         self.base_folder = self.calculate_base_folder(current_time)
 
         makedirs(self.base_folder, exist_ok=True)
 
         pid_hash = str(getpid())
-        basename=self.origFileName + "." + strftime(self.suffix, timeTuple) + '.' + pid_hash
-        new_filename= basename + self.postfix
-        
+        time_str = strftime(self.suffix, time_tuple)
+        base_filename = '.'.join([self.origFileName, time_str, pid_hash])
+        new_filename = base_filename + self.postfix
+
         new_filepath = path.join(self.base_folder, new_filename)
 
         return new_filepath
 
-    def get_files_to_delete(self, newFileName: str):
-        dirName, fName = path.split(self.origFileName)
-        dName, newFileName = path.split(newFileName)
+    def get_files_to_delete(self, newFilepath: str):
+        dName, newFileName = path.split(newFilepath)
+        dirName, fName = path.split(path.join(dName, self.origFileName))
 
         fileNames = listdir(dirName)
         result = []
@@ -155,14 +153,14 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
                 if self.extMatch.match(suffix):
                     filepath=path.join(dirName, fileName)
                     result.append(filepath)
-        
+
         result.sort()
         if len(result) < self.backupCount:
             result = []
         else:
             until=len(result) - self.backupCount
             result = result[:until]
-        
+
         return result
 
     def doRollover(self):

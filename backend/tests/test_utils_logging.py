@@ -74,9 +74,10 @@ def test_calculate_filename_utc(mocker, logs_foldername):
     rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_get_files_to_delete_no_backups(mocker, logs_foldername):
+@patch("backend.app.utils.logging.listdir")
+def test_get_files_to_delete_no_backups(listdir_mocker, logs_foldername):
     handler = DailyHierarchicalFileHandler(logs_foldername, "test.log", when="D", backupCount=0)
-    mocker.patch.object(os, "listdir", return_value=["other.log"])
+    listdir_mocker.return_value=["other.log"]
     
     new_filename = "test.log.2000-01-01.log"
     files_to_delete = handler.get_files_to_delete(new_filename)
@@ -85,9 +86,11 @@ def test_get_files_to_delete_no_backups(mocker, logs_foldername):
     rmtree(logs_foldername, ignore_errors=True)
 
 
-@patch("backend.app.utils.logging.os.listdir")
-def test_get_files_to_delete_excess_backups(listdit_mocker, logs_foldername):
+@patch("backend.app.utils.logging.listdir")
+def test_get_files_to_delete_excess_backups(listdir_mocker, logs_foldername):
     handler = DailyHierarchicalFileHandler(logs_foldername, "test.log", when="D", backupCount=1)
+    listdir_mocker.return_value=["test.log.2000-01-01.log", "test.log.2000-01-02.log"]
+    
     new_filename = "test.log.2000-01-03.log"
     files_to_delete = handler.get_files_to_delete(new_filename)
     assert files_to_delete == ["test.log.2000-01-01.log"]
@@ -108,16 +111,13 @@ def test_do_rollover_calculates_new_filename(mocked_time, logs_foldername):
     handler.doRollover()
 
     next_filename=handler.calculate_filename(handler.rolloverAt)
-
     assert next_filename.startswith(log_test)
 
     rmtree(logs_foldername, ignore_errors=True)
 
 
 def test_do_rollover_deletes_old_files(mocker, logs_foldername):
-    handler = DailyHierarchicalFileHandler(
-        logs_foldername, "test.log", when="D", backupCount=1
-    )
+    handler = DailyHierarchicalFileHandler(logs_foldername, "test.log", when="D", backupCount=1)
     filename="test.log.2024-06-20.log"
     
     mocker.patch.object(os, "listdir", return_value=[
@@ -134,10 +134,11 @@ def test_do_rollover_handles_dst_change(mocker, logs_foldername):
     # Simulate DST turning on before next rollover (June to July)
     time_tuple=(2000, 1, 1, 2, 0, 0, 0, 0, 0)
     
-    dst_on_time = time.mktime(time_tuple)  # June 20th, 2:00 AM (before DST)
-    mocker.patch.object(
-        time, "time", return_value=dst_on_time + 3600
-    )  # June 20th, 3:00 AM (after DST)
+    # June 20th, 2:00 AM (before DST)
+    dst_on_time = time.mktime(time_tuple)
+    
+    # June 20th, 3:00 AM (after DST)
+    mocker.patch.object(time, "time", return_value=dst_on_time + 3600)
     handler = DailyHierarchicalFileHandler(logs_foldername, "test.log", when="D")
     handler.doRollover()
     
@@ -150,15 +151,18 @@ def test_do_rollover_handles_dst_change_back(mocker, logs_foldername):
     # Simulate DST turning off before next rollover (October to November)
     time_tuple=(2000, 1, 1, 2, 0, 0, 0, 0, 0)
     
-    dst_off_time = time.mktime(time_tuple)                               # Oct 29th, 2:00 AM (DST)
-    mocker.patch.object(
-        time, "time", return_value=dst_off_time + 3600
-    )  # Oct 29th, 3:00 AM (after DST ends)
+    # Oct 29th, 2:00 AM (DST)
+    dst_off_time = time.mktime(time_tuple)
+    
+    # Oct 29th, 3:00 AM (after DST ends)
+    mocker.patch.object(time, "time", return_value=dst_off_time + 3600)
     handler = DailyHierarchicalFileHandler(
         logs_foldername, "test.log", when="D"
     )
     handler.doRollover()
-    assert handler.rolloverAt > dst_off_time  # Rollover time should be adjusted for DST ending
+    
+    # Rollover time should be adjusted for DST ending
+    assert handler.rolloverAt > dst_off_time
 
     rmtree(logs_foldername, ignore_errors=True)
 
@@ -251,9 +255,9 @@ def test_clear_folder_items_files():
 
     clear_folder_items(tmp_path, 2)
 
-    assert os.path.exists(f"{tmp_path}/1.txt")
+    assert not os.path.exists(f"{tmp_path}/1.txt")
     assert os.path.exists(f"{tmp_path}/2.txt")
-    assert not os.path.exists(f"{tmp_path}/3.txt")
+    assert os.path.exists(f"{tmp_path}/3.txt")
 
     rmtree(tmp_path, ignore_errors=True)
 
@@ -282,7 +286,7 @@ def test_daily_handler_rollover(
 
     # Create handler
     handler = DailyHierarchicalFileHandler(
-        foldername="logs", filename="app.log", when=when
+        root_foldername="logs", filename="app.log", when=when
     )
 
     # Assert expected attributes
@@ -307,7 +311,7 @@ def test_weekly_handler_raises_3_digits(
 ):
     with pytest.raises(ValueError):
         DailyHierarchicalFileHandler(
-            foldername="logs", filename="app.log", when="W42"
+            root_foldername="logs", filename="app.log", when="W42"
         )
 
 
@@ -317,7 +321,7 @@ def test_weekly_handler_raises_digit_outside_0_6(
 ):
     with pytest.raises(ValueError):
         DailyHierarchicalFileHandler(
-            foldername="logs", filename="app.log", when="W8"
+            root_foldername="logs", filename="app.log", when="W8"
         )
 
 
@@ -327,7 +331,7 @@ def test_weekly_handler_raises_invalid_when(
 ):
     with pytest.raises(ValueError):
         DailyHierarchicalFileHandler(
-            foldername="logs", filename="app.log", when="X"
+            root_foldername="logs", filename="app.log", when="X"
         )
 
 def test_handler_rollover_repr(
@@ -337,7 +341,7 @@ def test_handler_rollover_repr(
     from reprlib import repr
 
     handler = DailyHierarchicalFileHandler(
-        foldername="logs", filename="app.log", when="D"
+        root_foldername="logs", filename="app.log", when="D"
     )
     args="'logs', 'app.log', 'D', 1, 0, None, False, False, None, '.log'"
     obj_repr=f"DailyHierarchicalFileHandler({args})"

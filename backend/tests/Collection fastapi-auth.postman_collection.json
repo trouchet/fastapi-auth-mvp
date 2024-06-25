@@ -118,6 +118,43 @@
 			"item": [
 				{
 					"name": "Get access token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Check if the response is JSON\r",
+									"pm.test(\"Response is JSON\", function () {\r",
+									"    pm.response.to.have.jsonBody();\r",
+									"});\r",
+									"\r",
+									"// Parse the JSON response\r",
+									"let jsonData = pm.response.json();\r",
+									"\r",
+									"// Set collection variables with access_token and refresh_token\r",
+									"pm.collectionVariables.set(\"admin_access_token\", jsonData.access_token);\r",
+									"pm.collectionVariables.set(\"admin_refresh_token\", jsonData.refresh_token);\r",
+									"\r",
+									"// Log the tokens to the console for verification\r",
+									"console.log(\"Access Token:\", jsonData.access_token);\r",
+									"console.log(\"Refresh Token:\", jsonData.refresh_token);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -172,7 +209,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl91c2VyIiwicm9sZXMiOlsiYWRtaW4iLCJ1c2VyIl0sImV4cCI6MTcxOTI1MzUwOSwiaWF0IjoxNzE5MjQ2MzA5fQ.jqhAEHWXFV8S2QzzWEhNz0QH0OGcCqxWeeMd8qRX5rg",
+									"value": "{{admin_refresh_token}}",
 									"type": "string"
 								}
 							]
@@ -221,64 +258,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "Update access token",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl91c2VyIiwicm9sZXMiOlsiYWRtaW4iLCJ1c2VyIl0sImV4cCI6MTcxOTI0Mzg0NSwiaWF0IjoxNzE5MjM2NjQ1fQ.sJInM9tCVVyEZ0nnQnbby8zH_9F1xceP2LDqwgEUm_Q",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "admin_user",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "AdminPassword123!",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/auth/token",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"auth",
-								"token"
-							]
-						}
-					},
-					"response": []
 				}
 			]
 		},
@@ -296,7 +275,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQxNTQsImlhdCI6MTcxOTI1Mjk1NH0.xgkD0PumahdqB9RUvYzra-LKTxMfdZF0Cu6YH2w41hA",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzNDk5MDcsImlhdCI6MTcxOTM0NjMwN30.lJ7zmPYzFydrzUTMY8q-djNM_0Sap1d_SxL3ndoXTZI",
 									"type": "string"
 								}
 							]
@@ -346,192 +325,14 @@
 					"response": []
 				},
 				{
-					"name": "Get user by id",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
+					"name": "Invalid new user - password",
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQxNTQsImlhdCI6MTcxOTI1Mjk1NH0.xgkD0PumahdqB9RUvYzra-LKTxMfdZF0Cu6YH2w41hA",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "admin_user",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "AdminPassword123!",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/c58c92fa-fd8f-4558-899b-c82dc6ce9ea2",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"c58c92fa-fd8f-4558-899b-c82dc6ce9ea2"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get user role",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQxNTQsImlhdCI6MTcxOTI1Mjk1NH0.xgkD0PumahdqB9RUvYzra-LKTxMfdZF0Cu6YH2w41hA",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "admin_user",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "AdminPassword123!",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/c58c92fa-fd8f-4558-899b-c82dc6ce9ea2/roles",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"c58c92fa-fd8f-4558-899b-c82dc6ce9ea2",
-								"roles"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Alter user username",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								},
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/7117d071-ee46-40ad-bab1-b34afaa07065/username?new_username=new_user",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"7117d071-ee46-40ad-bab1-b34afaa07065",
-								"username"
-							],
-							"query": [
-								{
-									"key": "new_username",
-									"value": "new_user"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Put users",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQxNTQsImlhdCI6MTcxOTI1Mjk1NH0.xgkD0PumahdqB9RUvYzra-LKTxMfdZF0Cu6YH2w41hA",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzNDk5MDcsImlhdCI6MTcxOTM0NjMwN30.lJ7zmPYzFydrzUTMY8q-djNM_0Sap1d_SxL3ndoXTZI",
 									"type": "string"
 								}
 							]
@@ -575,7 +376,58 @@
 					"response": []
 				},
 				{
-					"name": "Put users Copy",
+					"name": "Put users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzNDk5MDcsImlhdCI6MTcxOTM0NjMwN30.lJ7zmPYzFydrzUTMY8q-djNM_0Sap1d_SxL3ndoXTZI",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"user_username\": \"new_user\",\r\n    \"user_password\": \"Secret_Password!123\",\r\n    \"user_email\": \"test_@example.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/api/users",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get users by role",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -585,7 +437,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQ2NzQsImlhdCI6MTcxOTI1MzQ3NH0.j_2c4FgssuLlV-1XHDm1qGG7w4TC-HJJxGG9R2pcBn8",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
 									"type": "string"
 								}
 							]
@@ -643,6 +495,242 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get user by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/795cb648-d21f-4a99-ab2f-573783357a97",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"795cb648-d21f-4a99-ab2f-573783357a97"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete user by id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/795cb648-d21f-4a99-ab2f-573783357a97",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"795cb648-d21f-4a99-ab2f-573783357a97"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user role",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/f5337ac3-4ba4-4ea2-ba6b-549e893a99aa/roles",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"f5337ac3-4ba4-4ea2-ba6b-549e893a99aa",
+								"roles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Alter user username",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/f5337ac3-4ba4-4ea2-ba6b-549e893a99aa/username?new_username=new_user",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"f5337ac3-4ba4-4ea2-ba6b-549e893a99aa",
+								"username"
+							],
+							"query": [
+								{
+									"key": "new_username",
+									"value": "new_user"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -660,7 +748,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQxNTQsImlhdCI6MTcxOTI1Mjk1NH0.xgkD0PumahdqB9RUvYzra-LKTxMfdZF0Cu6YH2w41hA",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjM4NDQsImlhdCI6MTcxOTMyMDI0NH0.FgolnYAL9Vecawt15NVwXD6LjuYl4Uu5wf0xAj1S5lI",
 									"type": "string"
 								}
 							]
@@ -710,7 +798,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkyNTQxNTQsImlhdCI6MTcxOTI1Mjk1NH0.xgkD0PumahdqB9RUvYzra-LKTxMfdZF0Cu6YH2w41hA",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjM4NDQsImlhdCI6MTcxOTMyMDI0NH0.FgolnYAL9Vecawt15NVwXD6LjuYl4Uu5wf0xAj1S5lI",
 									"type": "string"
 								}
 							]
@@ -750,7 +838,7 @@
 					"response": []
 				},
 				{
-					"name": "User try to det admin data",
+					"name": "User try to get admin data",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -800,6 +888,43 @@
 					"response": []
 				}
 			]
+		}
+	],
+	"auth": {
+		"type": "inherit"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "admin_access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_refresh_token",
+			"value": "",
+			"type": "string"
 		}
 	]
 }

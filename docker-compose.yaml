@@ -11,10 +11,11 @@ services:
     ports:
       - "$POSTGRES_PORT:$POSTGRES_PORT"
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
   auth-web:
     container_name: auth-app
+    image: auth-db-image:latest
     depends_on:
       - auth-db
     build: 

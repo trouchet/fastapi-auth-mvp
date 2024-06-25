@@ -3,7 +3,8 @@ from backend.app.database.core import Database
 from backend.app.database.initial_data import insert_initial_users
 
 # Load environment variables from the .env file
-uri = settings.database_uri()
+is_testing = settings.ENVIRONMENT == "testing"
+uri = settings.database_uri if not is_testing else settings.test_database_uri
 
 database = Database(uri)
 database.init()

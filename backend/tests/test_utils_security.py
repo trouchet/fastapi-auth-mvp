@@ -14,6 +14,7 @@ from backend.app.utils.security import (
     apply_password_validity_dict,
     get_invalid_password_conditions,
     is_password_valid,
+    is_valid_uuid,
     CONDITION_LIST,
 )
 
@@ -124,4 +125,22 @@ def test_is_password_valid_with_invalid_password():
     password = "short123"
     assert not is_password_valid(password)
 
-    
+def test_valid_uuid():
+    """Tests if a valid UUID string is correctly identified."""
+    valid_uuid = "123e4567-e89b-12d3-a456-426655440000"
+    assert is_valid_uuid(valid_uuid)
+
+def test_invalid_uuid():
+    """Tests if an invalid UUID string is correctly identified."""
+    invalid_uuid = "not-a-uuid"
+    assert not is_valid_uuid(invalid_uuid)
+
+def test_empty_string():
+    """Tests if an empty string is correctly identified as invalid."""
+    empty_string = ""
+    assert not is_valid_uuid(empty_string)
+
+def test_uuid_with_hyphens():
+    """Tests if a UUID with extra hyphens is correctly identified as invalid."""
+    uuid_with_hyphens = "123e4567-invalid-format"
+    assert not is_valid_uuid(uuid_with_hyphens)
