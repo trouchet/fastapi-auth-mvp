@@ -2,7 +2,6 @@ from passlib.context import CryptContext
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
-from sqlalchemy import or_, func
 from typing import List
 from datetime import datetime
 

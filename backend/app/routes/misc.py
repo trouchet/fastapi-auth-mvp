@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Request
-from starlette.staticfiles import StaticFiles
+from fastapi import APIRouter, HTTPException, status, Request
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 

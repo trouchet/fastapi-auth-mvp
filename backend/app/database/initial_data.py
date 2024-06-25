@@ -32,8 +32,8 @@ def insert_initial_users(database_):
         session.commit()
         logger.info("Initial users inserted successfully!")
 
-    except (IntegrityError, UniqueViolation) as e:
+    except (IntegrityError, UniqueViolation):
         # Handle potential duplicate user errors (e.g., username or email already exist)
-        logger.error(f"Duplicate entries found. Skipping...")
+        logger.error("Duplicate entries found. Skipping...")
         session.rollback()  # Rollback changes if an error occurs
 

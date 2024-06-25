@@ -7,7 +7,7 @@ from pydantic import (
 )
 
 from typing import (
-    Literal, Union, Annotated, Any, List,
+    Union, Annotated, Any, List,
 )
 from typing_extensions import Self
 from datetime import timedelta

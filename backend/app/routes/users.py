@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, Path
 from typing import List, Dict
 from uuid import uuid4
 from passlib.context import CryptContext
-from datetime import datetime
 
 from backend.app.core.auth import role_checker
 from backend.app.repositories.users import get_user_repo
@@ -103,12 +102,11 @@ def create_user(
         raise ExistentEmailException(user.user_email)
     
     user_keys=list(dict(user))
-    has_3_fields = len(user_keys) == 3
+    len(user_keys) == 3
     
     required_fields=['user_username', 'user_password', 'user_email']
-    keys_are_equal = set(user_keys) == set(required_fields)
+    set(user_keys) == set(required_fields)
 
-    is_user_data=keys_are_equal and has_3_fields
 
     new_user = UserDB(
         user_id=uuid4(),

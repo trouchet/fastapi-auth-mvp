@@ -1,5 +1,3 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.requests import Request
 from httpx import AsyncClient as HTTPClient
 
 from backend.app.core.logging import logger 
