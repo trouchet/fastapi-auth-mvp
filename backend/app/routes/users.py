@@ -38,20 +38,12 @@ from backend.app.utils.security import (
     is_valid_uuid,
     hash_string,
 )
+from backend.app.utils.users import (
+    userbd_to_user,
+    create_new_user,
+)
 
 router = APIRouter(prefix='/users', tags=["users"])
-
-
-def userbd_to_user(user: UserDB):
-    return {
-        "user_id": user.user_id,
-        "user_created_at": user.user_created_at,
-        "user_updated_at": user.user_updated_at,
-        "user_username": user.user_username,
-        "user_email": user.user_email,
-        "user_is_active": user.user_is_active,
-    }
-
 
 @router.get("/")
 @role_checker(["admin"])
@@ -144,38 +136,20 @@ def update_user(
 
 @router.put("/")
 @role_checker(["admin", "user"])
-def create_user(
+async def create_user(
     user: CreateUser,
     current_user: User = Depends(get_current_user),
     user_repo: UsersRepository=Depends(get_user_repo)
 ) -> Dict:
-    # Check if the username already exists
-    user_db = user_repo.get_user_by_username(user.user_username)
-    
-    if user_db:
-        raise ExistentUsernameException(user.user_username)
-    
-    # Check 
-    user_db = user_repo.get_user_by_email(user.user_email)
-    
-    if user_db:
-        raise ExistentEmailException(user.user_email)
-    
-    password=user.user_password
-    
-    if not is_password_valid(password):
-        invalidation_dict=apply_password_validity_dict(password)
-        raise InvalidPasswordException(invalidation_dict)
+    return await create_new_user(user, user_repo)
 
-    new_user = UserDB(
-        user_username=user.user_username,
-        user_hashed_password=hash_string(user.user_password),
-        user_email=user.user_email,
-    )
-    
-    user_repo.create_user(new_user)
 
-    return userbd_to_user(new_user)
+@router.post('signup')
+async def signup(
+    user: CreateUser,
+    user_repo: UsersRepository=Depends(get_user_repo)
+) -> Dict:
+    return await create_new_user(user, user_repo)
 
 
 @router.patch("/{user_id}")
@@ -289,24 +263,6 @@ def get_user_roles(
         return roles
 
 
-@router.get("/{user_id}/roles")
-@role_checker(["admin"])
-def get_user_roles(
-    user_id: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
-    current_user: User = Depends(get_current_user)
-) -> List[str]:
-    if not is_valid_uuid(user_id): 
-        raise InvalidUUIDException(user_id)
-    
-    roles=user_repo.get_user_roles(user_id)
-    
-    if not roles:
-        raise InexistentUserIDException(user_id) 
-    else:
-        return roles
-
-
 @router.patch("/{user_id}/activate")
 @role_checker(["admin"])
 def activate_user(
@@ -353,5 +309,4 @@ def get_users_by_role(
     users = user_repo.get_users_by_role(role)
 
     return list(map(userbd_to_user, users))
-
 
