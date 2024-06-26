@@ -4,8 +4,8 @@ services:
     image: postgres:16
     restart: always
     env_file: .env
-    # networks:
-    #   - CNPJ_net
+    networks:
+      - my_net
     expose:
       - "$POSTGRES_PORT"
     ports:
@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  web:
+  auth-web:
     container_name: auth-app
     image: auth-db-image:latest
     depends_on:
@@ -21,14 +21,17 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    # networks:
-    #   - CNPJ_net
+    env_file: .env
+    ports:
+      - "$APP_PORT:$APP_PORT"
+    networks:
+      - my_net
     restart: unless-stopped
     volumes:
       - .:/app
 
 networks:
-  CNPJ_net:
+  my_net:
 
 volumes:
   postgres_data:

@@ -19,7 +19,7 @@ COPY .env .
 CMD [\
     "uvicorn", \
     "backend.app.main:app", "--reload", \
-    "--workers", "1", \
+    "--workers", "4", \
     "--host", "0.0.0.0", \
     "--port", "8000" \
 ]
