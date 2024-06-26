@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import StreamingResponse, JSONResponse
-from fastapi.templates import Jinja2Templates
+from fastapi import APIRouter, HTTPException, status, Request
+from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+
+templates = Jinja2Templates(directory="backend/templates")
 
 from backend.app.core.logging import logger
 from backend.app.utils.misc import (
@@ -8,9 +11,7 @@ from backend.app.utils.misc import (
     fetch_image,
 )
 
-router = APIRouter(
-    tags=["misc"],
-)
+router = APIRouter(tags=["Miscelaneous"])
 
 
 @router.get("/hello")
@@ -21,12 +22,10 @@ def hello_func():
 @router.get("/cat/{status_code}")
 async def cat_by_status(status_code: int):
     try:
-        image_url = await get_cat_image_url(status_code)
+        image_url = get_cat_image_url(status_code)
         image_bytes = await fetch_image(image_url)
 
-        response = StreamingResponse(
-            content=iter([image_bytes]), media_type="image/jpeg"
-        )
+        response = StreamingResponse(content=iter([image_bytes]), media_type="image/jpeg")
 
         return response
 
@@ -36,8 +35,8 @@ async def cat_by_status(status_code: int):
     except Exception as e:
         logger.error(f"Error fetching cat image: {e}")
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content="Internal Server Error",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            content="Internal Server Error"
         )
 
 

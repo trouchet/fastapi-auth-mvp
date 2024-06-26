@@ -126,7 +126,6 @@ async def test_get_current_user_incomplete_data(
 
     assert "Token is missing required claim: sub" in str(excinfo.value)
 
-
 @pytest.mark.asyncio
 async def test_get_current_user_invalid_token():
     invalid_token = "invalid_token"
@@ -207,8 +206,10 @@ async def test_validate_refresh_token_valid_token(
 
 
 @pytest.mark.asyncio
-@patch("backend.app.auth.jwt.decode")
-async def test_validate_refresh_token_JWT_error(mock_jwt_decode, test_user_repository):
+@patch('backend.app.core.auth.jwt.decode')
+async def test_validate_refresh_token_JWT_error(
+    mock_jwt_decode, test_user_repository
+):
     # Mock jwt.decode to raise JWTError
     mock_jwt_decode.side_effect = JWTError
 
@@ -249,6 +250,85 @@ async def test_get_current_user_missing_username_in_token(test_user):
 async def test_validate_refresh_token_missing_username_in_token(
     test_users_db, test_refresh_tokens, test_user
 ):
+    # Use a valid token for an active user
+    username = test_user.user_username
+
+    auth_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    token = create_token(auth_dict)
+
+    current_user = await get_current_user(token)
+    
+    assert current_user.user_username == username
+
+
+@pytest.mark.asyncio
+async def test_get_current_active_user_inactive_user(
+    test_user_repository, test_inactive_user, test_user_password
+):
+    auth_dict={
+        'sub': test_inactive_user.user_username,
+        'roles': test_inactive_user.user_roles
+    }
+    token = create_token(auth_dict)
+
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user(token)
+
+    assert "is inactive" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_valid_token(
+    test_user_repository, test_user
+):
+    # Create a refresh token for a user
+    username=test_user.user_username
+    
+    user_dict={
+        'sub': test_user.user_username,
+        'roles': test_user.user_roles
+    }
+    refresh_token = create_token(user_dict)
+
+    test_user_repository.update_user_refresh_token(username, refresh_token)
+
+    # Add token to the list  
+    validated_user, _ = await validate_refresh_token(refresh_token)
+
+    assert validated_user.user_username == username
+
+
+@pytest.mark.asyncio
+@patch('backend.app.core.auth.jwt.decode')
+async def test_validate_refresh_token_JWT_error(
+    mock_jwt_decode, test_users_db, test_refresh_tokens
+):
+    # Mock jwt.decode to raise JWTError
+    mock_jwt_decode.side_effect = JWTError
+
+    token = "invalid_token"
+    
+    with pytest.raises(HTTPException) as excinfo:
+        await validate_refresh_token(token)
+    
+    assert "Could not validate credentials" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_invalid_token(test_users_db, test_refresh_tokens):
+    invalid_token = "invalid_refresh_token"
+
+    with pytest.raises(HTTPException) as excinfo:
+        await validate_refresh_token(invalid_token)
+
+    assert "Could not validate credentials" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_validate_refresh_token_missing_username_in_token(test_users_db, test_refresh_tokens, test_user):
     # Assuming this creates a refresh token (modify for your implementation)
     auth_dict = {"sub": test_user.user_username, "roles": test_user.user_roles}
     token = create_token(auth_dict)

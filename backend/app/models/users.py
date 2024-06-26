@@ -1,19 +1,16 @@
-from typing import List
 from pydantic import BaseModel
 
 
 class BaseUser(BaseModel):
-    user_username: str | None = None
-    user_roles: List[str] | None = None
+    user_username: str
 
 
 class User(BaseUser):
-    user_email: str | None = None
-    user_is_active: bool | None = None
-
+    user_email: str
+    user_password: str
 
 class CreateUser(User):
-    user_hashed_password: str | None = None
+    pass
 
 
 class UpdateUser(CreateUser):
@@ -21,5 +18,5 @@ class UpdateUser(CreateUser):
 
 
 class Token(BaseModel):
-    access_token: str | None = None
-    refresh_token: str | None = None
+    access_token: str
+    refresh_token: str

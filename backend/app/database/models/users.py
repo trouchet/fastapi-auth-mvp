@@ -1,4 +1,7 @@
-from sqlalchemy import Column, String, Boolean, DateTime, UUID, JSON
+from sqlalchemy import (
+    Column, String, Boolean, DateTime, UUID, 
+)
+from sqlalchemy.dialects.postgresql import JSONB
 
 from datetime import datetime
 
@@ -15,13 +18,13 @@ class UserDB(Base):
     user_username = Column(String, unique=True, index=True)
     user_email = Column(String, unique=True, index=True, nullable=False)
     user_hashed_password = Column(String, nullable=False)
-    user_roles = Column(JSON, default=["user"], nullable=False)
+    user_roles = Column(JSONB, default=["user"], nullable=False)
     user_is_active = Column(Boolean, default=True)
     user_access_token = Column(String, nullable=True)
     user_refresh_token = Column(String, nullable=True)
 
     def __repr__(self):
-        return f"<User {self.user_username}>"
+        return f"User({self.user_username})"
 
     def __str__(self):
         return self.__repr__()

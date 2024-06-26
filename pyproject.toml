@@ -10,6 +10,7 @@ readme = "README.md"
 python = "^3.8"
 fastapi-csrf-protect = "^0.3.4"
 fastapi = "^0.111.0"
+Jinja2 = "3.1.4"
 pydantic = "^2.7.4"
 uvicorn = {extras = ["standard"], version = "^0.30.1"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}

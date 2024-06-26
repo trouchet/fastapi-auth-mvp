@@ -3,7 +3,7 @@ import sys
 from dotenv import load_dotenv
 from os import getenv
 from pythonjsonlogger import jsonlogger
-from backend.app.config import settings
+from backend.app.core.config import settings
 
 from backend.app.utils.logging import DailyHierarchicalFileHandler
 
@@ -57,9 +57,10 @@ if ENVIRONMENT == "development":
 
 
 # Create daily rotating file handler with hierarchy
-project_name = settings.PROJECT_NAME
-environment = settings.ENVIRONMENT
-handler = DailyHierarchicalFileHandler("logs", f"{project_name}.log", when="midnight")
+project_name=settings.PROJECT_NAME
+environment=settings.ENVIRONMENT
+handler = DailyHierarchicalFileHandler('logs', f"{project_name}.log", when="midnight")
+
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)

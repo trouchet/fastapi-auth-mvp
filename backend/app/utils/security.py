@@ -36,9 +36,8 @@ def is_email_valid(email: str):
     # Check if the email matches the regular expression
     return bool(re.match(email_regex, email))
 
+
 MIN_PASSWORD_LENGTH = 8
-
-
 def password_validity_obj(invalid_password_message: str, validity_map: callable):
     return {
         "invalidation_message": invalid_password_message,

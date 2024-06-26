@@ -1,4 +1,4 @@
-from backend.app.config import settings
+from backend.app.core.config import settings
 from backend.app.database.core import Database
 from backend.app.database.initial_data import insert_initial_users
 

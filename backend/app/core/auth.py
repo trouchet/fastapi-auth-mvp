@@ -9,11 +9,9 @@ from functools import wraps
 from time import time
 import inspect
 
-from backend.app.constants import DEFAULT_ACCESS_TIMEOUT_MINUTES
-
-from backend.app.exceptions import (
-    CredentialsException,
-    PrivilegesException,
+from backend.app.core.exceptions import (
+    CredentialsException, 
+    PrivilegesException, 
     InexistentUsernameException,
     ExpiredTokenException,
     InactiveUserException,
@@ -26,13 +24,14 @@ from backend.app.repositories.users import (
 from backend.app.models.users import User
 from backend.app.database.models.users import UserDB
 
-from backend.app.config import settings
+from backend.app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-JWT_ALGORITHM = settings.JWT_ALGORITHM
-JWT_SECRET_KEY = settings.JWT_SECRET_KEY
+JWT_ALGORITHM=settings.JWT_ALGORITHM
+JWT_SECRET_KEY=settings.JWT_SECRET_KEY
+ACCESS_TOKEN_EXPIRE_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
@@ -86,7 +85,8 @@ async def get_user(username: str) -> UserDB | None:
 
 
 def create_token(
-    data: dict, expires_delta: timedelta | None = DEFAULT_ACCESS_TIMEOUT_MINUTES
+    data: dict, 
+    expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES
 ):
     to_encode = data.copy()
     current_time = datetime.now(timezone.utc)
@@ -150,14 +150,12 @@ def role_checker(allowed_roles):
     def wrapper(func):
         @wraps(func)
         async def decorated_view(
-            *args, current_user: User = Depends(get_current_user), **kwargs
+            *args, current_user: User, **kwargs
         ):
-            current_user = await get_current_user()
+            user_roles_set=set(current_user.user_roles)
+            allowed_roles_set=set(allowed_roles)
 
-            user_roles_set = set(current_user.roles)
-            allowed_roles_set = set(allowed_roles)
-
-            user_has_permission = not user_roles_set.isdisjoint(allowed_roles_set)
+            user_has_permission=user_roles_set.isdisjoint(allowed_roles_set) is False
 
             if not user_has_permission:
                 raise PrivilegesException()
@@ -169,8 +167,4 @@ def role_checker(allowed_roles):
             
         return decorated_view
     
-    return wrapper
-
-        return decorated_view
-
     return wrapper

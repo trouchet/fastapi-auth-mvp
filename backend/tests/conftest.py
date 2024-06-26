@@ -14,7 +14,6 @@ from backend.app.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-
 @pytest.fixture
 def test_database():
     uri = settings.test_database_uri

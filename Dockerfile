@@ -12,7 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container
 COPY backend .
-COPY static .
 COPY .env .
 
 # Command to run the FastAPI application
