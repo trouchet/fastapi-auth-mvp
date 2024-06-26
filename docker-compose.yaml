@@ -1,7 +1,7 @@
 services:
   auth-db:
     container_name: auth-db
-    image: postgres:14
+    image: postgres:16
     restart: always
     env_file: .env
     networks:
