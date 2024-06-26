@@ -3,7 +3,9 @@ services:
     container_name: auth-db
     image: postgres:14
     restart: always
-    env_file: .env
+    environment:
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD    
     networks:
       - my_net
     expose:
@@ -15,13 +17,12 @@ services:
 
   auth-web:
     container_name: auth-app
-    image: auth-db-image:latest
+    image: auth-app:latest
     depends_on:
       - auth-db
     build: 
       context: .
       dockerfile: Dockerfile
-    env_file: .env
     ports:
       - "$APP_PORT:$APP_PORT"
     networks:
