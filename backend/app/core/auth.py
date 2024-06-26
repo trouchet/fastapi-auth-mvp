@@ -5,8 +5,6 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
 from functools import wraps
-from time import time
-import inspect
 
 from backend.app.core.exceptions import (
     CredentialsException, 
@@ -55,7 +53,6 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
 
         if user_has_token:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-
             username: str = payload.get("sub")
             roles: str = payload.get("roles")
             expiration_date_int = payload.get("exp")
@@ -178,7 +175,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
 
     if user is None:
         raise InexistentUsernameException(username)
-
     if not user.user_is_active:
         raise InactiveUserException(user.user_username)
 

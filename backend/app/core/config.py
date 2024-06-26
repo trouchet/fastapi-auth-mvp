@@ -13,7 +13,6 @@ import re
 from warnings import warn
 import toml
 
-
 POSTGRES_DSN_SCHEME = "postgresql+psycopg2"
 
 DEFAULT_POSTGRES_PASSWORD = "postgres"

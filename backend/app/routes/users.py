@@ -3,6 +3,9 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from typing import List, Dict
+from uuid import uuid4
+from passlib.context import CryptContext
+from datetime import datetime
 
 from typing import List, Dict
 from uuid import uuid4
@@ -144,7 +147,6 @@ def create_user(
     set(user_keys) == set(required_fields)
 
     new_user = UserDB(
-        user_id=uuid4(),
         user_username=user.user_username,
         user_hashed_password=hash_string(user.user_password),
         user_email=user.user_email,
@@ -155,7 +157,47 @@ def create_user(
     return userbd_to_user(new_user)
 
 
+
+@router.put("/")
+@role_checker(["admin", "user"])
+def create_user(
+    user: CreateUser,
+    user_repo: UsersRepository=Depends(get_user_repo),
+    current_user: User = Depends(get_current_user)
+) -> Dict:
+    # Check if the username already exists
+    user_db = user_repo.get_user_by_username(user.user_username)
+    
+    if user_db:
+        raise ExistentUsernameException(user.user_username)
+    
+    # Check 
+    user_db = user_repo.get_user_by_email(user.user_email)
+    
+    if user_db:
+        raise ExistentEmailException(user.user_email)
+    
+    user_keys=list(dict(user))
+    has_3_fields = len(user_keys) == 3
+    
+    required_fields=['user_username', 'user_password', 'user_email']
+    keys_are_equal = set(user_keys) == set(required_fields)
+
+    is_user_data=keys_are_equal and has_3_fields
+
+    new_user = UserDB(
+        user_username=user.user_username,
+        user_hashed_password=pwd_context.hash(user.user_password),
+        user_email=user.user_email,
+    )
+    
+    user_repo.create_user(new_user)
+
+    return userbd_to_user(new_user)
+
+
 @router.patch("/{user_id}")
+@role_checker(["admin", "user"])
 def update_user(
     user_id: str, user: UpdateUser, user_repo: UsersRepository = Depends(get_user_repo)
 ) -> Dict:
@@ -212,9 +254,8 @@ def create_user(
     set(user_keys) == set(required_fields)
 
     new_user = UserDB(
-        user_id=uuid4(),
         user_username=user.user_username,
-        user_hashed_password=pwd_context.hash(user.user_password),
+        user_hashed_password=hash_string(user.user_password),
         user_email=user.user_email,
     )
     
@@ -314,6 +355,16 @@ def update_password(
         raise IncorrectCurrentPasswordException()
 
     return userbd_to_user(user)
+
+
+@router.get("/{user_id}/roles")
+@role_checker(["admin", "user"])
+def get_user_roles(
+    user_id: str,
+    user_repo: UsersRepository=Depends(get_user_repo),
+    current_user: User = Depends(get_current_user)
+) -> List[str]:
+    return user_repo.get_user_roles(user_id)
 
 
 @router.get("/{user_id}/roles")

@@ -43,7 +43,6 @@ app.mount("/static", obj, name="static")
 async def get_favicon():
     return FileResponse("backend/static/fastapi.svg")
 
-
 @app.exception_handler(status.HTTP_404_NOT_FOUND)
 async def not_found_handler(request: Request, exc: HTTPException):
     """Redirects to docs or redoc on 404 Not Found."""

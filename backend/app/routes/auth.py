@@ -23,6 +23,9 @@ OAuthDependency = Annotated[OAuth2PasswordRequestForm, Depends()]
 DEFAULT_ACCESS_TIMEOUT_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 DEFAULT_REFRESH_TIMEOUT_MINUTES=settings.REFRESH_TOKEN_EXPIRE_MINUTES
 
+DEFAULT_ACCESS_TIMEOUT_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+DEFAULT_REFRESH_TIMEOUT_MINUTES=settings.REFRESH_TOKEN_EXPIRE_MINUTES
+
 @router.post("/token")
 async def login_for_access_token(
     form_data: OAuthDependency,
