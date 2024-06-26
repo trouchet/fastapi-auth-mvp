@@ -101,8 +101,8 @@ def delete_user(
     admin_users=user_repo.get_users_by_role("admin")
     last_admin=len(admin_users)==1
     last_admin_candidate = admin_users[0]
-    this_last_admin=last_admin_candidate.user_id==user_id
-
+    this_last_admin=str(last_admin_candidate.user_id)==user_id
+    
     forbidden_remove_last_admin=last_admin and this_last_admin
 
     if forbidden_remove_last_admin:
@@ -113,87 +113,6 @@ def delete_user(
     return JSONResponse(
         content=jsonable_encoder({"message": f"User {user_id} deleted successfully"}),
     )
-
-
-@router.put("/")
-@role_checker(["admin", "user"])
-def create_user(
-    user: CreateUser,
-    current_user: User = Depends(get_current_user),
-    user_repo: UsersRepository=Depends(get_user_repo)
-) -> Dict:
-    # Check if the username already exists
-    user_db = user_repo.get_user_by_username(user.user_username)
-    
-    if user_db:
-        raise ExistentUsernameException(user.user_username)
-    
-    # Check 
-    user_db = user_repo.get_user_by_email(user.user_email)
-    
-    if user_db:
-        raise ExistentEmailException(user.user_email)
-    
-    password=user.user_password
-    
-    if not is_password_valid(password):
-        invalidation_dict=apply_password_validity_dict(password)
-        raise InvalidPasswordException(invalidation_dict)
-    
-    user_keys=list(dict(user))
-    len(user_keys) == 3
-    
-    required_fields=['user_username', 'user_password', 'user_email']
-    set(user_keys) == set(required_fields)
-
-    new_user = UserDB(
-        user_username=user.user_username,
-        user_hashed_password=hash_string(user.user_password),
-        user_email=user.user_email,
-    )
-    
-    user_repo.create_user(new_user)
-
-    return userbd_to_user(new_user)
-
-
-
-@router.put("/")
-@role_checker(["admin", "user"])
-def create_user(
-    user: CreateUser,
-    user_repo: UsersRepository=Depends(get_user_repo),
-    current_user: User = Depends(get_current_user)
-) -> Dict:
-    # Check if the username already exists
-    user_db = user_repo.get_user_by_username(user.user_username)
-    
-    if user_db:
-        raise ExistentUsernameException(user.user_username)
-    
-    # Check 
-    user_db = user_repo.get_user_by_email(user.user_email)
-    
-    if user_db:
-        raise ExistentEmailException(user.user_email)
-    
-    user_keys=list(dict(user))
-    has_3_fields = len(user_keys) == 3
-    
-    required_fields=['user_username', 'user_password', 'user_email']
-    keys_are_equal = set(user_keys) == set(required_fields)
-
-    is_user_data=keys_are_equal and has_3_fields
-
-    new_user = UserDB(
-        user_username=user.user_username,
-        user_hashed_password=pwd_context.hash(user.user_password),
-        user_email=user.user_email,
-    )
-    
-    user_repo.create_user(new_user)
-
-    return userbd_to_user(new_user)
 
 
 @router.patch("/{user_id}")
@@ -246,12 +165,6 @@ def create_user(
     if not is_password_valid(password):
         invalidation_dict=apply_password_validity_dict(password)
         raise InvalidPasswordException(invalidation_dict)
-    
-    user_keys=list(dict(user))
-    len(user_keys) == 3
-    
-    required_fields=['user_username', 'user_password', 'user_email']
-    set(user_keys) == set(required_fields)
 
     new_user = UserDB(
         user_username=user.user_username,
