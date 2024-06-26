@@ -1,6 +1,6 @@
 from .base import Base
 from .users import UserDB
-from .request import RequestLog
+from .request import RequestLogDB
 
 
 __all__ = [

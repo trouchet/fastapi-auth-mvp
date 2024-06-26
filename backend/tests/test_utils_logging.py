@@ -286,7 +286,7 @@ def test_daily_handler_rollover(
 
     # Create handler
     handler = DailyHierarchicalFileHandler(
-        root_foldername=logs_foldername, filename="app.log", when=when
+        foldername=logs_foldername, filename="app.log", when=when
     )
 
     # Assert expected attributes
@@ -313,7 +313,7 @@ def test_weekly_handler_raises_3_digits(
 ):
     with pytest.raises(ValueError):
         DailyHierarchicalFileHandler(
-            root_foldername=logs_foldername, 
+            foldername=logs_foldername, 
             filename="app.log", when="W42"
         )
 
@@ -324,7 +324,7 @@ def test_weekly_handler_raises_digit_outside_0_6(
 ):
     with pytest.raises(ValueError):
         DailyHierarchicalFileHandler(
-            root_foldername=logs_foldername, filename="app.log", when="W8"
+            foldername=logs_foldername, filename="app.log", when="W8"
         )
 
 
@@ -334,7 +334,7 @@ def test_weekly_handler_raises_invalid_when(
 ):
     with pytest.raises(ValueError):
         DailyHierarchicalFileHandler(
-            root_foldername=logs_foldername, filename="app.log", when="X"
+            foldername=logs_foldername, filename="app.log", when="X"
         )
     
     rmtree(logs_foldername, ignore_errors=True)
@@ -347,7 +347,7 @@ def test_handler_rollover_repr(
     from reprlib import repr
 
     handler = DailyHierarchicalFileHandler(
-        root_foldername=logs_foldername, filename="app.log", when="D"
+        foldername=logs_foldername, filename="app.log", when="D"
     )
     args = "'logs', 'app.log', 'D', 1, 0, None, False, False, None, '.log'"
     obj_repr = f"DailyHierarchicalFileHandler({args})"
