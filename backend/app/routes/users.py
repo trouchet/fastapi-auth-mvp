@@ -5,7 +5,6 @@ from fastapi.encoders import jsonable_encoder
 from typing import List, Dict
 from uuid import uuid4
 from passlib.context import CryptContext
-from datetime import datetime
 
 from typing import List, Dict
 from uuid import uuid4

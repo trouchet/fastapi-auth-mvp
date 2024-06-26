@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from httpx import AsyncClient
 import re
+=======
+from httpx import AsyncClient as HTTPClient
+>>>>>>> ac5ae46 (lint)
 
 from backend.app.core.logging import logger 
 
