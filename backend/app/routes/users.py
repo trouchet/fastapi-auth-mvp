@@ -6,10 +6,6 @@ from typing import List, Dict
 from uuid import uuid4
 from passlib.context import CryptContext
 
-from typing import List, Dict
-from uuid import uuid4
-from passlib.context import CryptContext
-
 from backend.app.core.auth import role_checker
 from backend.app.repositories.users import get_user_repo
 from backend.app.database.models.users import UserDB
@@ -28,6 +24,12 @@ from backend.app.core.exceptions import (
 )
 from backend.app.models.users import User, UpdateUser, CreateUser
 from backend.app.core.auth import get_current_user
+from backend.app.utils.security import (
+    is_password_valid, 
+    apply_password_validity_dict, 
+    is_email_valid,
+    is_valid_uuid,
+)
 
 from backend.app.utils.security import (
     is_password_valid, 
@@ -270,13 +272,21 @@ def update_password(
 
 
 @router.get("/{user_id}/roles")
-@role_checker(["admin", "user"])
+@role_checker(["admin"])
 def get_user_roles(
     user_id: str,
     user_repo: UsersRepository=Depends(get_user_repo),
     current_user: User = Depends(get_current_user)
 ) -> List[str]:
-    return user_repo.get_user_roles(user_id)
+    if not is_valid_uuid(user_id): 
+        raise InvalidUUIDException(user_id)
+    
+    roles=user_repo.get_user_roles(user_id)
+    
+    if not roles:
+        raise InexistentUserIDException(user_id) 
+    else:
+        return roles
 
 
 @router.get("/{user_id}/roles")

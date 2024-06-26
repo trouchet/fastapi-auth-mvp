@@ -119,10 +119,10 @@ class DailyHierarchicalFileHandler(TimedRotatingFileHandler):
     def calculate_base_folder(self, current_time):
         now = datetime.datetime.fromtimestamp(current_time)
         ymd_tree=now.strftime("%Y/%m/%d")
-        return path.join(self.folderName, ymd_tree)
+        return path.join(self.foldername, ymd_tree)
 
     def calculate_filename(self, current_time: int):
-        timeTuple = gmtime(current_time) if self.utc else localtime(current_time)
+        time_tuple = gmtime(current_time) if self.utc else localtime(current_time)
         self.base_folder = self.calculate_base_folder(current_time)
 
         makedirs(self.base_folder, exist_ok=True)
