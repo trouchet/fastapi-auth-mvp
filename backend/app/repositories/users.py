@@ -5,14 +5,13 @@ from typing import Annotated, Tuple
 from typing import List
 from datetime import datetime
 
+from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
 from backend.app.database.models.users import UserDB
 from backend.app.database.instance import get_session
 
 # Secutiry artifacts
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 TokenDependency = Annotated[str, Depends(oauth2_scheme)]
 
 
@@ -134,7 +133,7 @@ class UsersRepository:
         query = self.session.query(UserDB)
 
         user = query.filter(UserDB.user_id == user_id).first()
-        user.hashed_password = pwd_context.hash(password)
+        user.hashed_password = hash_string(password)
         self.session.commit()
 
         return user
@@ -187,7 +186,7 @@ class UsersRepository:
         hashed_password = user.user_hashed_password
 
         user_not_found = not user
-        is_password_wrong = not pwd_context.verify(plain_password, hashed_password)
+        is_password_wrong = not is_hash_from_string(plain_password, hashed_password)
 
         invalid_authentication = user_not_found or is_password_wrong
 

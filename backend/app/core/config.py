@@ -157,6 +157,7 @@ class Settings(BaseSettings):
         return self
 
 
+# Instantiate settings
 settings = Settings()
 
 # Set postgres host as 'auth-db' if environment has '*docker*'

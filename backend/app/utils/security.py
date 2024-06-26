@@ -1,6 +1,36 @@
 import re
+from passlib.context import CryptContext
 
 import uuid
+
+# Create a new CryptContext object
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_string(string: str) -> str:
+    """
+    Hashes a string using the pwd_context.
+
+    Args:
+        string (str): The string to be hashed.
+
+    Returns:
+        str: The hashed string.
+    """
+    return pwd_context.hash(string)
+
+def is_hash_from_string(string, hash_string):
+    """
+    Checks if a given string matches a hash string.
+
+    Args:
+        hash_string (str): The hash string to compare against.
+        string (str): The string to check.
+
+    Returns:
+        bool: True if the string matches the hash string, False otherwise.
+    """
+    return pwd_context.verify(string, hash_string)
+    
 
 def is_valid_uuid(uuid_str: str):
     """

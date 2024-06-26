@@ -6,10 +6,7 @@ from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory="backend/templates")
 
 from backend.app.core.logging import logger
-from backend.app.utils.misc import (
-    get_cat_image_url,
-    fetch_image,
-)
+from backend.app.utils.misc import get_cat_image_url, fetch_image
 
 router = APIRouter(tags=["Miscelaneous"])
 
@@ -30,6 +27,7 @@ async def cat_by_status(status_code: int):
         return response
 
     except HTTPException as e:
+        logger.error(f"Error fetching cat image: {e}")
         return JSONResponse(status_code=e.status_code, content=e.detail)
 
     except Exception as e:

@@ -12,7 +12,7 @@ async def fetch_image(image_url: str):
         response = await client.get(image_url)
 
     # Raise exception for non-200 status codes
-    await response.raise_for_status()  
+    response.raise_for_status()  
 
     return await response.aread()
 

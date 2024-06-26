@@ -2,8 +2,10 @@ from sqlalchemy import (
     Column, String, Boolean, DateTime, UUID, 
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from uuid import uuid4
 
 from datetime import datetime
+from typing import Any
 
 from . import Base
 
@@ -11,7 +13,7 @@ from . import Base
 class UserDB(Base):
     __tablename__ = "users"
 
-    user_id = Column(UUID, primary_key=True, index=True)
+    user_id = Column(UUID, primary_key=True, index=True, default=uuid4)
     user_created_at = Column(DateTime, default=datetime.now)
     user_updated_at = Column(DateTime, default=None, onupdate=datetime.now)
     user_last_login = Column(DateTime, default=None, nullable=True)
@@ -29,5 +31,11 @@ class UserDB(Base):
     def __str__(self):
         return self.__repr__()
 
-    def __eq__(self, other):
-        return self.user_username == other.user_username
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, UserDB):
+            equal_username=self.user_username == other.user_username
+            equal_email=self.user_email == other.user_email
+            
+            return equal_username or equal_email
+        else:
+            return False

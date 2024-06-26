@@ -8,14 +8,13 @@ from psycopg2.errors import UniqueViolation
 from backend.app.database.models.users import UserDB
 from backend.app.core.config import settings
 from backend.app.core.logging import logger
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from backend.app.utils.security import hash_string
 
 first_admin_user = UserDB(
     user_id=uuid4(),
     user_created_at=datetime.now(),
     user_username=settings.FIRST_ADMIN_USERNAME,
-    user_hashed_password=pwd_context.hash(settings.FIRST_ADMIN_PASSWORD),
+    user_hashed_password=hash_string(settings.FIRST_ADMIN_PASSWORD),
     user_email=settings.FIRST_ADMIN_EMAIL,
     user_roles=["admin", "user"],
     user_is_active=True,
@@ -30,8 +29,8 @@ def insert_initial_users(database_):
         for user in initial_users:
             session.add(user)
 
-        session.commit()
         logger.info("Initial users inserted successfully!")
+        session.commit()
 
     except (IntegrityError, UniqueViolation):
         # Handle potential duplicate user errors (e.g., username or email already exist)

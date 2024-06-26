@@ -6,12 +6,11 @@ from os import getcwd
 from time import mktime
 from uuid import uuid4
 
+from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
 from backend.app.database.models.users import UserDB
 from backend.app.repositories.users import UsersRepository
 from backend.app.core.config import settings
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @pytest.fixture
@@ -56,7 +55,7 @@ def test_user(session, test_user_password):
         user_username="test_",
         user_email="test_@example.com",
         user_roles=["user"],
-        user_hashed_password=pwd_context.hash(test_user_password),
+        user_hashed_password=hash_string(test_user_password),
         user_is_active=True,
     )
     session.add(user)
@@ -74,7 +73,7 @@ def test_inactive_user(session, test_user_password):
         user_username="inactive_",
         user_email="inactive@example.com",
         user_roles=["user"],
-        user_hashed_password=pwd_context.hash(test_user_password),
+        user_hashed_password=hash_string(test_user_password),
         user_is_active=False,
     )
     session.add(inactive_user)
@@ -92,7 +91,7 @@ def test_admin(session, test_admin_password):
         user_username="admin_",
         user_email="admin_@example.com",
         user_roles=["admin", "user"],
-        user_hashed_password=pwd_context.hash(test_admin_password),
+        user_hashed_password=hash_string(test_admin_password),
         user_is_active=True,
     )
     session.add(admin)
@@ -122,7 +121,7 @@ def user_dict(
 ):
     return {
         "username": username,
-        "hashed_password": pwd_context.hash(password),
+        "hashed_password": hash_string(password),
         "email": email,
         "roles": roles,
         "is_active": is_active,

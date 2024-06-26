@@ -26,17 +26,17 @@ from backend.app.core.exceptions import (
 )
 from backend.app.models.users import User, UpdateUser, CreateUser
 from backend.app.core.auth import get_current_user
+
 from backend.app.utils.security import (
     is_password_valid, 
     apply_password_validity_dict, 
     is_email_valid,
     is_valid_uuid,
+    hash_string,
 )
 
 router = APIRouter(prefix='/users', tags=["users"])
 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def userbd_to_user(user: UserDB):
     return {
@@ -146,7 +146,7 @@ def create_user(
     new_user = UserDB(
         user_id=uuid4(),
         user_username=user.user_username,
-        user_hashed_password=pwd_context.hash(user.user_password),
+        user_hashed_password=hash_string(user.user_password),
         user_email=user.user_email,
     )
     

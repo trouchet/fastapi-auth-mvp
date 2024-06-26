@@ -30,9 +30,6 @@ class Database:
             autocommit=False, autoflush=False, bind=self.engine
         )
 
-    def get_session(self):
-        yield self.session_maker()
-
     def create_database(self):
         # Create the database if it does not exist
         def create_database_alias():

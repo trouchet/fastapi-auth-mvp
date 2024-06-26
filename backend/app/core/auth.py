@@ -1,7 +1,6 @@
 # auth.py
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
@@ -26,7 +25,6 @@ from backend.app.database.models.users import UserDB
 
 from backend.app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 JWT_ALGORITHM=settings.JWT_ALGORITHM
@@ -35,6 +33,21 @@ ACCESS_TOKEN_EXPIRE_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
+    """
+    Validates the refresh token and returns the current user and the token.
+
+    Args:
+        token (str): The refresh token to be validated.
+
+    Returns:
+        Tuple[User, str]: A tuple containing the current user object and the token.
+
+    Raises:
+        ExpiredTokenException: If the token has expired.
+        CredentialsException: If the token is invalid or the user credentials are incorrect.
+        InactiveUserException: If the user is inactive.
+    """
+    
     try:
         user_repo = get_user_repo()
 
@@ -75,6 +88,15 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
 
 # Function to get the user from the database
 async def get_user(username: str) -> UserDB | None:
+    """
+    Retrieve a user from the database by username.
+
+    Args:
+        username (str): The username of the user to retrieve.
+
+    Returns:
+        UserDB | None: The retrieved user if found, otherwise None.
+    """
     user_repository = get_user_repo()
     user = await user_repository.get_user_by_username(username)
 
@@ -88,6 +110,17 @@ def create_token(
     data: dict, 
     expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES
 ):
+    """
+    Create a JSON Web Token (JWT) with the provided data and expiration time.
+
+    Args:
+        data (dict): The data to be encoded in the JWT.
+        expires_delta (timedelta | None, optional): The expiration time for the JWT. Defaults to ACCESS_TOKEN_EXPIRE_MINUTES.
+
+    Returns:
+        str: The encoded JWT.
+
+    """
     to_encode = data.copy()
     current_time = datetime.now(timezone.utc)
 
@@ -103,6 +136,24 @@ def create_token(
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    """
+    Retrieves the current user based on the provided token.
+
+    Args:
+        token (str): The JWT token used for authentication.
+
+    Returns:
+        User: The user object representing the current user.
+
+    Raises:
+        ExpiredTokenException: If the token has expired.
+        MissingRequiredClaimException: If the 'sub' claim is missing in the token.
+        CredentialsException: If the username is missing in the token.
+        MalformedTokenException: If the token is malformed.
+        InexistentUsernameException: If the username does not exist in the database.
+        InactiveUserException: If the user is inactive.
+    """
+    
     user_repo = get_user_repo()
 
     try:
@@ -136,7 +187,13 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
 
 async def is_async(func):
     """
-    Checks if a function is asynchronous using multiple methods.
+    Checks if a function is asynchronous.
+
+    Args:
+        func: The function to check.
+
+    Returns:
+        bool: True if the function is asynchronous, False otherwise.
     """
     return (
         inspect.iscoroutinefunction(func)
@@ -147,6 +204,16 @@ async def is_async(func):
 
 # Decorator to check the role
 def role_checker(allowed_roles):
+    """
+    Decorator function that checks if the current user has the required roles to access a view function.
+    
+    Args:
+        allowed_roles (list): A list of roles that are allowed to access the view function.
+        
+    Returns:
+        function: The decorated view function.
+    """
+    
     def wrapper(func):
         @wraps(func)
         async def decorated_view(

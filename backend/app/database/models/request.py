@@ -2,13 +2,14 @@ from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import UUID
+from uuid import uuid4
 
 from .base import Base
 
 class RequestLogDB(Base):
     __tablename__ = 'request_logs'
 
-    relo_id = Column(UUID, primary_key=True, index=True)
+    relo_id = Column(UUID, primary_key=True, index=True, default=uuid4)
     relo_create_at = Column(DateTime, default=datetime.now(timezone.utc))
     relo_method = Column(String, nullable=False, index=True)
     relo_url = Column(String, nullable=False)

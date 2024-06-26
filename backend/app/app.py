@@ -12,8 +12,7 @@ from backend.app.routes import (
     users_router,
 )
 from backend.app.core.config import settings
-from backend.app.models.auth import CsrfSettings
-
+from backend.app.middlewares.request import RequestLoggingMiddleware
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,6 +30,9 @@ app.include_router(misc_router, prefix=prefix)
 app.include_router(auth_router, prefix=prefix)
 app.include_router(data_router, prefix=prefix)
 app.include_router(users_router, prefix=prefix)
+
+# Middlewares
+app.add_middleware(RequestLoggingMiddleware)
 
 # Add static files
 obj = StaticFiles(directory="backend/static")
