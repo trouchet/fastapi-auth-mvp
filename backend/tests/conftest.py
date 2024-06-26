@@ -12,7 +12,6 @@ from backend.app.database.models.users import UserDB
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 @pytest.fixture
 def uri():
     return "postgresql://postgres:postgres@localhost:5432/auth_db"
@@ -176,3 +175,7 @@ def mock_strftime():
         "backend.app.utils.logging.strftime", side_effect=strftime
     ) as mock_strftime:
         yield mock_strftime
+
+@pytest.fixture
+def tmp_path():
+    return 'tmp/'

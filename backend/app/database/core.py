@@ -66,6 +66,12 @@ class Database:
 
         def create_tables_alias():
             Base.metadata.create_all(self.engine)
+            
+            # print available tables
+            logger.info("Tables created:")
+            for table in Base.metadata.tables:
+                logger.info(f"Table: {table}")
+            
 
         try_do(create_tables_alias, "creating tables")
 

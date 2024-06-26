@@ -9,7 +9,6 @@ from datetime import datetime
 from backend.app.database.models.users import UserDB
 from backend.app.database.instance import get_session
 
-
 # Secutiry artifacts
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
