@@ -67,7 +67,6 @@ minimal-requirements: ## Generates minimal requirements. Usage: make requirement
 lint: ## perform inplace lint fixes
 	@ruff check --unsafe-fixes --fix .
 	@black $(shell git ls-files '*.py')
-	@pylint $(shell git ls-files '*.py')
 
 pylint:
 	@pylint backend/
