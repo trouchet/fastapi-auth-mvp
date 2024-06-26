@@ -203,6 +203,33 @@
 				},
 				{
 					"name": "Refresh token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Check if the response is JSON\r",
+									"pm.test(\"Response is JSON\", function () {\r",
+									"    pm.response.to.have.jsonBody();\r",
+									"});\r",
+									"\r",
+									"// Parse the JSON response\r",
+									"let jsonData = pm.response.json();\r",
+									"\r",
+									"// Set collection variables with access_token and refresh_token\r",
+									"pm.collectionVariables.set(\"admin_access_token\", jsonData.access_token);\r",
+									"pm.collectionVariables.set(\"admin_refresh_token\", jsonData.refresh_token);\r",
+									"\r",
+									"// Log the tokens to the console for verification\r",
+									"console.log(\"Access Token:\", jsonData.access_token);\r",
+									"console.log(\"Refresh Token:\", jsonData.refresh_token);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -275,7 +302,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzNDk5MDcsImlhdCI6MTcxOTM0NjMwN30.lJ7zmPYzFydrzUTMY8q-djNM_0Sap1d_SxL3ndoXTZI",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -332,7 +359,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzNDk5MDcsImlhdCI6MTcxOTM0NjMwN30.lJ7zmPYzFydrzUTMY8q-djNM_0Sap1d_SxL3ndoXTZI",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -377,13 +404,40 @@
 				},
 				{
 					"name": "Put users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Check if the response is JSON\r",
+									"pm.test(\"Response is JSON\", function () {\r",
+									"    pm.response.to.have.jsonBody();\r",
+									"});\r",
+									"\r",
+									"// Parse the JSON response\r",
+									"let jsonData = pm.response.json();\r",
+									"\r",
+									"// Set collection variables with access_token and refresh_token\r",
+									"pm.collectionVariables.set(\"user_id\", jsonData.user_id);\r",
+									"pm.collectionVariables.set(\"user_email\", jsonData.user_email);\r",
+									"\r",
+									"// Log the tokens to the console for verification\r",
+									"console.log(\"User id:\", jsonData.user_id);\r",
+									"console.log(\"User e-mail:\", jsonData.user_email);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzNDk5MDcsImlhdCI6MTcxOTM0NjMwN30.lJ7zmPYzFydrzUTMY8q-djNM_0Sap1d_SxL3ndoXTZI",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -437,7 +491,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -507,7 +561,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -543,7 +597,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/795cb648-d21f-4a99-ab2f-573783357a97",
+							"raw": "localhost:8000/api/users/{{user_id}}",
 							"host": [
 								"localhost"
 							],
@@ -551,7 +605,7 @@
 							"path": [
 								"api",
 								"users",
-								"795cb648-d21f-4a99-ab2f-573783357a97"
+								"{{user_id}}"
 							]
 						}
 					},
@@ -565,7 +619,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -601,7 +655,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/795cb648-d21f-4a99-ab2f-573783357a97",
+							"raw": "localhost:8000/api/users/{{user_id}}",
 							"host": [
 								"localhost"
 							],
@@ -609,14 +663,72 @@
 							"path": [
 								"api",
 								"users",
-								"795cb648-d21f-4a99-ab2f-573783357a97"
+								"{{user_id}}"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Get user role",
+					"name": "Fail to delete last admin",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{user_id}}",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user role -",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -626,7 +738,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjc0NjMsImlhdCI6MTcxOTMyMzg2M30.MCxaFTb65MSaF57uPAsZBNhl2ijlKA19-xv3CaIq0iE",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -662,7 +774,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/f5337ac3-4ba4-4ea2-ba6b-549e893a99aa/roles",
+							"raw": "localhost:8000/api/users/{{user_id}}/roles",
 							"host": [
 								"localhost"
 							],
@@ -670,7 +782,7 @@
 							"path": [
 								"api",
 								"users",
-								"f5337ac3-4ba4-4ea2-ba6b-549e893a99aa",
+								"{{user_id}}",
 								"roles"
 							]
 						}
@@ -680,6 +792,16 @@
 				{
 					"name": "Alter user username",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PATCH",
 						"header": [
 							{
@@ -711,7 +833,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/f5337ac3-4ba4-4ea2-ba6b-549e893a99aa/username?new_username=new_user",
+							"raw": "localhost:8000/api/users/{{user_id}}/username?new_username=new_user",
 							"host": [
 								"localhost"
 							],
@@ -719,7 +841,7 @@
 							"path": [
 								"api",
 								"users",
-								"f5337ac3-4ba4-4ea2-ba6b-549e893a99aa",
+								"{{user_id}}",
 								"username"
 							],
 							"query": [
@@ -748,7 +870,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjM4NDQsImlhdCI6MTcxOTMyMDI0NH0.FgolnYAL9Vecawt15NVwXD6LjuYl4Uu5wf0xAj1S5lI",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -798,7 +920,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIiwidXNlciJdLCJleHAiOjE3MTkzMjM4NDQsImlhdCI6MTcxOTMyMDI0NH0.FgolnYAL9Vecawt15NVwXD6LjuYl4Uu5wf0xAj1S5lI",
+									"value": "{{admin_access_token}}",
 									"type": "string"
 								}
 							]
@@ -925,6 +1047,10 @@
 			"key": "admin_refresh_token",
 			"value": "",
 			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": ""
 		}
 	]
 }
