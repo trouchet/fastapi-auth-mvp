@@ -138,13 +138,13 @@ def update_user(
 @role_checker(["admin", "user"])
 async def create_user(
     user: CreateUser,
-    current_user: User = Depends(get_current_user),
-    user_repo: UsersRepository=Depends(get_user_repo)
+    user_repo: UsersRepository = Depends(get_user_repo),
+    current_user: User = Depends(get_current_user)
 ) -> Dict:
     return await create_new_user(user, user_repo)
 
 
-@router.post('signup')
+@router.post('/signup')
 async def signup(
     user: CreateUser,
     user_repo: UsersRepository=Depends(get_user_repo)
@@ -162,7 +162,7 @@ def update_user(
 ) -> Dict:
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
-    
+
     user = user_repo.update_user(user_id, user)
 
     if not user:
@@ -272,8 +272,8 @@ def activate_user(
 ) -> Dict:
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
-    
-    user = user_repo.update_user_active_status(user_id)
+
+    user = user_repo.update_user_active_status(user_id, True)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -291,7 +291,7 @@ def deactivate_user(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
     
-    user = user_repo.activate_user(user_id)
+    user = user_repo.update_user_active_status(user_id, False)
 
     if not user:
         raise InexistentUserIDException(user_id)
