@@ -1,4 +1,4 @@
-from backend.app.core.app import app
+from backend.app.app import app
 from backend.app.core.logging import logger
 
 app.logger = logger
