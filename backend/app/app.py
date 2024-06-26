@@ -10,6 +10,7 @@ from backend.app.routes import (
     data_router,
     misc_router,
     users_router,
+    health_router,
 )
 from backend.app.core.config import settings
 from backend.app.middlewares.request import RequestLoggingMiddleware
@@ -30,6 +31,7 @@ app.include_router(misc_router, prefix=prefix)
 app.include_router(auth_router, prefix=prefix)
 app.include_router(data_router, prefix=prefix)
 app.include_router(users_router, prefix=prefix)
+app.include_router(health_router, prefix=prefix)
 
 # Middlewares
 app.add_middleware(RequestLoggingMiddleware)
