@@ -213,8 +213,11 @@ def role_checker(allowed_roles):
     def wrapper(func):
         @wraps(func)
         async def decorated_view(
-            *args, current_user: User, **kwargs
+            *args, 
+            **kwargs
         ):
+            current_user: User = kwargs.get("current_user")
+            
             user_roles_set=set(current_user.user_roles)
             allowed_roles_set=set(allowed_roles)
 
@@ -224,10 +227,11 @@ def role_checker(allowed_roles):
                 raise PrivilegesException()
 
             if await is_async(func):
-                return await func(*args, current_user, **kwargs)
+                return await func(*args, **kwargs)
             else:
-                return func(*args, current_user=current_user, **kwargs)
+                return func(*args, **kwargs)
             
         return decorated_view
     
     return wrapper
+
