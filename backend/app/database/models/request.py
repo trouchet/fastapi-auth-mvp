@@ -9,6 +9,7 @@ class RequestLogDB(Base):
     __tablename__ = 'request_logs'
 
     relo_id = Column(UUID, primary_key=True, index=True)
+    relo_create_at = Column(DateTime, default=datetime.now(timezone.utc))
     relo_method = Column(String, nullable=False, index=True)
     relo_url = Column(String, nullable=False)
     relo_headers = Column(JSONB, nullable=True)
