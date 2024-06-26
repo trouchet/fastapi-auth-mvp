@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated
 from functools import wraps
+from time import time
+import inspect
 
 from backend.app.core.exceptions import (
     CredentialsException, 
@@ -15,9 +17,7 @@ from backend.app.core.exceptions import (
     MalformedTokenException,
     MissingRequiredClaimException,
 )
-from backend.app.repositories.users import (
-    get_user_repo,
-)
+from backend.app.repositories.users import get_user_repo
 from backend.app.models.users import User
 from backend.app.database.models.users import UserDB
 
