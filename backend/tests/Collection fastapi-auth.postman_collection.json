@@ -8,6 +8,70 @@
 	},
 	"item": [
 		{
+			"name": "Healthcheck",
+			"item": [
+				{
+					"name": "Health check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/api/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Liveness",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/api/health/liveness",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"health",
+								"liveness"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Readiness",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/api/health/readiness",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"health",
+								"readiness"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Miscelaneous",
 			"item": [
 				{
@@ -110,8 +174,61 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get cat page as html page",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/cat/page/200",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"cat",
+								"page",
+								"200"
+							]
+						}
+					},
+					"response": []
 				}
-			]
+			],
+			"description": "Miscelaneous endpoints for silly page and health"
 		},
 		{
 			"name": "Authentication",
@@ -286,7 +403,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Authentication endpoint"
 		},
 		{
 			"name": "Users",
@@ -346,6 +464,385 @@
 							"path": [
 								"api",
 								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get users by role 'admin'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Check if the response is JSON\r",
+									"pm.test(\"Response is JSON\", function () {\r",
+									"    pm.response.to.have.jsonBody();\r",
+									"});\r",
+									"\r",
+									"// Parse the JSON response\r",
+									"let jsonData = pm.response.json();\r",
+									"\r",
+									"// Set collection variables with access_token and refresh_token\r",
+									"pm.collectionVariables.set(\"admin_id\", jsonData[0].user_id);\r",
+									"\r",
+									"// Log the tokens to the console for verification\r",
+									"console.log(\"Admin id:\", jsonData[0].user_id);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_username",
+									"value": "user",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "user_password",
+									"value": "password",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "user_email",
+									"value": "test@gmail.com",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/role/admin",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"role",
+								"admin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get users by role 'user'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_username",
+									"value": "user",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "user_password",
+									"value": "password",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "user_email",
+									"value": "test@gmail.com",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/role/user",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"role",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Signup user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Check if the response is JSON\r",
+									"pm.test(\"Response is JSON\", function () {\r",
+									"    pm.response.to.have.jsonBody();\r",
+									"});\r",
+									"\r",
+									"// Parse the JSON response\r",
+									"let jsonData = pm.response.json();\r",
+									"\r",
+									"// Set collection variables with access_token and refresh_token\r",
+									"pm.collectionVariables.set(\"signed_up_user_id\", jsonData.user_id);\r",
+									"pm.collectionVariables.set(\"signed_up_user_email\", jsonData.user_email);\r",
+									"\r",
+									"// Log the tokens to the console for verification\r",
+									"console.log(\"Signed up User id:\", jsonData.user_id);\r",
+									"console.log(\"Signed up user e-mail:\", jsonData.user_email);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"user_username\": \"signed_up_user\",\r\n    \"user_password\": \"Secret_Password!123\",\r\n    \"user_email\": \"signed_up_user@example.com\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/signup",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user role",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{user_id}}/roles",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{user_id}}",
+								"roles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{user_id}}",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{user_id}}"
 							]
 						}
 					},
@@ -418,12 +915,12 @@
 									"let jsonData = pm.response.json();\r",
 									"\r",
 									"// Set collection variables with access_token and refresh_token\r",
-									"pm.collectionVariables.set(\"user_id\", jsonData.user_id);\r",
-									"pm.collectionVariables.set(\"user_email\", jsonData.user_email);\r",
+									"pm.collectionVariables.set(\"put_user_id\", jsonData.user_id);\r",
+									"pm.collectionVariables.set(\"put_user_email\", jsonData.user_email);\r",
 									"\r",
 									"// Log the tokens to the console for verification\r",
-									"console.log(\"User id:\", jsonData.user_id);\r",
-									"console.log(\"User e-mail:\", jsonData.user_email);\r",
+									"console.log(\"PUT User id:\", jsonData.user_id);\r",
+									"console.log(\"PUT User e-mail:\", jsonData.user_email);\r",
 									""
 								],
 								"type": "text/javascript",
@@ -459,7 +956,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"user_username\": \"new_user\",\r\n    \"user_password\": \"Secret_Password!123\",\r\n    \"user_email\": \"test_@example.com\"\r\n}",
+							"raw": "{\r\n    \"user_username\": \"put_user\",\r\n    \"user_password\": \"Secret_Password!123\",\r\n    \"user_email\": \"put_user@example.com\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -475,137 +972,6 @@
 							"path": [
 								"api",
 								"users"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get users by role",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "user_username",
-									"value": "user",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "user_password",
-									"value": "password",
-									"type": "text",
-									"disabled": true
-								},
-								{
-									"key": "user_email",
-									"value": "test@gmail.com",
-									"type": "text",
-									"disabled": true
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/role/user",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"role",
-								"user"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get user by id",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "admin_user",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "AdminPassword123!",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}"
 							]
 						}
 					},
@@ -655,7 +1021,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}",
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}",
 							"host": [
 								"localhost"
 							],
@@ -663,7 +1029,7 @@
 							"path": [
 								"api",
 								"users",
-								"{{user_id}}"
+								"{{signed_up_user_id}}"
 							]
 						}
 					},
@@ -713,7 +1079,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}",
+							"raw": "localhost:8000/api/users/{{admin_id}}",
 							"host": [
 								"localhost"
 							],
@@ -721,76 +1087,14 @@
 							"path": [
 								"api",
 								"users",
-								"{{user_id}}"
+								"{{admin_id}}"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Get user role -",
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "admin_user",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "AdminPassword123!",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}/roles",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}",
-								"roles"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Alter user username",
+					"name": "Alter signed up user username",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -853,8 +1157,267 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Alter signed up user email",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{user_id}}/email?new_email=test2@example.com",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{user_id}}",
+								"email"
+							],
+							"query": [
+								{
+									"key": "new_email",
+									"value": "test2@example.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Alter signed up user password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{user_id}}/username?new_username=new_user",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{user_id}}",
+								"username"
+							],
+							"query": [
+								{
+									"key": "new_username",
+									"value": "new_user"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate signed up user Copy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/password?old_password=Secret_Password!123&new_password=SignedUpPWD!42",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"password"
+							],
+							"query": [
+								{
+									"key": "old_password",
+									"value": "Secret_Password!123"
+								},
+								{
+									"key": "new_password",
+									"value": "SignedUpPWD!42"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Activate signed up user Copy 2",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/activate",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"activate"
+							]
+						}
+					},
+					"response": []
 				}
-			]
+			],
+			"description": "Endpoints for user database interaction"
 		},
 		{
 			"name": "Data",
@@ -1009,7 +1572,8 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Endpoints to data access"
 		}
 	],
 	"auth": {
@@ -1049,7 +1613,39 @@
 			"type": "string"
 		},
 		{
+			"key": "admin_id",
+			"value": ""
+		},
+		{
 			"key": "user_id",
+			"value": ""
+		},
+		{
+			"key": "user_email",
+			"value": ""
+		},
+		{
+			"key": "signup_user_id",
+			"value": ""
+		},
+		{
+			"key": "signup_user_email",
+			"value": ""
+		},
+		{
+			"key": "signed_up_user_id",
+			"value": ""
+		},
+		{
+			"key": "signed_up_user_email",
+			"value": ""
+		},
+		{
+			"key": "put_user_id",
+			"value": ""
+		},
+		{
+			"key": "put_user_email",
 			"value": ""
 		}
 	]
