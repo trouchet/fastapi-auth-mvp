@@ -18,7 +18,7 @@ from logging.handlers import (
 
 # Function to clear the latest 'n' items (files or folders)
 def clear_folder_items(
-    path_, remaining_items: int, key=lambda item: item.stat().st_mtime
+    path_, remaining_items: int, key_map: callable =lambda item: item.stat().st_mtime
 ):
     """
     Clears the latest 'n' items (files or folders) in the specified path.
@@ -35,13 +35,14 @@ def clear_folder_items(
         raise FileNotFoundError(f"Path not found: {path_}")
 
     # Get all items sorted by modification time (newest first)
-    items = sorted(scandir(path_), key=key)
-
+    print([key_map(item) for item in scandir(path_)])
+    items = sorted(scandir(path_), key=key_map)
+    
     # Clear the latest 'n' items
     items_len = len(items)
     if items_len >= remaining_items:
         to_remove = items[0 : items_len - remaining_items]
-
+        
         for item in to_remove:
             if path.isfile(item.path):
                 remove(item.path)

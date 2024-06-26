@@ -170,99 +170,98 @@ def test_do_rollover_handles_dst_change_back(mocker, logs_foldername):
     rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_clear_folder_items_success():
+def test_clear_folder_items_success(logs_foldername):
     """Tests clear_latest_items with successful removal."""
-    tmp_path = "tests/tmp"
-    shutil.rmtree(tmp_path, ignore_errors=True)
+    shutil.rmtree(logs_foldername, ignore_errors=True)
 
-    os.makedirs(tmp_path, exist_ok=True)
-    os.makedirs(f"{tmp_path}/1", exist_ok=True)
-    os.makedirs(f"{tmp_path}/2", exist_ok=True)
-    os.makedirs(f"{tmp_path}/3", exist_ok=True)
+    os.makedirs(logs_foldername, exist_ok=True)
+    os.makedirs(f"{logs_foldername}/1", exist_ok=True)
+    os.makedirs(f"{logs_foldername}/2", exist_ok=True)
+    os.makedirs(f"{logs_foldername}/3", exist_ok=True)
 
-    clear_folder_items(tmp_path, 2)
+    # Provides key to ordenate by name
+    def key_map_(item):
+        return item.path
 
-    assert os.path.exists(f"{tmp_path}/1")
-    assert not os.path.exists(f"{tmp_path}/2")
-    assert os.path.exists(f"{tmp_path}/3")
+    clear_folder_items(logs_foldername, 2, key_map=key_map_)
 
-    rmtree(tmp_path, ignore_errors=True)
+    assert not os.path.exists(f"{logs_foldername}/1")
+    assert os.path.exists(f"{logs_foldername}/2")
+    assert os.path.exists(f"{logs_foldername}/3")
+
+    rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_clear_folder_items_key_name():
+def test_clear_folder_items_key_name(logs_foldername):
     """Tests clear_latest_items with a key name."""
-    tmp_path = "tests/tmp"
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
-    os.makedirs(tmp_path, exist_ok=True)
-    os.makedirs(f"{tmp_path}/1", exist_ok=True)
-    os.makedirs(f"{tmp_path}/2", exist_ok=True)
-    os.makedirs(f"{tmp_path}/3", exist_ok=True)
+    os.makedirs(logs_foldername, exist_ok=True)
+    os.makedirs(f"{logs_foldername}/1", exist_ok=True)
+    os.makedirs(f"{logs_foldername}/2", exist_ok=True)
+    os.makedirs(f"{logs_foldername}/3", exist_ok=True)
 
-    def key(item):
-        return item.name
+    def key_map_(item):
+        return item.path
 
-    clear_folder_items(tmp_path, 2, key=key)
+    clear_folder_items(logs_foldername, 2, key_map=key_map_)
 
-    assert not os.path.exists(f"{tmp_path}/1")
-    assert os.path.exists(f"{tmp_path}/2")
-    assert os.path.exists(f"{tmp_path}/3")
+    assert not os.path.exists(f"{logs_foldername}/1")
+    assert os.path.exists(f"{logs_foldername}/2")
+    assert os.path.exists(f"{logs_foldername}/3")
 
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_clear_folder_items_not_found():
+def test_clear_folder_items_not_found(logs_foldername):
     """Tests clear_latest_items with a non-existent path."""
-    tmp_path = "tests/tmp"
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
     try:
-        clear_folder_items(tmp_path, 2)
+        clear_folder_items(logs_foldername, 2)
     except FileNotFoundError as e:
-        assert str(e) == f"Path not found: {tmp_path}"
+        assert str(e) == f"Path not found: {logs_foldername}"
     else:
         assert False, "Expected FileNotFoundError."
 
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_clear_folder_items_not_enough_items():
+def test_clear_folder_items_not_enough_items(logs_foldername):
     """Tests clear_latest_items with fewer items than requested."""
-    tmp_path = "tests/tmp"
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
-    os.makedirs(tmp_path, exist_ok=True)
-    os.makedirs(f"{tmp_path}/1", exist_ok=True)
-    os.makedirs(f"{tmp_path}/2", exist_ok=True)
+    os.makedirs(logs_foldername, exist_ok=True)
+    os.makedirs(f"{logs_foldername}/1", exist_ok=True)
+    os.makedirs(f"{logs_foldername}/2", exist_ok=True)
 
-    clear_folder_items(tmp_path, 3)
+    clear_folder_items(logs_foldername, 3)
 
-    assert os.path.exists(f"{tmp_path}/1")
-    assert os.path.exists(f"{tmp_path}/2")
+    assert os.path.exists(f"{logs_foldername}/1")
+    assert os.path.exists(f"{logs_foldername}/2")
 
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_clear_folder_items_files():
+def test_clear_folder_items_files(logs_foldername):
     """Tests clear_latest_items with files."""
-    tmp_path = "tmp"
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
-    os.makedirs(tmp_path, exist_ok=True)
-    with open(f"{tmp_path}/1.txt", "w") as f:
+    os.makedirs(logs_foldername, exist_ok=True)
+    with open(f"{logs_foldername}/1.txt", "w") as f:
         f.write("test")
-    with open(f"{tmp_path}/2.txt", "w") as f:
+    with open(f"{logs_foldername}/2.txt", "w") as f:
         f.write("test")
-    with open(f"{tmp_path}/3.txt", "w") as f:
+    with open(f"{logs_foldername}/3.txt", "w") as f:
         f.write("test")
 
-    clear_folder_items(tmp_path, 2)
+    clear_folder_items(logs_foldername, 2)
 
-    assert os.path.exists(f"{tmp_path}/1.txt")
-    assert os.path.exists(f"{tmp_path}/2.txt")
-    assert not os.path.exists(f"{tmp_path}/3.txt")
+    assert os.path.exists(f"{logs_foldername}/1.txt")
+    assert os.path.exists(f"{logs_foldername}/2.txt")
+    assert not os.path.exists(f"{logs_foldername}/3.txt")
 
-    rmtree(tmp_path, ignore_errors=True)
+    rmtree(logs_foldername, ignore_errors=True)
 
 
 @pytest.mark.parametrize(
@@ -277,12 +276,9 @@ def test_clear_folder_items_files():
     ],
 )
 def test_daily_handler_rollover(
-    mocker,
-    mock_time_functions,
-    mock_strftime,
-    test_time_tuple,
-    test_current_time,
-    rollover_data,
+    mocker, mock_time_functions, mock_strftime,
+    test_time_tuple, test_current_time, logs_foldername,
+    rollover_data
 ):
 
     # Unpack test data
@@ -290,7 +286,7 @@ def test_daily_handler_rollover(
 
     # Create handler
     handler = DailyHierarchicalFileHandler(
-        foldername="logs", filename="app.log", when=when
+        root_foldername=logs_foldername, filename="app.log", when=when
     )
 
     # Assert expected attributes
@@ -309,36 +305,52 @@ def test_daily_handler_rollover(
     filename = f"logs/{year}/{month}/{day}/app.log.{year}-{month}-{day}"
     assert handler.calculate_filename(test_current_time).startswith(filename)
 
+    rmtree(logs_foldername, ignore_errors=True)
 
 def test_weekly_handler_raises_3_digits(
-    mocker, mock_time_functions, mock_strftime, test_time_tuple, test_current_time
+    mocker, mock_time_functions, mock_strftime, 
+    test_time_tuple, test_current_time, logs_foldername
 ):
     with pytest.raises(ValueError):
-        DailyHierarchicalFileHandler(foldername="logs", filename="app.log", when="W42")
+        DailyHierarchicalFileHandler(
+            root_foldername=logs_foldername, 
+            filename="app.log", when="W42"
+        )
 
 
 def test_weekly_handler_raises_digit_outside_0_6(
-    mocker, mock_time_functions, mock_strftime, test_time_tuple, test_current_time
+    mocker, mock_time_functions, mock_strftime, 
+    test_time_tuple, test_current_time, logs_foldername
 ):
     with pytest.raises(ValueError):
-        DailyHierarchicalFileHandler(foldername="logs", filename="app.log", when="W8")
+        DailyHierarchicalFileHandler(
+            root_foldername=logs_foldername, filename="app.log", when="W8"
+        )
 
 
 def test_weekly_handler_raises_invalid_when(
-    mocker, mock_time_functions, mock_strftime, test_time_tuple, test_current_time
+    mocker, mock_time_functions, mock_strftime, 
+    test_time_tuple, test_current_time, logs_foldername
 ):
     with pytest.raises(ValueError):
-        DailyHierarchicalFileHandler(foldername="logs", filename="app.log", when="X")
-
+        DailyHierarchicalFileHandler(
+            root_foldername=logs_foldername, filename="app.log", when="X"
+        )
+    
+    rmtree(logs_foldername, ignore_errors=True)
 
 def test_handler_rollover_repr(
-    mocker, mock_time_functions, mock_strftime, test_time_tuple, test_current_time
+    mocker, mock_time_functions, mock_strftime, 
+    test_time_tuple, test_current_time, 
+    logs_foldername
 ):
     from reprlib import repr
 
     handler = DailyHierarchicalFileHandler(
-        foldername="logs", filename="app.log", when="D"
+        root_foldername=logs_foldername, filename="app.log", when="D"
     )
     args = "'logs', 'app.log', 'D', 1, 0, None, False, False, None, '.log'"
     obj_repr = f"DailyHierarchicalFileHandler({args})"
     assert handler.__repr__() == repr(obj_repr)
+
+    rmtree(logs_foldername, ignore_errors=True)
