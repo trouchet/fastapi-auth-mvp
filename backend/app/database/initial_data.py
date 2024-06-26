@@ -22,15 +22,14 @@ first_admin_user = UserDB(
 
 initial_users = [ first_admin_user ]
 
-
 def insert_initial_users(database_):
     session = database_.session_maker()
     try:
         for user in initial_users:
             session.add(user)
 
-        logger.info("Initial users inserted successfully!")
         session.commit()
+        logger.info("Initial users inserted successfully!")
 
     except (IntegrityError, UniqueViolation):
         # Handle potential duplicate user errors (e.g., username or email already exist)
