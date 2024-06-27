@@ -13,9 +13,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  auth-web:
+  auth-app:
     container_name: auth-app
-    image: auth-db-image:latest
+    image: auth-app:latest
     depends_on:
       - auth-db
     build: 
@@ -29,6 +29,23 @@ services:
     restart: unless-stopped
     volumes:
       - .:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # auth-nginx:
+  #   container_name: auth-nginx
+  #   image: nginx:latest
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   ports: 
+  #     - "8080:80"
+  #   depends_on:
+  #     - auth-app
+  #   networks:
+  #     - my_net
 
 networks:
   my_net:
