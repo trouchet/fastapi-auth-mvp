@@ -293,12 +293,12 @@
 							"urlencoded": [
 								{
 									"key": "username",
-									"value": "admin",
+									"value": "admin_user",
 									"type": "text"
 								},
 								{
 									"key": "password",
-									"value": "admin",
+									"value": "secret_key_123!",
 									"type": "text"
 								}
 							]
@@ -726,6 +726,323 @@
 					"response": []
 				},
 				{
+					"name": "Alter signed up user username",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/username?new_username=new_signed_up_user",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"username"
+							],
+							"query": [
+								{
+									"key": "new_username",
+									"value": "new_signed_up_user"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Alter signed up user email",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/email?new_email=new_signed_up_user@example.com",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"email"
+							],
+							"query": [
+								{
+									"key": "new_email",
+									"value": "new_signed_up_user@example.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Alter signed up user password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/password?old_password=Secret_Password!123&new_password=SignedUpPWD!42",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"password"
+							],
+							"query": [
+								{
+									"key": "old_password",
+									"value": "Secret_Password!123"
+								},
+								{
+									"key": "new_password",
+									"value": "SignedUpPWD!42"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate signed up user Copy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/deactivate",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"deactivate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Activate signed up user Copy 2",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/activate",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}",
+								"activate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get user role",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -772,7 +1089,7 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}/roles",
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/roles",
 							"host": [
 								"localhost"
 							],
@@ -780,7 +1097,7 @@
 							"path": [
 								"api",
 								"users",
-								"{{user_id}}",
+								"{{signed_up_user_id}}",
 								"roles"
 							]
 						}
@@ -849,6 +1166,64 @@
 					"response": []
 				},
 				{
+					"name": "Delete user by id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "username",
+									"value": "admin_user",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "AdminPassword123!",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8000/api/users/{{signed_up_user_id}}",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"users",
+								"{{signed_up_user_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Invalid new user - password",
 					"request": {
 						"auth": {
@@ -878,7 +1253,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"user_username\": \"new_user\",\r\n    \"user_password\": \"new_password\",\r\n    \"user_email\": \"test2@example.com\"\r\n}",
+							"raw": "{\r\n    \"user_username\": \"another_user\",\r\n    \"user_password\": \"new_password\",\r\n    \"user_email\": \"new_mail@example.com\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -978,64 +1353,6 @@
 					"response": []
 				},
 				{
-					"name": "Delete user by id",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "username",
-									"value": "admin_user",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "AdminPassword123!",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{signed_up_user_id}}",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{signed_up_user_id}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Fail to delete last admin",
 					"request": {
 						"auth": {
@@ -1088,329 +1405,6 @@
 								"api",
 								"users",
 								"{{admin_id}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Alter signed up user username",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								},
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}/username?new_username=new_user",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}",
-								"username"
-							],
-							"query": [
-								{
-									"key": "new_username",
-									"value": "new_user"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Alter signed up user email",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								},
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}/email?new_email=test2@example.com",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}",
-								"email"
-							],
-							"query": [
-								{
-									"key": "new_email",
-									"value": "test2@example.com"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Alter signed up user password",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								},
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{user_id}}/username?new_username=new_user",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{user_id}}",
-								"username"
-							],
-							"query": [
-								{
-									"key": "new_username",
-									"value": "new_user"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Deactivate signed up user Copy",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								},
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/password?old_password=Secret_Password!123&new_password=SignedUpPWD!42",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{signed_up_user_id}}",
-								"password"
-							],
-							"query": [
-								{
-									"key": "old_password",
-									"value": "Secret_Password!123"
-								},
-								{
-									"key": "new_password",
-									"value": "SignedUpPWD!42"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Activate signed up user Copy 2",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{admin_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								},
-								{
-									"key": "",
-									"value": "",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "localhost:8000/api/users/{{signed_up_user_id}}/activate",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"users",
-								"{{signed_up_user_id}}",
-								"activate"
 							]
 						}
 					},
@@ -1614,22 +1608,6 @@
 		},
 		{
 			"key": "admin_id",
-			"value": ""
-		},
-		{
-			"key": "user_id",
-			"value": ""
-		},
-		{
-			"key": "user_email",
-			"value": ""
-		},
-		{
-			"key": "signup_user_id",
-			"value": ""
-		},
-		{
-			"key": "signup_user_email",
 			"value": ""
 		},
 		{
