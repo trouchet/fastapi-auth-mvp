@@ -30,22 +30,19 @@ services:
     volumes:
       - .:/app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "curl", "-f", "http://auth-app:$APP_PORT/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  auth-nginx:
-    container_name: auth-nginx
-    image: nginx:latest
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports: 
-      - "8080:80"
-    depends_on:
-      - auth-app
+  auth-redis:
+    container_name: auth-redis
+    image: redis:latest
     networks:
       - my_net
+    ports:
+      - "$REDIS_PORT:$REDIS_PORT"
+    restart: always
 
 networks:
   my_net:
