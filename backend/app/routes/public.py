@@ -8,7 +8,7 @@ templates = Jinja2Templates(directory="backend/templates")
 from backend.app.core.logging import logger
 from backend.app.utils.misc import get_cat_image_url, fetch_image
 
-router = APIRouter(tags=["Miscelaneous"])
+router = APIRouter(prefix='public', tags=["Miscelaneous"])
 
 
 @router.get("/hello")
