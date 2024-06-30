@@ -2,21 +2,18 @@ from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import UUID
-from uuid import uuid4
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 
 from .base import Base
 
-class RequestLogDB(Base):
+class RequestLog(Base):
     __tablename__ = 'request_logs'
-
-    relo_id = Column(UUID, primary_key=True, index=True, default=uuid4)
-    relo_create_at = Column(DateTime, default=datetime.now(timezone.utc))
-    relo_method = Column(String, nullable=False, index=True)
-    relo_url = Column(String, nullable=False)
-    relo_headers = Column(JSONB, nullable=True)
-    relo_query_params = Column(JSONB, nullable=True)
-    relo_client_host = Column(String, nullable=True)
-    relo_client_port = Column(Integer, nullable=True)
-    relo_cookies = Column(JSONB, nullable=True)
-    relo_body = Column(Text, nullable=True)
+    relo_id = Column(Integer, primary_key=True, index=True)
+    relo_user_id = Column(Integer, ForeignKey('users.id'))
+    relo_method = Column(String, index=True)
+    relo_path = Column(String, index=True)
+    relo_status_code = Column(Integer)
     relo_timestamp = Column(DateTime, default=datetime.now(timezone.utc))
+    
+    relo_user = relationship('User', back_populates='request_logs')
