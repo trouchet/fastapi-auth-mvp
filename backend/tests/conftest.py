@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
-from backend.app.database.models.users import UserDB
+from backend.app.database.models.users import User
 from backend.app.repositories.users import UsersRepository
 from backend.app.core.config import settings
 
@@ -50,11 +50,11 @@ def test_admin_password():
 @pytest.fixture
 def test_user(session, test_user_password):
     # Generate and insert test data
-    user = UserDB(
+    user = User(
         user_id=uuid4(),
         user_username="test_",
         user_email="test_@example.com",
-        user_roles=["user"],
+        user_roles=["SuperAdmin"],
         user_hashed_password=hash_string(test_user_password),
         user_is_active=True,
     )
@@ -68,7 +68,7 @@ def test_user(session, test_user_password):
 @pytest.fixture
 def test_inactive_user(session, test_user_password):
     # Generate and insert test data
-    inactive_user = UserDB(
+    inactive_user = User(
         user_id=uuid4(),
         user_username="inactive_",
         user_email="inactive@example.com",
@@ -86,11 +86,11 @@ def test_inactive_user(session, test_user_password):
 @pytest.fixture
 def test_admin(session, test_admin_password):
     # Generate and insert test data
-    admin = UserDB(
+    admin = User(
         user_id=uuid4(),
         user_username="admin_",
         user_email="admin_@example.com",
-        user_roles=["admin", "user"],
+        user_roles=["SuperAdmin", "user"],
         user_hashed_password=hash_string(test_admin_password),
         user_is_active=True,
     )
