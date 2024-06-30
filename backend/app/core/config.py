@@ -6,7 +6,7 @@ from pydantic import (
     model_validator,
 )
 
-from typing import Union, Annotated, Any, List
+from typing import Union, Annotated, Any, List, Tuple
 from typing_extensions import Self
 from datetime import timedelta
 import re
@@ -22,8 +22,9 @@ DEFAULT_FIRST_ADMIN_USERNAME="admin"
 DEFAULT_FIRST_ADMIN_PASSWORD="admin"
 DEFAULT_FIRST_ADMIN_EMAIL="admin@example.com"
 
-DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 60
-DEFAULT_REFRESH_TOKEN_EXPIRE_MINUTES = 120
+# Token expiration times
+DEFAULT_ACCESS_TIMEOUT_MINUTES = timedelta(minutes=30)
+DEFAULT_REFRESH_TIMEOUT_MINUTES = timedelta(minutes=60)
 
 # Project settings
 with open("pyproject.toml", "r") as f:
@@ -47,20 +48,6 @@ def string_has_token(string: str, token: str):
     match = re.search(pattern, string)
 
     return match is not None
-
-def warn_default_value(environment: str, var_name: str, default_value: Any):
-    message = (
-        f'The value of {var_name} is "{default_value}", '
-        "for security, please change it, at least for deployments."
-    )
-    
-    is_default_safe=string_has_token(environment, 'dev') or \
-        string_has_token(environment, 'testing')
-    
-    if is_default_safe:
-        warn(message, stacklevel=1)
-    else:
-        raise ValueError(message)
 
 # Settings class
 class Settings(BaseSettings):
@@ -87,8 +74,8 @@ class Settings(BaseSettings):
     DOMAIN: str = f"localhost:{APP_PORT}"
 
     # 1 day
-    ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES)
-    REFRESH_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=DEFAULT_REFRESH_TOKEN_EXPIRE_MINUTES)
+    ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = DEFAULT_ACCESS_TIMEOUT_MINUTES
+    REFRESH_TOKEN_EXPIRE_MINUTES: timedelta = DEFAULT_REFRESH_TIMEOUT_MINUTES
 
     # CORS
     BACKEND_CORS_ORIGINS: Annotated[
@@ -117,6 +104,10 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD_TEST: str = 'postgres'
     POSTGRES_DBNAME_TEST: str = "auth_db"
 
+    REDIS_HOST: str = 'localhost'
+    REDIS_PORT: int = 6379
+    REDID_DB: int = 0
+
     @computed_field
     @property
     def database_uri(self) -> str:
@@ -125,6 +116,11 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DBNAME}"
         )
+    
+    @computed_field
+    @property
+    def redis_url(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDID_DB}"
         
     @computed_field
     @property
@@ -134,25 +130,41 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@"
             f"{self.POSTGRES_HOST_TEST}:{self.POSTGRES_PORT_TEST}/{self.POSTGRES_DBNAME_TEST}"
         )
-    
 
-    def _check_default_value(
-        self, 
-        var_name: str, 
-        value: Union[str, None],
-        default_value: str
+    def _warn_default_value(self, var_name: str, default_value: Any):
+        environment = self.ENVIRONMENT
+        message = (
+            f'The value of {var_name} is "{default_value}", '
+            "for security, please change it, at least for deployments."
+        )
+        
+        is_default_safe=string_has_token(environment, 'dev') or \
+            string_has_token(environment, 'testing')
+        
+        if is_default_safe:
+            warn(message, stacklevel=1)
+        else:
+            raise ValueError(message)
+
+    def _check_default_values(
+        self, default_tuples: List[Tuple[str, Any, Any]] = None
     ) -> None:
-        if value == default_value:
-            warn_default_value(self.ENVIRONMENT, var_name, value)
+        for var_name, value, default_value in default_tuples:
+            if value == default_value:
+                self._warn_default_value(var_name, value)
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
-        self._check_default_value("JWT_SECRET_KEY", self.JWT_SECRET_KEY, DEFAULT_SECRET_KEY)
-        self._check_default_value("COOKIE_SECRET_KEY", self.COOKIE_SECRET_KEY, DEFAULT_SECRET_KEY)
-        self._check_default_value("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD)
-        self._check_default_value("FIRST_ADMIN_USERNAME", self.FIRST_ADMIN_USERNAME, DEFAULT_FIRST_ADMIN_USERNAME)
-        self._check_default_value("FIRST_ADMIN_PASSWORD", self.FIRST_ADMIN_PASSWORD, DEFAULT_FIRST_ADMIN_PASSWORD)
-        self._check_default_value("FIRST_ADMIN_EMAIL", self.FIRST_ADMIN_EMAIL, DEFAULT_FIRST_ADMIN_EMAIL)
+        default_tuples = [
+            ("JWT_SECRET_KEY", self.JWT_SECRET_KEY, DEFAULT_SECRET_KEY),
+            ("COOKIE_SECRET_KEY", self.COOKIE_SECRET_KEY, DEFAULT_SECRET_KEY),
+            ("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD, DEFAULT_POSTGRES_PASSWORD),
+            ("FIRST_ADMIN_USERNAME", self.FIRST_ADMIN_USERNAME, DEFAULT_FIRST_ADMIN_USERNAME),
+            ("FIRST_ADMIN_PASSWORD", self.FIRST_ADMIN_PASSWORD, DEFAULT_FIRST_ADMIN_PASSWORD),
+            ("FIRST_ADMIN_EMAIL", self.FIRST_ADMIN_EMAIL, DEFAULT_FIRST_ADMIN_EMAIL),
+        ]
+        
+        self._check_default_values(default_tuples)
 
         return self
 
