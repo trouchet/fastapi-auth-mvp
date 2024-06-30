@@ -3,10 +3,9 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from typing import Annotated
+from typing import Annotated, Tuple
 from functools import wraps
 from time import time
-import inspect
 
 from backend.app.core.exceptions import (
     CredentialsException, 
@@ -19,7 +18,8 @@ from backend.app.core.exceptions import (
 )
 from backend.app.repositories.users import get_user_repo
 from backend.app.models.users import User
-from backend.app.database.models.users import UserDB
+from backend.app.database.models.users import User
+from backend.app.utils.misc import is_async
 
 from backend.app.core.config import settings
 
@@ -84,7 +84,7 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
 
 
 # Function to get the user from the database
-async def get_user(username: str) -> UserDB | None:
+async def get_user(username: str) -> User | None:
     """
     Retrieve a user from the database by username.
 
@@ -92,7 +92,7 @@ async def get_user(username: str) -> UserDB | None:
         username (str): The username of the user to retrieve.
 
     Returns:
-        UserDB | None: The retrieved user if found, otherwise None.
+        User | None: The retrieved user if found, otherwise None.
     """
     user_repository = get_user_repo()
     user = await user_repository.get_user_by_username(username)
@@ -181,50 +181,31 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
     return user
 
 
-async def is_async(func):
-    """
-    Checks if a function is asynchronous.
-
-    Args:
-        func: The function to check.
-
-    Returns:
-        bool: True if the function is asynchronous, False otherwise.
-    """
-    return (
-        inspect.iscoroutinefunction(func)
-        or inspect.isasyncgenfunction(func)
-        or hasattr(func, "__await__")
-    )
-
-
-# Decorator to check the role
-def role_checker(allowed_roles):
-    """
-    Decorator function that checks if the current user has the required roles to access a view function.
-    
-    Args:
-        allowed_roles (list): A list of roles that are allowed to access the view function.
-        
-    Returns:
-        function: The decorated view function.
-    """
-    
+def role_checker(required_roles: Tuple[str]):
     def wrapper(func):
         @wraps(func)
-        async def decorated_view(
-            *args, current_user: User, **kwargs
-        ):
-            user_roles_set=set(current_user.user_roles)
-            allowed_roles_set=set(allowed_roles)
-
-            user_has_permission=user_roles_set.isdisjoint(allowed_roles_set) is False
-
-            if not user_has_permission:
+        async def decorated_view(*args, current_user: User, **kwargs):
+            if not current_user.has_roles(required_roles):
                 raise PrivilegesException()
 
             if await is_async(func):
-                return await func(*args, current_user, **kwargs)
+                return await func(*args, current_user=current_user, **kwargs)
+            else:
+                return func(*args, current_user=current_user, **kwargs)
+            
+        return decorated_view
+    
+    return wrapper
+
+def permissions_checker(required_permissions: Tuple[str]):
+    def wrapper(func):
+        @wraps(func)
+        async def decorated_view(*args, current_user: User, **kwargs):
+            if not current_user.has_permissions(required_permissions):
+                raise PrivilegesException()
+
+            if await is_async(func):
+                return await func(*args, current_user=current_user, **kwargs)
             else:
                 return func(*args, current_user=current_user, **kwargs)
             
