@@ -1,5 +1,6 @@
 from fastapi import Request
-from backend.app.database.models.request import RequestLogDB
+
+from backend.app.database.models.request import RequestLog
 
 class RequestLogRepository:
     def __init__(self, session):
@@ -7,7 +8,7 @@ class RequestLogRepository:
 
     async def create_log(self, request: Request):
         body = await request.body()
-        log = RequestLogDB(
+        log = RequestLog(
             relo_method=request.method,
             relo_url=str(request.url),
             relo_headers=dict(request.headers),

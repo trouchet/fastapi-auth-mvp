@@ -7,7 +7,7 @@ from datetime import datetime
 
 from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
-from backend.app.database.models.users import UserDB
+from backend.app.database.models.users import User
 from backend.app.database.instance import get_session
 
 # Secutiry artifacts
@@ -19,34 +19,34 @@ class UsersRepository:
     def __init__(self, session):
         self.session = session
 
-    def get_user(self, username: str) -> UserDB:
-        query = self.session.query(UserDB)
+    def get_user(self, username: str) -> User:
+        query = self.session.query(User)
 
-        return query.filter(UserDB.user_username == username).first()
+        return query.filter(User.user_username == username).first()
 
-    def get_user_by_id(self, user_id: str) -> UserDB:
-        query = self.session.query(UserDB)
+    def get_user_by_id(self, user_id: str) -> User:
+        query = self.session.query(User)
 
-        return query.filter(UserDB.user_id == user_id).first()
+        return query.filter(User.user_id == user_id).first()
 
-    def get_user_by_email(self, email: str) -> UserDB:
-        query = self.session.query(UserDB)
+    def get_user_by_email(self, email: str) -> User:
+        query = self.session.query(User)
 
-        return query.filter(UserDB.user_email == email).first()
+        return query.filter(User.user_email == email).first()
 
-    def get_user_by_username(self, username: str) -> UserDB:
-        query=self.session.query(UserDB)
-        return query.filter(UserDB.user_username == username).first()
+    def get_user_by_username(self, username: str) -> User:
+        query=self.session.query(User)
+        return query.filter(User.user_username == username).first()
 
-    def create_user(self, user: UserDB):
+    def create_user(self, user: User):
 
         self.session.add(user)
         self.session.commit()
 
     def update_user(self, user_id: str, update_user: UpdateUser):
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
-        user_to_update=query.filter(UserDB.user_id == user_id).first()
+        user_to_update=query.filter(User.user_id == user_id).first()
         
         if not user_to_update:
             return None
@@ -62,21 +62,21 @@ class UsersRepository:
         return user_to_update  
 
     def delete_user_by_id(self, user_id: str):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        query.filter(UserDB.user_id == user_id).delete()
+        query.filter(User.user_id == user_id).delete()
         self.session.commit()
 
     def delete_user_by_username(self, username: str):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        query.filter(UserDB.user_username == username).delete()
+        query.filter(User.user_username == username).delete()
         self.session.commit()
 
     def activate_user(self, user_id: str):
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
-        user=query.filter(UserDB.user_id == user_id).first()
+        user=query.filter(User.user_id == user_id).first()
         
         user.is_active=True
         
@@ -85,28 +85,28 @@ class UsersRepository:
         return user
 
     def deactivate_user(self, user_id: str):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        user = query.filter(UserDB.user_id == user_id).first()
+        user = query.filter(User.user_id == user_id).first()
         user.is_active = False
         self.session.commit()
 
         return user
 
     def get_users(self, limit: int = 10, offset: int = 0):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
         return query.limit(limit).offset(offset).all()
 
     def get_all_roles(self):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        return query.with_entities(UserDB.roles).distinct().all()
+        return query.with_entities(User.roles).distinct().all()
 
     def get_user_roles(self, user_id: str):
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
 
-        user=query.filter(UserDB.user_id == user_id).first()
+        user=query.filter(User.user_id == user_id).first()
         
         if not user:
             return None
@@ -115,73 +115,73 @@ class UsersRepository:
             
 
     def get_users_by_role(self, role: str):
-        query = self.session.query(UserDB)
-        has_role = UserDB.user_roles.contains([role])
+        query = self.session.query(User)
+        has_role = User.user_roles.contains([role])
 
         return query.filter(has_role).all()
 
     def update_user_email(self, user_id: str, email: str):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        user = query.filter(UserDB.user_id == user_id).first()
+        user = query.filter(User.user_id == user_id).first()
         user.email = email
         self.session.commit()
 
         return user
 
     def update_user_password(self, user_id: str, password: str):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        user = query.filter(UserDB.user_id == user_id).first()
+        user = query.filter(User.user_id == user_id).first()
         user.hashed_password = hash_string(password)
         self.session.commit()
 
         return user
 
     def update_user_username(self, user_id: str, username: str):
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
-        user=query.filter(UserDB.user_id == user_id).first()
+        user=query.filter(User.user_id == user_id).first()
         user.user_username=username
         self.session.commit()
 
         return user
 
     def update_user_roles(self, user_id: str, roles: list):
-        query = self.session.query(UserDB)
+        query = self.session.query(User)
 
-        user = query.filter(UserDB.user_id == user_id).first()
+        user = query.filter(User.user_id == user_id).first()
         user.user_roles = roles
         self.session.commit()
 
         return user
 
     def update_user_active_status(self, username: str, is_active: bool):
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
-        user=query.filter(UserDB.user_username == username).first()
+        user=query.filter(User.user_username == username).first()
         user.user_is_active=is_active
         self.session.commit()
 
         return user
 
     def is_user_active_by_id(self, user_id: str) -> bool:
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
-        user=query.filter(UserDB.user_id == user_id).first()
+        user=query.filter(User.user_id == user_id).first()
         
         return user.user_is_active
     
     def is_user_active_by_username(self, user_name: str) -> bool:
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
-        user=query.filter(UserDB.user_username == user_name).first()
+        user=query.filter(User.user_username == user_name).first()
         
         return user.user_is_active
     
     def is_user_credentials_authentic(
         self, username: str, plain_password: str
-    ) -> UserDB:
+    ) -> User:
         user = self.get_user(username)
         hashed_password = user.user_hashed_password
 
@@ -197,10 +197,10 @@ class UsersRepository:
         
         return set(roles).isdisjoint(set(user.user_roles)) is False
     
-    def refresh_token_exists(self, token: str) -> Tuple[bool | None, UserDB | None]:
-        query = self.session.query(UserDB)
+    def refresh_token_exists(self, token: str) -> Tuple[bool | None, User | None]:
+        query = self.session.query(User)
 
-        user = query.filter(UserDB.user_refresh_token == token).first()
+        user = query.filter(User.user_refresh_token == token).first()
 
         return user is not None, user
 
