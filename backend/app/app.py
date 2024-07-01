@@ -18,7 +18,7 @@ from backend.app.middlewares.bundler import middlewares
 async def lifespan(app: FastAPI):
     await init_rate_limiter(app)
     await start_schedulers()
-    insert_initial_data(database)
+    insert_initial_data()
 
 # Create the FastAPI app
 app = FastAPI(
