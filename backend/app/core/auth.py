@@ -173,6 +173,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
     # Get the user from the database
     user = user_repo.get_user_by_username(username=username)
 
+    # Check if the user exists and is active
     if user is None:
         raise InexistentUsernameException(username)
     if not user.user_is_active:
