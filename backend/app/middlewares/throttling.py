@@ -6,17 +6,16 @@ from starlette.responses import Response
 from typing import Callable, Awaitable
 from aioredis import create_redis_pool
 from typing import Callable
-from enum import Enum
 from fnmatch import fnmatch
 
-from backend.app.core.config import settings
 from backend.app.core.exceptions import (
     MissingTokenException,
     TooManyRequestsException,
 )
 from backend.app.core.config import settings
+from backend.app.data.auth import ROLES_METADATA
 
-class RateLimiterPolicy(Enum):
+class RateLimiterPolicy:
     def __init__(
             self, 
             times: int = 5, 
@@ -39,6 +38,16 @@ async def init_rate_limiter(app: FastAPI):
     redis = await init_redis_pool()
     await FastAPILimiter.init(redis)
 
+# Given rate limiter, find throughput
+def get_throughput(rate_limiter: RateLimiterPolicy):
+    times = rate_limiter.times
+    interval_seconds = rate_limiter.hours * 3600 + \
+                       rate_limiter.minutes * 60 + \
+                       rate_limiter.seconds + \
+                       rate_limiter.milliseconds / 1000
+    
+    return times / interval_seconds
+
 def get_rate_limiter(
     user_identifier: str, policy: RateLimiterPolicy = RateLimiterPolicy()
 ):
@@ -53,9 +62,9 @@ def get_rate_limiter(
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
-        self, app: FastAPI, identifier_callable: Callable[[str], Awaitable]
+        self, identifier_callable: Callable[[str], Awaitable]
     ):
-        super().__init__(app)
+        super().__init__()
         self.identifier_callable = identifier_callable
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
@@ -69,7 +78,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             current_user = await self.identifier_callable(token)
             user_identifier = current_user.user_username
-            limiter = get_rate_limiter(user_identifier)
+            roles = current_user.user_roles
+            rate_policies = [
+                ROLES_METADATA[role]['rate_policy'] for role in roles
+            ]
+
+            # Get the most permissive rate policy
+            rate_policy = max(rate_policies, key=get_throughput)
+            limiter = get_rate_limiter(user_identifier, rate_policy)
 
             if not await limiter.check(request, route):
                 raise TooManyRequestsException()
