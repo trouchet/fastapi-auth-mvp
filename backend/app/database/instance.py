@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from backend.app.core.config import settings
 from backend.app.database.core import Database
 
@@ -9,6 +11,7 @@ uri = settings.database_uri if not is_testing else settings.test_database_uri
 database = Database(uri)
 database.init()
 
+@contextmanager
 def get_session():
     """
     Define a dependency to create a database session
@@ -20,6 +23,6 @@ def get_session():
     
     session = database.session_maker()
     try:
-        return session
+        yield session
     finally:
         session.close()
