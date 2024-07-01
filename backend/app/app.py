@@ -3,20 +3,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from backend.app.middlewares.throttling import (
-    init_rate_limiter, 
-)
+from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.routes.bundler import api_router
 from backend.app.core.config import settings
-from backend.app.middlewares.request import (
-    RequestLoggingMiddleware, 
-)
+from backend.app.middlewares.request import RequestLoggingMiddleware
 from backend.app.scheduler.bundler import start_schedulers
 from backend.app.database.instance import database
 from backend.app.database.initial_data import insert_initial_data
+from backend.app.middlewares.bundler import middlewares
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,20 +35,8 @@ app = FastAPI(
 app.include_router(api_router)
 
 # Middlewares
-app.add_middleware(RequestLoggingMiddleware)
-
-# Set all CORS enabled origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
-            str(origin).strip("/") 
-            for origin in settings.BACKEND_CORS_ORIGINS
-        ],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+for middleware in middlewares:
+    app.add_middleware(middleware)
 
 # Add static files
 obj = StaticFiles(directory="backend/static")
