@@ -22,23 +22,23 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable
     ):
-        session=get_session()
-        request_repo=RequestLogRepository(session)
+        with get_session() as session:
+            request_repo=RequestLogRepository(session)
 
-        # Process the request
-        response = await call_next(request)
+            # Process the request
+            response = await call_next(request)
 
-        try:
-            if should_log_request(request, response):
-                # Log request information
-                await request_repo.create_log(request)
+            try:
+                if should_log_request(request, response):
+                    # Log request information
+                    await request_repo.create_log(request)
 
-            return response
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
+                return response
+            except Exception as e:
+                session.rollback()
+                raise e
+            finally:
+                session.close()
 
 
 
