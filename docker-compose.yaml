@@ -15,11 +15,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  auth-redis:
+    container_name: auth-redis
+    image: redis:latest
+    networks:
+      - my_net
+    ports:
+      - "$REDIS_PORT:$REDIS_PORT"
+    restart: always
+
   auth-app:
     container_name: auth-app
     image: auth-app:latest
     depends_on:
       - auth-db
+      - auth-redis
     build: 
       context: .
       dockerfile: Dockerfile
@@ -35,15 +45,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  auth-redis:
-    container_name: auth-redis
-    image: redis:latest
-    networks:
-      - my_net
-    ports:
-      - "$REDIS_PORT:$REDIS_PORT"
-    restart: always
 
 networks:
   my_net:
