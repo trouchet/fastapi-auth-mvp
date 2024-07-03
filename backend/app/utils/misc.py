@@ -18,14 +18,6 @@ async def fetch_image(image_url: str):
     return await response.aread()
 
 
-def try_do(func, action, *args, **kwargs):
-    try:
-        func(*args, **kwargs)
-    except Exception as e:
-        logger.error(f"Error {action}: {e}")
-        raise e
-
-
 async def is_async(func):
     """
     Checks if a function is asynchronous.
@@ -41,3 +33,14 @@ async def is_async(func):
         or inspect.isasyncgenfunction(func)
         or hasattr(func, "__await__")
     )
+
+
+async def try_do(func, action, *args, **kwargs):
+    try:
+        if(await is_async(func)):
+            return await func(*args, **kwargs)
+        else:
+            return  func(*args, **kwargs)
+    except Exception as e:
+        logger.error(f"Error {action}: {e}")
+        

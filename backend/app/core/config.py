@@ -14,7 +14,7 @@ from warnings import warn
 import toml
 
 
-POSTGRES_DSN_SCHEME = "postgresql+psycopg2"
+POSTGRES_DSN_SCHEME = "postgresql+asyncpg"
 
 DEFAULT_POSTGRES_PASSWORD = "postgres"
 DEFAULT_SECRET_KEY="secret_key_123"
@@ -43,10 +43,7 @@ def string_has_token(string: str, token: str):
 
 def validate_environment(environment):
     valid_environments = [
-        "testing",
-        "docker-dev",
-        "docker-staging",
-        "docker-prod",
+        "testing", "docker-dev", "docker-staging", "docker-prod",
     ]
 
     if environment not in valid_environments:
