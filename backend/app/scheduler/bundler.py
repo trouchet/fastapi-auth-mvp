@@ -1,7 +1,10 @@
-from backend.app.scheduler.request_logging import scheduler
+from backend.app.scheduler.request_logging import scheduler as request_logging_scheduler
 
-schedulers=[scheduler]
+# Define the schedulers to start
+schedulers=[
+    request_logging_scheduler
+]
 
-async def start_schedulers():
+def start_schedulers():
     for scheduler in schedulers:
-        await scheduler.start()
+        scheduler.start()

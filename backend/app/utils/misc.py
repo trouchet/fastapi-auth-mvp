@@ -1,5 +1,6 @@
 from httpx import AsyncClient
 import inspect
+import re
 
 from backend.app.core.logging import logger 
 
@@ -22,6 +23,7 @@ def try_do(func, action, *args, **kwargs):
         func(*args, **kwargs)
     except Exception as e:
         logger.error(f"Error {action}: {e}")
+        raise e
 
 
 async def is_async(func):
