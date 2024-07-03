@@ -1,30 +1,37 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.middlewares.request import RequestLoggingMiddleware
-from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.middlewares.throttling import RateLimitMiddleware
+from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.middlewares.bundler import add_middlewares
 from backend.app.routes.bundler import api_router
-from backend.app.core.config import settings
 from backend.app.core.auth import get_current_user
 from backend.app.scheduler.bundler import start_schedulers
+
+from backend.app.database.instance import init_database
 from backend.app.database.initial_data import insert_initial_data
+
 from backend.app.middlewares.bundler import add_middlewares
 from backend.app.core.config import settings, is_docker
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Database initialization
+    await init_database()
+    await insert_initial_data()
+    
+    # Rate limiter initialization
     if is_docker(settings.ENVIRONMENT): 
         await init_rate_limiter()
     
+    # Start the schedulers
     start_schedulers()
-    insert_initial_data()
+    
     yield
 
 # Create the FastAPI app
