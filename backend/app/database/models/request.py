@@ -10,10 +10,10 @@ from .base import Base
 class RequestLog(Base):
     __tablename__ = 'request_logs'
     relo_id = Column(Integer, primary_key=True, index=True)
-    relo_user_id = Column(Integer, ForeignKey('users.id'))
+    relo_user_id = Column(UUID, ForeignKey('users.user_id'))
     relo_method = Column(String, index=True)
     relo_path = Column(String, index=True)
-    relo_status_code = Column(Integer)
+    relo_status_code = Column(Integer, index=True)
     relo_timestamp = Column(DateTime, default=datetime.now(timezone.utc))
     
-    relo_user = relationship('User', back_populates='request_logs')
+    relo_user = relationship('User', back_populates='user_request_logs')

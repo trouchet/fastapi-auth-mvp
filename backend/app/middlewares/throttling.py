@@ -42,9 +42,9 @@ async def init_rate_limiter(app: FastAPI):
 def get_throughput(rate_limiter: RateLimiterPolicy):
     times = rate_limiter.times
     interval_seconds = rate_limiter.hours * 3600 + \
-                       rate_limiter.minutes * 60 + \
-                       rate_limiter.seconds + \
-                       rate_limiter.milliseconds / 1000
+        rate_limiter.minutes * 60 + \
+        rate_limiter.seconds + \
+        rate_limiter.milliseconds / 1000
     
     return times / interval_seconds
 

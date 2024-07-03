@@ -1,10 +1,12 @@
 from .base import Base
-from .users import UserDB
-from .request import RequestLogDB
+from .users import User, Role, Permission
+from .request import RequestLog
 
 
 __all__ = [
     "Base",
-    "UserDB",
-    "RequestLogDB"
+    "User",
+    "RequestLog",
+    "Role",
+    "Permission"
 ]

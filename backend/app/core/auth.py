@@ -45,40 +45,37 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
         CredentialsException: If the token is invalid or the user credentials are incorrect.
         InactiveUserException: If the user is inactive.
     """
-    
-    try:
-        user_repo = get_user_repo()
+    with get_user_repo() as user_repository:
+        try:
+            user_has_token, user = user_repository.refresh_token_exists(token)
 
-        user_has_token, user = user_repo.refresh_token_exists(token)
+            if user_has_token:
+                payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+                username: str = payload.get("sub")
+                expiration_date_int = payload.get("exp")
 
-        if user_has_token:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            username: str = payload.get("sub")
-            roles: str = payload.get("roles")
-            expiration_date_int = payload.get("exp")
+                expiration_date = datetime.fromtimestamp(expiration_date_int)
 
-            expiration_date = datetime.fromtimestamp(expiration_date_int)
+                if expiration_date < datetime.now():
+                    raise ExpiredTokenException()
 
-            if expiration_date < datetime.now():
-                raise ExpiredTokenException()
+                invalid_credentials = username is None or user.user_username != username
 
-            empty_entry = username is None or roles is None
-
-            if empty_entry or user.user_username != username:
+                if invalid_credentials:
+                    raise CredentialsException()
+            else:
                 raise CredentialsException()
-        else:
+
+        except JWTError:
+            raise ExpiredTokenException()
+
+        current_user = user_repository.get_user_by_username(username)
+
+        if current_user is None:
             raise CredentialsException()
 
-    except JWTError:
-        raise ExpiredTokenException()
-
-    current_user = user_repo.get_user_by_username(username)
-
-    if current_user is None:
-        raise CredentialsException()
-
-    if not current_user.user_is_active:
-        raise InactiveUserException(current_user.user_username)
+        if not current_user.user_is_active:
+            raise InactiveUserException(current_user.user_username)
 
     return current_user, token
 
@@ -94,11 +91,11 @@ async def get_user(username: str) -> User | None:
     Returns:
         User | None: The retrieved user if found, otherwise None.
     """
-    user_repository = get_user_repo()
-    user = await user_repository.get_user_by_username(username)
+    with get_user_repo() as user_repository:
+        user = await user_repository.get_user_by_username(username)
 
-    if not user:
-        return
+        if not user:
+            return
 
     return user
 
@@ -150,34 +147,32 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         InexistentUsernameException: If the username does not exist in the database.
         InactiveUserException: If the user is inactive.
     """
-    
-    user_repo = get_user_repo()
+    with get_user_repo() as user_repository:
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            
+            if payload['exp'] <= time():
+                raise ExpiredTokenException()
+            
+            if 'sub' in payload:
+                username: str = payload.get("sub")
+            else:
+                raise MissingRequiredClaimException("sub")
+            
+            if username is None:
+                raise CredentialsException()
 
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        
-        if payload['exp'] <= time():
-            raise ExpiredTokenException()
-        
-        if 'sub' in payload:
-            username: str = payload.get("sub")
-        else:
-            raise MissingRequiredClaimException("sub")
-        
-        if username is None:
-            raise CredentialsException()
+        except JWTError:
+            raise MalformedTokenException()
 
-    except JWTError:
-        raise MalformedTokenException()
+        # Get the user from the database
+        user = user_repository.get_user_by_username(username=username)
 
-    # Get the user from the database
-    user = user_repo.get_user_by_username(username=username)
-
-    # Check if the user exists and is active
-    if user is None:
-        raise InexistentUsernameException(username)
-    if not user.user_is_active:
-        raise InactiveUserException(user.user_username)
+        # Check if the user exists and is active
+        if user is None:
+            raise InexistentUsernameException(username)
+        if not user.user_is_active:
+            raise InactiveUserException(user.user_username)
 
     return user
 

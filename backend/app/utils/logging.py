@@ -34,7 +34,6 @@ def clear_folder_items(
         raise FileNotFoundError(f"Path not found: {path_}")
 
     # Get all items sorted by modification time (newest first)
-    print([key_map(item) for item in scandir(path_)])
     items = sorted(scandir(path_), key=key_map)
     
     # Clear the latest 'n' items

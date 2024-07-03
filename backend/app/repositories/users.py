@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
 from typing import List
 from datetime import datetime
+from contextlib import contextmanager
 
 from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
@@ -39,7 +40,6 @@ class UsersRepository:
         return query.filter(User.user_username == username).first()
 
     def create_user(self, user: User):
-
         self.session.add(user)
         self.session.commit()
 
@@ -217,7 +217,7 @@ class UsersRepository:
 
         return user
 
-
+@contextmanager
 def get_user_repo():
-    session = get_session()
-    return UsersRepository(session)
+    with get_session() as session:
+        yield UsersRepository(session)

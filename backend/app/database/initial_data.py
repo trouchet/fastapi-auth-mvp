@@ -11,47 +11,68 @@ from backend.app.core.config import settings
 from backend.app.core.logging import logger
 from backend.app.data.auth import (
     ROLES_METADATA,
-    INITIAL_USERS,
 )
+from backend.app.repositories.auth import (
+    get_role_repository, 
+    get_permission_repository,
+)
+from backend.app.repositories.users import get_user_repo
+from backend.app.repositories.auth import get_role_repository
+from backend.app.utils.repositories import get_role_permissions
 
 from .models.users import Role, Permission
 
-# Function to create a new role with associated permissions
-def create_role_with_permissions(session, role_name, permission_names):
-    role = Role(name=role_name)
-    for perm_name in permission_names:
-        permission = session.query(Permission).filter_by(name=perm_name).first()
-        if not permission:
-            permission = Permission(name=perm_name)
-        role.role_permissions.append(permission)
-    session.add(role)
-    session.commit()
-
 # Create roles and permissions
-def create_roles_and_permissions(session):
-    for role, metadata in ROLES_METADATA.items():
-        permissions=metadata['permissions']
-        create_role_with_permissions(session, role, permissions)
+def create_roles_and_permissions():
+    with get_role_repository() as role_repository:
+        for role_name, metadata in ROLES_METADATA.items():
+            permissions=metadata['permissions']        
+            
+            try:
+                role_repository.create_role(role_name, permissions)
+
+            except (IntegrityError, UniqueViolation):
+                # Handle potential duplicate role errors
+                logger.warning(f"Duplicate entries found. Skipping role {role_name}...")
+                
+                # Rollback changes if an error occurs
+                role_repository.session.rollback()
 
 # Insert initial users
-def insert_initial_users(session):
-    try:
-        for user in INITIAL_USERS:
-            session.add(user)
+def insert_initial_users():    
+    # Create the first admin user    
+    with get_role_repository() as role_repository: 
+        super_admin_role = role_repository.get_role_by_name("SuperAdmin")
 
-        session.commit()
-        logger.info("Initial users inserted successfully!")
+    first_super_admin_user = User(
+        user_id=uuid4(),
+        user_created_at=datetime.now(),
+        user_username=settings.FIRST_SUPER_ADMIN_USERNAME,
+        user_hashed_password=hash_string(settings.FIRST_SUPER_ADMIN_PASSWORD),
+        user_email=settings.FIRST_SUPER_ADMIN_EMAIL,
+        user_roles=[super_admin_role],
+        user_is_active=True,
+    )
 
-    except (IntegrityError, UniqueViolation):
-        # Handle potential duplicate user errors (e.g., username or email already exist)
-        logger.error("Duplicate entries found. Skipping...")
-        session.rollback()  # Rollback changes if an error occurs
+    initial_users = [ first_super_admin_user ]
 
-def insert_initial_data(database_: Database):
-    session = database_.session_maker()
+    with get_user_repo() as user_repository:
+        for user in initial_users:
+            try:
+                user_repository.create_user(user)
 
+            except (IntegrityError, UniqueViolation):
+                # Handle potential duplicate user errors
+                logger.warning(f"Duplicate entries found. Skipping user {user}...")
+                
+                # Rollback changes if an error occurs
+                user_repository.session.rollback()
+
+    logger.info("Initial users inserted successfully!")
+
+def insert_initial_data():
     # Insert initial roles, permissions and users
-    create_roles_and_permissions(session)
-    insert_initial_users(session)
+    create_roles_and_permissions()
+    insert_initial_users()
 
     logger.info("Initial data inserted successfully!")

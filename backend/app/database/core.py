@@ -1,5 +1,5 @@
 from sqlalchemy_utils import database_exists, create_database
-from sqlalchemy import create_engine, pool, text
+from sqlalchemy import create_engine, pool, text, inspect
 from sqlalchemy.orm import sessionmaker
 
 from backend.app.core.logging import logger
@@ -70,6 +70,17 @@ class Database:
             
 
         try_do(create_tables_alias, "creating tables")
+        
+    def print_tables(self):
+        """
+        Print the available tables in the database.
+        """
+        try:
+            inspector = inspect(self.engine)
+            tables = inspector.get_table_names()
+            logger.info(f"Available tables: {tables}")
+        except Exception as e:
+            logger.error(f"Error fetching table names: {str(e)}")
 
     def init(self):
         """
@@ -86,3 +97,5 @@ class Database:
         self.create_database()
         self.test_connection()
         self.create_tables()
+        self.print_tables()
+
