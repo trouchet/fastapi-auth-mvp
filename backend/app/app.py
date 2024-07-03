@@ -4,13 +4,24 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import Request, HTTPException, status
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.middlewares.request import RequestLoggingMiddleware
 from backend.app.middlewares.throttling import init_rate_limiter
+from backend.app.middlewares.throttling import RateLimitMiddleware
+from backend.app.middlewares.bundler import create_middlewares
 from backend.app.routes.bundler import api_router
 from backend.app.core.config import settings
+<<<<<<< HEAD
+=======
+from backend.app.core.auth import get_current_user
+>>>>>>> fa86615 (WIP: middleware changes)
 from backend.app.scheduler.bundler import start_schedulers
 from backend.app.database.initial_data import insert_initial_data
+<<<<<<< HEAD
 from backend.app.middlewares.bundler import add_middlewares
+=======
+>>>>>>> fa86615 (WIP: middleware changes)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
