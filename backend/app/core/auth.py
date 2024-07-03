@@ -208,8 +208,9 @@ def permissions_checker(required_permissions: Tuple[str]):
             if await is_async(func):
                 return await func(*args, current_user=current_user, **kwargs)
             else:
-                return func(*args, current_user=current_user, **kwargs)
+                return func(*args, **kwargs)
             
         return decorated_view
     
     return wrapper
+

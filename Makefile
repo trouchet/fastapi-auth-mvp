@@ -84,6 +84,12 @@ test-watch: ## Run tests on watchdog mode. Usage: make ptw-watch
 minimal-requirements: ## Generates minimal requirements. Usage: make requirements
 	python3 scripts/clean_packages.py requirements.txt requirements.txt
 
+ip: ## Get the IP of a container. Usage: make ip container="db-cron-task"
+	docker inspect $(container) | jq -r '.[0].NetworkSettings.Networks[].IPAddress'
+
+ip-db: ## Get the database IP. Usage: make db-ip
+	$(MAKE) ip container="auth-db"
+
 lint: ## perform inplace lint fixes
 	@ruff check --unsafe-fixes --fix .
 	@black $(shell git ls-files '*.py')

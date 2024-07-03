@@ -151,27 +151,9 @@ def update_user(
 @role_checker(user_management_roles)
 def create_user(
     user: CreateUser,
-    current_user: User = Depends(get_current_user),
-    user_repo: UsersRepository=Depends(get_user_repo)
+    user_repo: UsersRepository = Depends(get_user_repo),
+    current_user: User = Depends(get_current_user)
 ) -> Dict:
-    # Check if the username already exists
-    user_db = user_repo.get_user_by_username(user.user_username)
-    
-    if user_db:
-        raise ExistentUsernameException(user.user_username)
-    
-    # Check 
-    user_db = user_repo.get_user_by_email(user.user_email)
-    
-    if user_db:
-        raise ExistentEmailException(user.user_email)
-    
-    password=user.user_password
-    
-    if not is_password_valid(password):
-        invalidation_dict=apply_password_validity_dict(password)
-        raise InvalidPasswordException(invalidation_dict)
-
     new_user = User(
         user_username=user.user_username,
         user_hashed_password=hash_string(user.user_password),
@@ -180,7 +162,12 @@ def create_user(
     
     user_repo.create_user(new_user)
 
-    return userbd_to_user(new_user)
+@router.post('/signup')
+async def signup(
+    user: CreateUser,
+    user_repo: UsersRepository=Depends(get_user_repo)
+) -> Dict:
+    return await create_new_user(user, user_repo)
 
 
 @router.patch("/{user_id}")
@@ -193,7 +180,7 @@ def update_user(
 ) -> Dict:
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
-    
+
     user = user_repo.update_user(user_id, user)
 
     if not user:
@@ -321,8 +308,8 @@ def activate_user(
 ) -> Dict:
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
-    
-    user = user_repo.update_user_active_status(user_id)
+
+    user = user_repo.update_user_active_status(user_id, True)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -340,7 +327,7 @@ def deactivate_user(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
     
-    user = user_repo.activate_user(user_id)
+    user = user_repo.update_user_active_status(user_id, False)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -358,5 +345,4 @@ def get_users_by_role(
     users = user_repo.get_users_by_role(role)
 
     return list(map(userbd_to_user, users))
-
 
