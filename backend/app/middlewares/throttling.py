@@ -8,22 +8,24 @@ from aioredis import create_redis_pool
 from typing import Callable
 from fnmatch import fnmatch
 
+from backend.app.utils.request import get_route_and_token
 from backend.app.core.exceptions import (
     MissingTokenException,
     TooManyRequestsException,
 )
+from backend.app.utils.request import route_requires_authentication
 from backend.app.core.config import settings, is_docker
 from backend.app.data.auth import ROLES_METADATA
 
 class RateLimiterPolicy:
     def __init__(
-            self, 
-            times: int = 5, 
-            hours: int = 0, 
-            minutes: int = 1, 
-            seconds: int = 0, 
-            milliseconds: int = 0
-        ):
+        self, 
+        times: int = 5, 
+        hours: int = 0, 
+        minutes: int = 1, 
+        seconds: int = 0, 
+        milliseconds: int = 0
+    ):
         self.times = times
         self.hours = hours
         self.minutes = minutes
@@ -34,9 +36,11 @@ class RateLimiterPolicy:
 async def init_redis_pool():
     return await create_redis_pool(settings.redis_url)
 
+
 async def init_rate_limiter():
     redis = await init_redis_pool()
     await FastAPILimiter.init(redis)
+
 
 # Given rate limiter, find throughput
 def get_throughput(rate_limiter: RateLimiterPolicy):
@@ -47,6 +51,7 @@ def get_throughput(rate_limiter: RateLimiterPolicy):
         rate_limiter.milliseconds / 1000
     
     return times / interval_seconds
+
 
 def get_rate_limiter(
     user_identifier: str, policy: RateLimiterPolicy = RateLimiterPolicy()
@@ -61,20 +66,15 @@ def get_rate_limiter(
     )
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(
-        self, 
-        app: FastAPI,
-        identifier_callable: Callable[[str], Awaitable]
-    ):
+    def __init__(self, app: FastAPI, identifier_callable: Callable[[str], Awaitable]):
         super().__init__(app)
         self.identifier_callable = identifier_callable
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        route = request.scope['path']
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
-
+        route, token=get_route_and_token(request)
+        
         # Check if the route requires authentication
-        if self.route_requires_authentication(route):
+        if route_requires_authentication(route):
             if not token:
                 raise MissingTokenException()
 
@@ -95,17 +95,5 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
-    def route_requires_authentication(self, route: str) -> bool:
-        prefix = settings.API_V1_STR
-        allowed_patterns = [
-            f"/{prefix}/public/*", 
-            f"/{prefix}/token", 
-            f"/{prefix}/refresh",
-        ]
-
-        for pattern in allowed_patterns:
-            if fnmatch(route, pattern):
-                return False
-
-        return True  # Route requires authentication
+    
 

@@ -3,28 +3,28 @@ from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
-
-from backend.app.repositories.request import (
-    RequestLogRepository,
-)
+from backend.app.utils.request import get_route_and_token
+from backend.app.repositories.request import RequestLogRepository
+from backend.app.utils.request import route_requires_authentication
 from backend.app.database.instance import get_session
+
 
 def should_log_request(request: Request, response: Response):
     # Log only POST, PUT, DELETE requests or error responses
-    log_verbs = ['POST', 'PUT', 'DELETE']
+    log_verbs = ['GET', 'POST', 'PUT', 'DELETE']
     is_log_verb = request.method in log_verbs
-    is_error_response = response.status_code >= 400
+    is_error_response = response.status_code >= 200
 
     return is_log_verb or is_error_response
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, 
-        app: FastAPI,
-        request: Request, call_next: Callable
-    ):
-        with get_session() as session:
+    def __init__(self, app: FastAPI, identifier_callable: Callable = None):
+        super().__init__(app)
+        self.identifier_callable = identifier_callable
+
+    async def dispatch(self, request: Request, call_next: Callable):
+        async with get_session() as session:
             request_repo=RequestLogRepository(session)
 
             # Process the request
@@ -32,15 +32,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
             try:
                 if should_log_request(request, response):
-                    # Log request information
-                    await request_repo.create_log(request)
+                    route, token = get_route_and_token(request)
+                    if route_requires_authentication(route):
+                        current_user = await self.identifier_callable(token)
+
+                        await request_repo.create_log(current_user.user_id, request)
 
                 return response
             except Exception as e:
-                session.rollback()
+                await session.rollback()
                 raise e
             finally:
-                session.close()
+                await session.close()
 
 
 
