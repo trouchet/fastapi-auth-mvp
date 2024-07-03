@@ -47,7 +47,9 @@ services:
       retries: 3
 
 networks:
-  my_net:
+    my_net:
+        driver: bridge
+
 
 volumes:
   postgres_data:
