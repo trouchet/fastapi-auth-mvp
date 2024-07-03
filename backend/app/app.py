@@ -9,25 +9,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.middlewares.request import RequestLoggingMiddleware
 from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.middlewares.throttling import RateLimitMiddleware
-from backend.app.middlewares.bundler import create_middlewares
+from backend.app.middlewares.bundler import add_middlewares
 from backend.app.routes.bundler import api_router
 from backend.app.core.config import settings
-<<<<<<< HEAD
-=======
 from backend.app.core.auth import get_current_user
->>>>>>> fa86615 (WIP: middleware changes)
 from backend.app.scheduler.bundler import start_schedulers
 from backend.app.database.initial_data import insert_initial_data
-<<<<<<< HEAD
 from backend.app.middlewares.bundler import add_middlewares
-=======
->>>>>>> fa86615 (WIP: middleware changes)
+from backend.app.core.config import settings, is_docker
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_rate_limiter(app)
-    await start_schedulers()
+    if is_docker(settings.ENVIRONMENT): 
+        await init_rate_limiter()
+    
+    start_schedulers()
     insert_initial_data()
+    yield
 
 # Create the FastAPI app
 app = FastAPI(
@@ -43,7 +41,7 @@ app = FastAPI(
 # Include routers in the app
 app.include_router(api_router)
 
-# Middlewares
+# Add middlewares
 add_middlewares(app)
 
 # Add static files
