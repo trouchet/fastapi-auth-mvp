@@ -42,7 +42,7 @@ from .roles_bundler import (
     user_editor_roles,
 )
 
-router = APIRouter(prefix='/users', tags=["users"])
+router = APIRouter(prefix='/users', tags=["Users"])
 
 
 def userbd_to_user(user: User):

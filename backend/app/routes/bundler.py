@@ -12,10 +12,10 @@ from backend.app.core.config import settings
 # Include all routers in the API
 routers = [
     public_router,
+    system_router,
     auth_router,
     data_router,
     users_router,
-    system_router,
 ]
 
 prefix = f"{settings.API_V1_STR}"
