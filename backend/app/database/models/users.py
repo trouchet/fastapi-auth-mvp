@@ -90,6 +90,9 @@ class Role(Base):
         'User', secondary=users_roles_association,  back_populates='user_roles'
     )
 
+    def __repr__(self):
+        return f"Role({self.role_name})"
+
 class Permission(Base):
     __tablename__ = 'permissions'
     perm_id = Column(UUID, primary_key=True)
@@ -97,3 +100,6 @@ class Permission(Base):
     perm_roles = relationship(
         'Role', secondary=roles_permissions_association, back_populates='role_permissions'
     )
+
+    def __repr__(self):
+        return f"Permission({self.perm_name})"
