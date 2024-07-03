@@ -12,7 +12,7 @@ from backend.app.core.exceptions import (
     MissingTokenException,
     TooManyRequestsException,
 )
-from backend.app.core.config import settings
+from backend.app.core.config import settings, is_docker
 from backend.app.data.auth import ROLES_METADATA
 
 class RateLimiterPolicy:
