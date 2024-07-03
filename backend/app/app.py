@@ -8,11 +8,9 @@ from contextlib import asynccontextmanager
 from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.routes.bundler import api_router
 from backend.app.core.config import settings
-from backend.app.middlewares.request import RequestLoggingMiddleware
 from backend.app.scheduler.bundler import start_schedulers
-from backend.app.database.instance import database
 from backend.app.database.initial_data import insert_initial_data
-from backend.app.middlewares.bundler import middlewares
+from backend.app.middlewares.bundler import add_middlewares
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,8 +33,7 @@ app = FastAPI(
 app.include_router(api_router)
 
 # Middlewares
-for middleware in middlewares:
-    app.add_middleware(middleware)
+add_middlewares(app)
 
 # Add static files
 obj = StaticFiles(directory="backend/static")
