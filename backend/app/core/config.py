@@ -30,6 +30,43 @@ DEFAULT_REFRESH_TIMEOUT_MINUTES = timedelta(minutes=60)
 with open("pyproject.toml", "r") as f:
     config = toml.load(f)
 
+
+def string_has_token(string: str, token: str):
+    # Regular expression to match 'docker' case-insensitively
+    pattern = rf"(?i){token}"  # 'i' flag for case-insensitive matching
+
+    # Check if the pattern matches anywhere in the string
+    match = re.search(pattern, string)
+
+    return match is not None
+
+
+def validate_environment(environment):
+    valid_environments = [
+        "testing",
+        "docker-dev",
+        "docker-staging",
+        "docker-prod",
+    ]
+
+    if environment not in valid_environments:
+        raise ValueError(
+            f"Invalid environment: {environment}. "
+            f"Valid environments are: {valid_environments}"
+        )
+    else:
+        return environment
+
+
+def is_sandbox(environment: str):
+    return string_has_token(environment, 'dev') or \
+            string_has_token(environment, 'testing')
+
+
+def is_docker(environment):
+    return string_has_token(environment, 'docker')
+
+
 def parse_cors(v: Any) -> Union[List[str], str]:
     maybe_list=not v.startswith("[") and not v.endswith("]")
     is_not_list=isinstance(v, str) and maybe_list
@@ -40,14 +77,6 @@ def parse_cors(v: Any) -> Union[List[str], str]:
     
     raise ValueError(v)
 
-def string_has_token(string: str, token: str):
-    # Regular expression to match 'docker' case-insensitively
-    pattern = rf"(?i){token}"  # 'i' flag for case-insensitive matching
-
-    # Check if the pattern matches anywhere in the string
-    match = re.search(pattern, string)
-
-    return match is not None
 
 # Settings class
 class Settings(BaseSettings):
@@ -59,7 +88,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = config["tool"]["poetry"]["name"]
     DESCRIPTION: str = config["tool"]["poetry"]["description"]
     API_V1_STR: str = "/api"
-    
+    ENVIRONMENT: Annotated[str, BeforeValidator(validate_environment)]
+
+    APP_HOST: str = 'localhost'
     APP_PORT: int = 8000
 
     COOKIE_SECRET_KEY: str = DEFAULT_SECRET_KEY
@@ -70,8 +101,7 @@ class Settings(BaseSettings):
     FIRST_SUPER_ADMIN_PASSWORD: str = DEFAULT_FIRST_SUPER_ADMIN_PASSWORD
     FIRST_SUPER_ADMIN_EMAIL: str = DEFAULT_FIRST_SUPER_ADMIN_EMAIL
 
-    ENVIRONMENT: str = "development"
-    DOMAIN: str = f"localhost:{APP_PORT}"
+    DOMAIN: str = f"{APP_HOST}:{APP_PORT}"
 
     # 1 day
     ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = DEFAULT_ACCESS_TIMEOUT_MINUTES
@@ -86,50 +116,65 @@ class Settings(BaseSettings):
     @property
     def server_host(self) -> str:
         # Use HTTPS for anything other than local development
-        protocol = "http" if self.ENVIRONMENT == "development" else "https"
+        protocol = "http" if is_sandbox(self.ENVIRONMENT) else "https"
         return f"{protocol}://{self.DOMAIN}"
+
+    @classmethod
+    def get_redis_host(cls):
+        return 'auth-redis' if is_docker(cls().ENVIRONMENT) else 'localhost'
+
+    @classmethod
+    def get_postgres_host(cls):
+        return 'auth-db' if is_docker(cls().ENVIRONMENT) else 'localhost'
 
     # Database settings
     POSTGRES_DSN_SCHEME: str = POSTGRES_DSN_SCHEME
     
-    POSTGRES_HOST: str = 'localhost'
+    @property
+    def POSTGRES_HOST(self):
+        return self.get_postgres_host()
+    
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = 'postgres'
     POSTGRES_PASSWORD: str = 'postgres'
     POSTGRES_DBNAME: str = "auth_db"
-    
+
     POSTGRES_HOST_TEST: str = 'localhost'
     POSTGRES_PORT_TEST: int = 5433
     POSTGRES_USER_TEST: str = 'postgres'
     POSTGRES_PASSWORD_TEST: str = 'postgres'
     POSTGRES_DBNAME_TEST: str = "auth_db"
 
-    REDIS_HOST: str = 'localhost'
+    @property
+    def REDIS_HOST(self):
+        return self.get_redis_host()
+    
     REDIS_PORT: int = 6379
     REDID_DB: int = 0
 
     @computed_field
     @property
     def database_uri(self) -> str:
-        return (
-            f"{POSTGRES_DSN_SCHEME}://{self.POSTGRES_USER}:"
-            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
-            f"{self.POSTGRES_PORT}/{self.POSTGRES_DBNAME}"
-        )
-    
+        scheme=f"{POSTGRES_DSN_SCHEME}"
+        credentials=f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+        url=f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DBNAME}"
+
+        return f"{scheme}://{credentials}@{url}"
+            
     @computed_field
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDID_DB}"
+        url = f"{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDID_DB}"
+        return f"redis://{url}"
         
     @computed_field
     @property
     def test_database_uri(self) -> str:
-        return (
-            f"{POSTGRES_DSN_SCHEME}://"
-            f"{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}@"
-            f"{self.POSTGRES_HOST_TEST}:{self.POSTGRES_PORT_TEST}/{self.POSTGRES_DBNAME_TEST}"
-        )
+        scheme=f"{POSTGRES_DSN_SCHEME}"
+        credentials=f"{self.POSTGRES_USER_TEST}:{self.POSTGRES_PASSWORD_TEST}"
+        url=f"{self.POSTGRES_HOST_TEST}:{self.POSTGRES_PORT_TEST}/{self.POSTGRES_DBNAME_TEST}"
+
+        return f"{scheme}://{credentials}@{url}"
 
     def _warn_default_value(self, var_name: str, default_value: Any):
         environment = self.ENVIRONMENT
@@ -137,11 +182,8 @@ class Settings(BaseSettings):
             f'The value of {var_name} is "{default_value}", '
             "for security, please change it, at least for deployments."
         )
-        
-        is_default_safe=string_has_token(environment, 'dev') or \
-            string_has_token(environment, 'testing')
-        
-        if is_default_safe:
+
+        if is_sandbox(environment):
             warn(message, stacklevel=1)
         else:
             raise ValueError(message)
@@ -163,7 +205,7 @@ class Settings(BaseSettings):
             ("FIRST_SUPER_ADMIN_PASSWORD", self.FIRST_SUPER_ADMIN_PASSWORD, DEFAULT_FIRST_SUPER_ADMIN_PASSWORD),
             ("FIRST_SUPER_ADMIN_EMAIL", self.FIRST_SUPER_ADMIN_EMAIL, DEFAULT_FIRST_SUPER_ADMIN_EMAIL),
         ]
-        
+
         self._check_default_values(default_tuples)
 
         return self
@@ -171,7 +213,3 @@ class Settings(BaseSettings):
 
 # Instantiate settings
 settings = Settings()
-
-# Set postgres host as 'auth-db' if environment has '*docker*'
-if string_has_token(settings.ENVIRONMENT, 'docker'):
-    settings.POSTGRES_HOST = 'auth-db'
