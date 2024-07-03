@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import Request, FastAPI
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
@@ -16,11 +16,13 @@ def should_log_request(request: Request, response: Response):
     is_error_response = response.status_code >= 400
 
     return is_log_verb or is_error_response
-        
+
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
-        self, request: Request, call_next: Callable
+        self, 
+        app: FastAPI,
+        request: Request, call_next: Callable
     ):
         with get_session() as session:
             request_repo=RequestLogRepository(session)

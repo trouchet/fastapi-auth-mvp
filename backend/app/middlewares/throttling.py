@@ -34,7 +34,7 @@ class RateLimiterPolicy:
 async def init_redis_pool():
     return await create_redis_pool(settings.redis_url)
 
-async def init_rate_limiter(app: FastAPI):
+async def init_rate_limiter():
     redis = await init_redis_pool()
     await FastAPILimiter.init(redis)
 
@@ -62,9 +62,11 @@ def get_rate_limiter(
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
-        self, identifier_callable: Callable[[str], Awaitable]
+        self, 
+        app: FastAPI,
+        identifier_callable: Callable[[str], Awaitable]
     ):
-        super().__init__()
+        super().__init__(app)
         self.identifier_callable = identifier_callable
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
