@@ -69,7 +69,6 @@ def test_permission_repository(test_session):
         test_session.close()
     
 
-
 @pytest.fixture
 def test_user_password():
     return "User_password_shh123!"
@@ -82,18 +81,31 @@ def test_admin_password():
 
 @pytest.fixture
 def super_admin_role(test_role_repository):
-    return test_role_repository.get_role_by_name("SuperAdmin")
+    super_admin_role = test_role_repository.get_role_by_name("SuperAdmin")
+    
+    return super_admin_role
 
 
 @pytest.fixture
 def admin_role(test_role_repository):
-    return test_role_repository.get_role_by_name("Admin")
+    admin_role = test_role_repository.get_role_by_name("Admin")
+    
+    return admin_role
 
 
 @pytest.fixture
 def viewer_role(test_role_repository):
-    return test_role_repository.get_role_by_name("Viewer")
+    viewer_role = test_role_repository.get_role_by_name("Viewer")
+    
+    return viewer_role
 
+
+@pytest.fixture
+def test_user_repository(test_session):
+    try:
+        yield UsersRepository(session=test_session)
+    finally:
+        test_session.close()
 
 @pytest.fixture
 def test_user(test_user_repository, super_admin_role, test_user_password):
