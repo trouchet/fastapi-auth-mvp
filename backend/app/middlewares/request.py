@@ -5,8 +5,8 @@ from typing import Callable
 
 from backend.app.utils.request import get_route_and_token
 from backend.app.repositories.request import RequestLogRepository
-from backend.app.utils.request import route_requires_authentication
 from backend.app.database.instance import get_session
+from backend.app.core.config import settings
 
 
 def should_log_request(request: Request, response: Response):
@@ -33,10 +33,14 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             try:
                 if should_log_request(request, response):
                     route, token = get_route_and_token(request)
-                    if route_requires_authentication(route):
-                        current_user = await self.identifier_callable(token)
 
-                        await request_repo.create_log(current_user.user_id, request)
+                    if settings.route_requires_authentication(route):
+                        current_user = await self.identifier_callable(token)
+                        user_id = current_user.user_id
+                    else:
+                        user_id = None
+
+                    await request_repo.create_log(user_id, request)
 
                 return response
             except Exception as e:
@@ -44,7 +48,4 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 raise e
             finally:
                 await session.close()
-
-
-
 

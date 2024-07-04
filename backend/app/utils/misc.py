@@ -43,4 +43,4 @@ async def try_do(func, action, *args, **kwargs):
             return  func(*args, **kwargs)
     except Exception as e:
         logger.error(f"Error {action}: {e}")
-        
+

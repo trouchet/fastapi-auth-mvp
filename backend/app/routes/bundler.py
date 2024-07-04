@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
 from backend.app.routes import (
+    health_router,
+    public_router,
     auth_router,
     data_router,
-    public_router,
     users_router,
     system_router,
 )
@@ -11,6 +12,7 @@ from backend.app.core.config import settings
 
 # Include all routers in the API
 routers = [
+    health_router,
     public_router,
     system_router,
     auth_router,

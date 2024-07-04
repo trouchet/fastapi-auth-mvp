@@ -254,12 +254,16 @@ def test_clear_folder_items_files(logs_foldername):
         f.write("test")
     with open(f"{logs_foldername}/3.txt", "w") as f:
         f.write("test")
-
+    
+    print(os.listdir(logs_foldername))
+    
     clear_folder_items(logs_foldername, 2)
 
-    assert os.path.exists(f"{logs_foldername}/1.txt")
+    assert not os.path.exists(f"{logs_foldername}/1.txt")
     assert os.path.exists(f"{logs_foldername}/2.txt")
-    assert not os.path.exists(f"{logs_foldername}/3.txt")
+    assert os.path.exists(f"{logs_foldername}/3.txt")
+    
+    rmtree(logs_foldername, ignore_errors=True)
 
 
 @pytest.mark.parametrize(
@@ -312,6 +316,8 @@ def test_weekly_handler_raises_3_digits(
         DailyHierarchicalFileHandler(
             root_foldername="logs", filename="app.log", when="W42"
         )
+        
+    rmtree(logs_foldername, ignore_errors=True)
 
 
 def test_weekly_handler_raises_digit_outside_0_6(
@@ -322,6 +328,8 @@ def test_weekly_handler_raises_digit_outside_0_6(
         DailyHierarchicalFileHandler(
             root_foldername="logs", filename="app.log", when="W8"
         )
+        
+    rmtree(logs_foldername, ignore_errors=True)
 
 
 def test_weekly_handler_raises_invalid_when(

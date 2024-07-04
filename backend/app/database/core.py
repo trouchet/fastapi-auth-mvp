@@ -56,6 +56,7 @@ class Database:
             database_name = self.uri.split("/")[-1]
             uri_without_database = '/'.join(self.uri.split("/")[:-1])
 
+            
             # Create a new engine without specifying a database
             engine = create_async_engine(uri_without_database, echo=False)
 
@@ -65,11 +66,9 @@ class Database:
                     await conn.execute(text("COMMIT"))
                     await conn.execute(text(f"CREATE DATABASE {database_name}"))
                     logger.info(f"Database '{database_name}' created successfully.")
-                except DuplicateDatabaseError:
-                    logger.warning(f"Database '{database_name}' already exists.")
                 except OperationalError as e:
                     logger.error(f"Error creating database '{database_name}': {e}")
-                    
+
         await try_do(create_database_alias, "create database")
 
     async def test_connection(self):
@@ -128,7 +127,11 @@ class Database:
             Database: A NamedTuple with engine and conn attributes for the database connection.
             None: If there was an error connecting to the database.
         """
-        await self.create_database()
+        if(await self.database_exists(self.uri)):
+            await self.create_database()
+        else:
+            logger.warning("Database already exists!")
+        
         await self.test_connection()
         await self.create_tables()
         await self.print_tables()

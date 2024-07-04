@@ -5,14 +5,13 @@ from pydantic import (
     computed_field,
     model_validator,
 )
-
 from typing import Union, Annotated, Any, List, Tuple
 from typing_extensions import Self
 from datetime import timedelta
-import re
+from fnmatch import fnmatch
 from warnings import warn
 import toml
-
+import re
 
 POSTGRES_DSN_SCHEME = "postgresql+asyncpg"
 
@@ -108,6 +107,19 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: Annotated[
         Union[List[AnyUrl], str], BeforeValidator(parse_cors)
     ] = []
+    
+    AUTH_PATTERNS: List = [
+            f"/favicon.ico",
+            f"{API_V1_STR}/openapi.json",
+            f"{API_V1_STR}/docs",
+            f"{API_V1_STR}/redoc",
+            f"{API_V1_STR}/public/*",
+            f"{API_V1_STR}/health",
+            f"{API_V1_STR}/health/*",
+            f"{API_V1_STR}/system/",
+            f"{API_V1_STR}/token", 
+            f"{API_V1_STR}/refresh",
+        ]
 
     @computed_field
     @property
@@ -173,6 +185,12 @@ class Settings(BaseSettings):
 
         return f"{scheme}://{credentials}@{url}"
 
+    def route_requires_authentication(self, route: str) -> bool:
+        has_match = lambda pattern: fnmatch(route, pattern)
+        non_token_route_list = list(map(has_match, self.AUTH_PATTERNS))
+        
+        return not any(non_token_route_list)
+    
     def _warn_default_value(self, var_name: str, default_value: Any):
         environment = self.ENVIRONMENT
         message = (

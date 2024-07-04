@@ -7,7 +7,7 @@ from backend.app.core.auth import create_token
 from backend.app.models.users import User, Token
 from backend.app.core.auth import validate_refresh_token
 
-from backend.app.repositories.users import get_user_repo
+from backend.app.repositories.users import get_user_repository
 from backend.app.core.exceptions import (
     InexistentUsernameException, 
     CredentialsException,
@@ -27,7 +27,7 @@ DEFAULT_REFRESH_TIMEOUT_MINUTES=settings.REFRESH_TOKEN_EXPIRE_MINUTES
 @router.post("/token")
 async def login_for_access_token(
     form_data: OAuthDependency,
-    user_repo=Depends(get_user_repo)
+    user_repo=Depends(get_user_repository)
 ) -> Token:
     try: 
         username, password = form_data.username, form_data.password
@@ -68,7 +68,7 @@ RefreshTokenDependency = Annotated[Tuple[User, str], Depends(validate_refresh_to
 @router.post("/refresh")
 async def refresh_access_token(
     token_data: RefreshTokenDependency,
-    user_repo = Depends(get_user_repo)
+    user_repo = Depends(get_user_repository)
 ):    
     user, token = token_data
     auth_data = {"sub": user.user_username, "roles": user.user_roles}

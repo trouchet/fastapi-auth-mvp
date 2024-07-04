@@ -84,7 +84,16 @@ class UsersRepository:
         user_to_delete = result.scalars().first()
 
         if user_to_delete:
-            self.session.delete(user_to_delete)
+            await self.session.delete(user_to_delete)
+            await self.session.commit()
+            
+    async def delete_user_by_email(self, email: str):
+        statement = select(User).where(User.user_email == email)
+        result = await self.session.execute(statement)
+        user_to_delete = result.scalars().first()
+
+        if user_to_delete:
+            await self.session.delete(user_to_delete)
             await self.session.commit()
 
     async def update_user_active_status(self, user_id: str, new_status: bool):
@@ -191,9 +200,13 @@ class UsersRepository:
         return not set(roles).isdisjoint(set(user.user_roles))
     
     async def refresh_token_exists(self, token: str) -> Tuple[bool | None, User | None]:
+        print(token)
         query = select(User).where(User.user_refresh_token == token)
         result = await self.session.execute(query)
+        
         user = result.scalars().first()
+        
+        
         return user is not None, user
 
     async def update_user_last_login(self, username: str):
@@ -215,18 +228,17 @@ class UsersRepository:
         if user:
             user.user_access_token = access_token
             await self.session.commit()
-
-        return user
+            await self.session.refresh(user)
 
     async def update_user_refresh_token(self, username: str, refresh_token: str):
         user = await self.get_user_by_username(username)
         if user:
             user.user_refresh_token = refresh_token
+            print(user.user_refresh_token)
             await self.session.commit()
-
-        return user
+            await self.session.refresh(user)
 
 @asynccontextmanager
-async def get_user_repo():
+async def get_user_repository():
     async with get_session() as session:
         yield UsersRepository(session)

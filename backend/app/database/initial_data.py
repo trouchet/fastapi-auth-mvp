@@ -13,7 +13,7 @@ from backend.app.data.auth import ROLES_METADATA
 from backend.app.repositories.auth import (
     get_role_repository, get_permission_repository,
 )
-from backend.app.repositories.users import get_user_repo
+from backend.app.repositories.users import get_user_repository
 from backend.app.repositories.auth import get_role_repository
 from backend.app.utils.repositories import get_role_permissions
 
@@ -24,7 +24,7 @@ async def create_roles_and_permissions():
     async with get_role_repository() as role_repository:
         for role_name, metadata in ROLES_METADATA.items():
             permissions=metadata['permissions']        
-            
+
             try:
                 await role_repository.create_role(role_name, permissions)
 
@@ -53,7 +53,7 @@ async def insert_initial_users():
 
     initial_users = [ first_super_admin_user ]
 
-    async with get_user_repo() as user_repository:
+    async with get_user_repository() as user_repository:
         for user in initial_users:
             try:
                 await user_repository.create_user(user)
@@ -71,5 +71,3 @@ async def insert_initial_data():
     # Insert initial roles, permissions and users
     await create_roles_and_permissions()
     await insert_initial_users()
-
-    logger.info("Initial data inserted successfully!")

@@ -23,15 +23,18 @@ class RoleRepository:
             Role: The newly created role object.
         """
         new_role = Role(role_id=str(uuid4()), role_name=role_name)
-
+        
         try:
             for perm_name in permission_names:
                 condition = Permission.perm_name == perm_name
                 statement = select(Permission).filter(condition)
+
                 permission = await self.session.execute(statement)
                 existing_permission = permission.scalars().first()
+                
                 if not existing_permission:
                     new_permission = Permission(perm_id=str(uuid4()), perm_name=perm_name)
+                    
                     self.session.add(new_permission)
                     await self.session.flush()
                     new_role.role_permissions.append(new_permission)
