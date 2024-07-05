@@ -1,5 +1,7 @@
 from httpx import AsyncClient
+import inspect
 import re
+
 from backend.app.core.logging import logger 
 
 def get_cat_image_url(status_code: int):
@@ -16,8 +18,29 @@ async def fetch_image(image_url: str):
     return await response.aread()
 
 
-def try_do(func, action, *args, **kwargs):
+async def is_async(func):
+    """
+    Checks if a function is asynchronous.
+
+    Args:
+        func: The function to check.
+
+    Returns:
+        bool: True if the function is asynchronous, False otherwise.
+    """
+    return (
+        inspect.iscoroutinefunction(func)
+        or inspect.isasyncgenfunction(func)
+        or hasattr(func, "__await__")
+    )
+
+
+async def try_do(func, action, *args, **kwargs):
     try:
-        func(*args, **kwargs)
+        if(await is_async(func)):
+            return await func(*args, **kwargs)
+        else:
+            return  func(*args, **kwargs)
     except Exception as e:
         logger.error(f"Error {action}: {e}")
+        

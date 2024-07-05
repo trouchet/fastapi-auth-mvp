@@ -1,30 +1,37 @@
+from contextlib import asynccontextmanager
+
 from backend.app.core.config import settings
 from backend.app.database.core import Database
-from backend.app.database.initial_data import insert_initial_users
 
 # Load environment variables from the .env file
 is_testing = settings.ENVIRONMENT == "testing"
 uri = settings.database_uri if not is_testing else settings.test_database_uri
 
-# Create a database connection
-database = Database(uri)
-database.init()
+database = None
 
-# Insert first user
-insert_initial_users(database)
+# Global variable to hold the database instance
+# Function to create and initialize the database
+async def init_database():
+    global database
+    database = Database(uri)
+    await database.init()
 
 
-def get_session():
+@asynccontextmanager
+async def get_session():
     """
-    Define a dependency to create a database session
+    Define a dependency to create a database session asynchronously.
 
     Returns:
         Database: A NamedTuple with engine and conn attributes for the database connection.
         None: If there was an error connecting to the database.
     """
+    # Ensure database is initialized before getting a session
+    if database is None:
+        await init_database()
     
-    session = database.session_maker()
-    try:
-        return session
-    finally:
-        session.close()
+    async with database.session_maker() as session:
+        try:
+            yield session
+        finally:
+            await session.close()

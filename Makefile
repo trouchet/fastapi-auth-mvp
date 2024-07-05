@@ -55,6 +55,26 @@ replace: ## Replaces a token in the code. Usage: make replace token=your_token
 		--exclude-dir=.git \
 		--exclude=poetry.lock)
 
+ip: ## Get the IP of a container. Usage: make ip container="db-cron-task"
+	docker inspect $(container) | jq -r '.[0].NetworkSettings.Networks[].IPAddress'
+
+ip-db: ## Get the database IP. Usage: make db-ip
+	$(MAKE) ip container=auth-db
+
+kill-container: ## Kill the database container. Usage: make kill-db
+	docker inspect $(container) | jq -r '.[0].State.Pid' | sudo xargs kill -9
+
+kill-db: ## Kill the database container. Usage: make kill-db
+	$(MAKE) kill-container container=auth-db
+
+kill-nginx: ## Kill the database container. Usage: make kill-db
+	$(MAKE) kill-container container=auth-nginx
+
+kill-app: ## Kill the database container. Usage: make kill-db
+	$(MAKE) kill-container container=auth-app
+
+kill: kill-db kill-app kill-nginx ## Kill the database and cron containers. Usage: make kill
+
 test: ## Test the application. Usage: make test
 	poetry run coverage run --rcfile=.coveragerc -m pytest
 
@@ -63,12 +83,6 @@ test-watch: ## Run tests on watchdog mode. Usage: make ptw-watch
 
 minimal-requirements: ## Generates minimal requirements. Usage: make requirements
 	python3 scripts/clean_packages.py requirements.txt requirements.txt
-
-ip: ## Get the IP of a container. Usage: make ip container="db-cron-task"
-	docker inspect $(container) | jq -r '.[0].NetworkSettings.Networks[].IPAddress'
-
-ip-db: ## Get the database IP. Usage: make db-ip
-	$(MAKE) ip container="auth-db"
 
 lint: ## perform inplace lint fixes
 	@ruff check --unsafe-fixes --fix .
@@ -80,6 +94,8 @@ pylint:
 report: test ## Generate coverage report. Usage: make report
 	coverage report --omit=$(OMIT_PATHS) --show-missing
 
+ps: ## List all containers. Usage: make ps
+	docker ps -a
 
 build: ## Build the application. Usage: make build
 	docker-compose build
@@ -88,4 +104,4 @@ down: ## Down the application. Usage: make down
 	docker-compose down
 
 up: ## Up the application. Usage: make up
-	docker-compose up -d
+	docker-compose up --build -d

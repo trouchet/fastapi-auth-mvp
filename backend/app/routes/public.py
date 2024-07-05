@@ -16,7 +16,7 @@ from backend.app.utils.healthcheck import (
     healthcheck_dict,
 )
 
-router = APIRouter(tags=["Miscelaneous"])
+router = APIRouter(prefix='/public', tags=["Public"])
 
 
 @router.get("/hello")

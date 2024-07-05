@@ -29,7 +29,7 @@ class PrivilegesException(HTTPException):
     def __init__(self):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="You don't have enough permissions",
+            detail="You don't have enough permissions to a access this resource",
         )
 
 
@@ -81,6 +81,15 @@ class IncorrectCurrentPasswordException(IncorrectPasswordException):
         )
 
 
+class MissingTokenException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 class ExpiredTokenException(HTTPException):
     def __init__(self):
         super().__init__(
@@ -105,6 +114,14 @@ class MalformedTokenException(HTTPException):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="This token is malformed. Please log in again to obtain a new token.",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class TooManyRequestsException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Please try again later.",
         )
 
 

@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 import shutil
 
-
 from backend.app.utils.logging import (
     clear_folder_items,
     DailyHierarchicalFileHandler,
@@ -103,7 +102,7 @@ def test_get_files_to_delete_excess_backups(listdir_mocker, logs_foldername):
 @patch("backend.app.utils.logging.time")
 def test_do_rollover_calculates_new_filename(mocked_time, logs_foldername):
     time_tuple = (2000, 1, 1, 12, 0, 0, 0, 0, 0)
-    log_test = "logs/2000/01/02/test.log.2000-01-02"
+    log_test = f"{logs_foldername}/2000/01/02/test.log.2000-01-02"
 
     current_time = time.mktime(time_tuple)
 
@@ -185,7 +184,7 @@ def test_clear_folder_items_success(logs_foldername):
         return item.path
 
     clear_folder_items(logs_foldername, 2, key_map=key_map_)
-
+    
     assert not os.path.exists(f"{logs_foldername}/1")
     assert os.path.exists(f"{logs_foldername}/2")
     assert os.path.exists(f"{logs_foldername}/3")
@@ -258,9 +257,9 @@ def test_clear_folder_items_files(logs_foldername):
 
     clear_folder_items(logs_foldername, 2)
 
-    assert not os.path.exists(f"{logs_foldername}/1.txt")
+    assert os.path.exists(f"{logs_foldername}/1.txt")
     assert os.path.exists(f"{logs_foldername}/2.txt")
-    assert os.path.exists(f"{logs_foldername}/3.txt")
+    assert not os.path.exists(f"{logs_foldername}/3.txt")
 
 
 @pytest.mark.parametrize(

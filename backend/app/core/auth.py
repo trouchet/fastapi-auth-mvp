@@ -3,10 +3,9 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from typing import Annotated
+from typing import Annotated, Tuple
 from functools import wraps
 from time import time
-import inspect
 
 from backend.app.core.exceptions import (
     CredentialsException, 
@@ -19,7 +18,8 @@ from backend.app.core.exceptions import (
 )
 from backend.app.repositories.users import get_user_repo
 from backend.app.models.users import User
-from backend.app.database.models.users import UserDB
+from backend.app.database.models.users import User
+from backend.app.utils.misc import is_async
 
 from backend.app.core.config import settings
 
@@ -45,46 +45,43 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
         CredentialsException: If the token is invalid or the user credentials are incorrect.
         InactiveUserException: If the user is inactive.
     """
-    
-    try:
-        user_repo = get_user_repo()
+    with get_user_repo() as user_repository:
+        try:
+            user_has_token, user = user_repository.refresh_token_exists(token)
 
-        user_has_token, user = user_repo.refresh_token_exists(token)
+            if user_has_token:
+                payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+                username: str = payload.get("sub")
+                expiration_date_int = payload.get("exp")
 
-        if user_has_token:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            username: str = payload.get("sub")
-            roles: str = payload.get("roles")
-            expiration_date_int = payload.get("exp")
+                expiration_date = datetime.fromtimestamp(expiration_date_int)
 
-            expiration_date = datetime.fromtimestamp(expiration_date_int)
+                if expiration_date < datetime.now():
+                    raise ExpiredTokenException()
 
-            if expiration_date < datetime.now():
-                raise ExpiredTokenException()
+                invalid_credentials = username is None or user.user_username != username
 
-            empty_entry = username is None or roles is None
-
-            if empty_entry or user.user_username != username:
+                if invalid_credentials:
+                    raise CredentialsException()
+            else:
                 raise CredentialsException()
-        else:
+
+        except JWTError:
+            raise ExpiredTokenException()
+
+        current_user = user_repository.get_user_by_username(username)
+
+        if current_user is None:
             raise CredentialsException()
 
-    except JWTError:
-        raise ExpiredTokenException()
-
-    current_user = user_repo.get_user_by_username(username)
-
-    if current_user is None:
-        raise CredentialsException()
-
-    if not current_user.user_is_active:
-        raise InactiveUserException(current_user.user_username)
+        if not current_user.user_is_active:
+            raise InactiveUserException(current_user.user_username)
 
     return current_user, token
 
 
 # Function to get the user from the database
-async def get_user(username: str) -> UserDB | None:
+async def get_user(username: str) -> User | None:
     """
     Retrieve a user from the database by username.
 
@@ -92,13 +89,13 @@ async def get_user(username: str) -> UserDB | None:
         username (str): The username of the user to retrieve.
 
     Returns:
-        UserDB | None: The retrieved user if found, otherwise None.
+        User | None: The retrieved user if found, otherwise None.
     """
-    user_repository = get_user_repo()
-    user = await user_repository.get_user_by_username(username)
+    with get_user_repo() as user_repository:
+        user = await user_repository.get_user_by_username(username)
 
-    if not user:
-        return
+        if not user:
+            return
 
     return user
 
@@ -150,84 +147,61 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         InexistentUsernameException: If the username does not exist in the database.
         InactiveUserException: If the user is inactive.
     """
-    
-    user_repo = get_user_repo()
+    async with get_user_repo() as user_repository:
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            
+            if payload['exp'] <= time():
+                raise ExpiredTokenException()
+            
+            if 'sub' in payload:
+                username: str = payload.get("sub")
+            else:
+                raise MissingRequiredClaimException("sub")
+            
+            if username is None:
+                raise CredentialsException()
 
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        
-        if payload['exp'] <= time():
-            raise ExpiredTokenException()
-        
-        if 'sub' in payload:
-            username: str = payload.get("sub")
-        else:
-            raise MissingRequiredClaimException("sub")
-        
-        if username is None:
-            raise CredentialsException()
+        except JWTError:
+            raise MalformedTokenException()
 
-    except JWTError:
-        raise MalformedTokenException()
+        # Get the user from the database
+        user = user_repository.get_user_by_username(username=username)
 
-    # Get the user from the database
-    user = user_repo.get_user_by_username(username=username)
-
-    if user is None:
-        raise InexistentUsernameException(username)
-    if not user.user_is_active:
-        raise InactiveUserException(user.user_username)
+        # Check if the user exists and is active
+        if user is None:
+            raise InexistentUsernameException(username)
+        if not user.user_is_active:
+            raise InactiveUserException(user.user_username)
 
     return user
 
 
-async def is_async(func):
-    """
-    Checks if a function is asynchronous.
-
-    Args:
-        func: The function to check.
-
-    Returns:
-        bool: True if the function is asynchronous, False otherwise.
-    """
-    return (
-        inspect.iscoroutinefunction(func)
-        or inspect.isasyncgenfunction(func)
-        or hasattr(func, "__await__")
-    )
-
-
-# Decorator to check the role
-def role_checker(allowed_roles):
-    """
-    Decorator function that checks if the current user has the required roles to access a view function.
-    
-    Args:
-        allowed_roles (list): A list of roles that are allowed to access the view function.
-        
-    Returns:
-        function: The decorated view function.
-    """
-    
+def role_checker(required_roles: Tuple[str]):
     def wrapper(func):
         @wraps(func)
-        async def decorated_view(
-            *args, 
-            **kwargs
-        ):
-            current_user: User = kwargs.get("current_user")
-            
-            user_roles_set=set(current_user.user_roles)
-            allowed_roles_set=set(allowed_roles)
-
-            user_has_permission=user_roles_set.isdisjoint(allowed_roles_set) is False
-
-            if not user_has_permission:
+        async def decorated_view(*args, current_user: User, **kwargs):
+            if not current_user.has_roles(required_roles):
                 raise PrivilegesException()
 
             if await is_async(func):
-                return await func(*args, **kwargs)
+                return await func(*args, current_user=current_user, **kwargs)
+            else:
+                return func(*args, current_user=current_user, **kwargs)
+            
+        return decorated_view
+    
+    return wrapper
+
+def permissions_checker(required_permissions: Tuple[str]):
+    def wrapper(func):
+        @wraps(func)
+        async def decorated_view(*args, current_user: User, **kwargs):
+            if not current_user.has_permissions(required_permissions):
+                raise PrivilegesException()
+
+            if await is_async(func):
+                return await func(*args, current_user=current_user, **kwargs)
             else:
                 return func(*args, **kwargs)
             
