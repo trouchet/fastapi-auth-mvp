@@ -32,4 +32,3 @@ class RequestLogRepository:
 def get_request_log_repository():
     with get_session() as session:
         yield RequestLogRepository(session)
-s

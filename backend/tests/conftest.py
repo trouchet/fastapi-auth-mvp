@@ -14,18 +14,10 @@ from backend.app.database.core import Database
 from backend.app.database.models.users import User, Role
 from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository, PermissionRepository
-from backend.app.data.auth import ROLES_METADATA
-from backend.app.utils.repositories import get_role_permissions
 from backend.app.database.initial_data import insert_initial_data
-from backend.app.repositories.auth import get_role_repository, get_permission_repository
 from backend.app.core.config import settings
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture

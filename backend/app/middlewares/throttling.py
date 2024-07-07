@@ -4,7 +4,7 @@ from fastapi_limiter.depends import RateLimiter
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
-from aioredis import create_redis_pool
+import aioredis
 from typing import Callable, Union
 from fnmatch import fnmatch
 
@@ -30,7 +30,7 @@ class RateLimiterPolicy:
 
 
 async def init_redis_pool():
-    return await create_redis_pool(settings.redis_url)
+    return await aioredis.Redis.from_url(settings.redis_url)
 
 
 async def init_rate_limiter():
