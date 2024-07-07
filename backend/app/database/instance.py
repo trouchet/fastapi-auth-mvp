@@ -30,7 +30,7 @@ async def get_session():
     if database is None:
         await init_database()
     
-    async with database.session_maker() as session:
+    async with database.scoped_session_maker() as session:
         try:
             yield session
         finally:
