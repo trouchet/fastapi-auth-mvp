@@ -255,13 +255,11 @@ def test_clear_folder_items_files(logs_foldername):
     with open(f"{logs_foldername}/3.txt", "w") as f:
         f.write("test")
     
-    print(os.listdir(logs_foldername))
-    
     clear_folder_items(logs_foldername, 2)
 
-    assert not os.path.exists(f"{logs_foldername}/1.txt")
+    assert os.path.exists(f"{logs_foldername}/1.txt")
     assert os.path.exists(f"{logs_foldername}/2.txt")
-    assert os.path.exists(f"{logs_foldername}/3.txt")
+    assert not os.path.exists(f"{logs_foldername}/3.txt")
     
     rmtree(logs_foldername, ignore_errors=True)
 

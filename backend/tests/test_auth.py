@@ -344,26 +344,29 @@ async def test_validate_refresh_token_nonexistent_user(test_viewer):
 
 @pytest.mark.asyncio("scope")
 async def test_role_checker_allows_authorized_role():
+    # Helper class to represent a mock user object
+    class MockUser:
+        def __init__(self, roles: List[str]):
+            self.user_roles = roles
+            
+        def has_roles(self, given_roles):
+            user_roles_set = { role_name for role_name in self.user_roles }
+            allowed_roles_set = set(given_roles)
+            return not user_roles_set.isdisjoint(allowed_roles_set)
+    
     #Tests if the decorator allows access with an authorized role.
     # Mock get_current_active_user to return a user with an allowed role
     allowed_roles = ("Admin",)
     mock_user = MockUser(roles=["Admin"])
-    
+    CurrentUserDependency=Depends(get_current_user)
+
     with patch("backend.app.core.auth.get_current_user", return_value=mock_user):
         @role_checker(allowed_roles)
-        async def protected_view(current_user: Depends(get_current_user)):
+        async def protected_view(current_user: CurrentUserDependency):
             return "Success"
 
         # Call the decorated view and assert no exception is raised
         assert await protected_view(current_user=mock_user) == "Success"
 
 
-# Helper class to represent a mock user object
-class MockUser:
-    def __init__(self, roles: List[str]):
-        self.user_roles = roles
-        
-    def has_roles(self, given_roles):
-        user_roles_set = { role_name for role_name in self.user_roles }
-        allowed_roles_set = set(given_roles)
-        return not user_roles_set.isdisjoint(allowed_roles_set)
+

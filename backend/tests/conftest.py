@@ -1,13 +1,8 @@
 import pytest
-from passlib.context import CryptContext
-from typing import Set, Tuple, Dict, List
+from typing import Tuple, Dict, List
 from unittest.mock import patch
-from os import getcwd
 from time import mktime
 from uuid import uuid4
-from asyncio import new_event_loop
-from contextlib import contextmanager
-from asyncpg.exceptions import PostgresConnectionError
 
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
@@ -18,8 +13,6 @@ from backend.app.database.initial_data import insert_initial_data
 from backend.app.core.config import settings
 
 
-
-
 @pytest.fixture
 async def manage_database_connection():
     uri = settings.test_database_uri
@@ -27,13 +20,14 @@ async def manage_database_connection():
     # Connect to your database
     database = Database(uri)
 
-    await database.init()
-    await insert_initial_data()
+    try:
+        await database.init()
+        await insert_initial_data()
 
-    yield database
+        yield database
 
-    await database.engine.dispose()
-
+    finally:
+        await database.engine.dispose()
 
 @pytest.fixture
 async def test_session(manage_database_connection):
