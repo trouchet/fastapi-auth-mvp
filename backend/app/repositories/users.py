@@ -50,7 +50,7 @@ class UsersRepository:
         
         if not user_to_update:
             return None
-        
+
         # Iterate over the fields in the Pydantic model and update the SQLAlchemy model
         update_data = update_user.model_dump(exclude_unset=True)
         for key, value in update_data.items():
@@ -58,7 +58,7 @@ class UsersRepository:
 
         self.session.commit()
         self.session.refresh()
-        
+
         return user_to_update  
 
     def delete_user_by_id(self, user_id: str):
@@ -74,7 +74,7 @@ class UsersRepository:
         self.session.commit()
 
     def update_user_active_status(self, user_id: str, new_status: bool):
-        query=self.session.query(UserDB)
+        query=self.session.query(User)
         
         user=query.filter(User.user_id == user_id).first()
         

@@ -2,29 +2,21 @@ from fastapi import Depends
 from typing import Dict
 
 from backend.app.repositories.users import get_user_repo, UsersRepository
-from backend.app.database.models.users import UserDB
+from backend.app.database.models.users import User
 from backend.app.models.users import CreateUser
 from backend.app.utils.security import (
     is_password_valid, 
     apply_password_validity_dict, 
-    is_email_valid,
-    is_valid_uuid,
 )
 from backend.app.core.exceptions import (
-    InexistentUserIDException,
-    InactiveUserException,
-    IncorrectCurrentPasswordException,
     ExistentUsernameException,
     ExistentEmailException,
-    LastAdminRemovalException,
     InvalidPasswordException,
-    InvalidEmailException,
-    InvalidUUIDException,
     InvalidPasswordException,
 )
 from backend.app.utils.security import hash_string
 
-def userbd_to_user(user: UserDB):
+def userbd_to_user(user: User):
     return {
         "user_id": user.user_id,
         "user_created_at": user.user_created_at,
@@ -54,7 +46,7 @@ async def create_new_user(
         raise InvalidPasswordException(invalidation_dict)
 
     # Create new user
-    new_user = UserDB(
+    new_user = User(
         user_username=user.user_username,
         user_hashed_password=hash_string(user.user_password),
         user_email=user.user_email,
