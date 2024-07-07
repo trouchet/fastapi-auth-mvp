@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     POSTGRES_DBNAME: str = "auth_db"
     
     POSTGRES_HOST_TEST: str = 'localhost'
-    POSTGRES_PORT_TEST: int = 5433
+    POSTGRES_PORT_TEST: int = 5432
     POSTGRES_USER_TEST: str = 'postgres'
     POSTGRES_PASSWORD_TEST: str = 'postgres'
     POSTGRES_DBNAME_TEST: str = "auth_db"
