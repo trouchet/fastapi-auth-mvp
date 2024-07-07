@@ -19,7 +19,7 @@ from backend.app.core.auth import (
     JWT_SECRET_KEY,
 )
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_user_existing(test_user_repository, test_viewer):
     username = test_viewer.user_username
     user = await test_user_repository.get_user_by_username(username)
@@ -27,7 +27,7 @@ async def test_get_user_existing(test_user_repository, test_viewer):
     assert user.user_username == username
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_user_nonexistent(test_user_repository):
     username = "unknown_user"
     user = await test_user_repository.get_user_by_username(username)
@@ -35,7 +35,7 @@ async def test_get_user_nonexistent(test_user_repository):
     assert user is None
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_authenticate_user_correct_credentials(
     test_user_repository, test_viewer, test_viewer_data
 ):
@@ -48,7 +48,7 @@ async def test_authenticate_user_correct_credentials(
     assert is_authentic
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_authenticate_user_incorrect_password(test_user_repository, test_viewer):
     username = test_viewer.user_username
     incorrect_password = "any_password"
@@ -78,7 +78,7 @@ def test_create_token_with_custom_expiry(test_viewer):
 
 def test_create_token_default_expiry(test_viewer):
     auth_data = {"sub": test_viewer.user_username}
-    print(test_viewer.user_roles)
+
     token = create_token(auth_data)
 
     # decode the token and check expiration (should be 15 minutes)
@@ -88,7 +88,7 @@ def test_create_token_default_expiry(test_viewer):
     assert expire_time > datetime.now() + timedelta(minutes=12)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_user_valid_token(
     test_user_repository, test_viewer
 ):
@@ -102,7 +102,7 @@ async def test_get_current_user_valid_token(
     assert current_user.user_username == username
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_user_inexistent_user(
     test_user_repository, test_viewer
 ):
@@ -117,7 +117,7 @@ async def test_get_current_user_inexistent_user(
     assert f"Username {unknown_username} does not exist" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_user_incomplete_data(
     test_user_repository, test_viewer
 ):
@@ -131,7 +131,7 @@ async def test_get_current_user_incomplete_data(
     assert "Token is missing required claim: sub" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_user_invalid_token():
     invalid_token = "invalid_token"
 
@@ -141,7 +141,7 @@ async def test_get_current_user_invalid_token():
     assert "This token is malformed." in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_user_missing_username_in_token(test_viewer):
     auth_dict={
         'sub': test_viewer.user_username
@@ -158,7 +158,7 @@ async def test_get_current_user_missing_username_in_token(test_viewer):
     assert "This token is malformed" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_active_user(test_viewer):
     # Use a valid token for an active user
     username = test_viewer.user_username
@@ -171,7 +171,7 @@ async def test_get_current_active_user(test_viewer):
     assert current_user.user_username == username
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_active_user_inactive_user(test_inactive_user):
     # Use a valid token for an inactive user
     username = test_inactive_user.user_username
@@ -186,7 +186,7 @@ async def test_get_current_active_user_inactive_user(test_inactive_user):
     assert f"User {username} is inactive" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_validate_refresh_token_valid_token(
     test_user_repository, test_viewer
 ):
@@ -206,7 +206,7 @@ async def test_validate_refresh_token_valid_token(
     assert validated_user.user_username == username
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 @patch('backend.app.core.auth.jwt.decode')
 async def test_validate_refresh_token_JWT_error(
     mock_jwt_decode, test_user_repository
@@ -222,7 +222,7 @@ async def test_validate_refresh_token_JWT_error(
     assert "Could not validate credentials" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_validate_refresh_token_invalid_token():
     invalid_token = "invalid_refresh_token"
 
@@ -232,7 +232,7 @@ async def test_validate_refresh_token_invalid_token():
     assert "Could not validate credentials" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_user_missing_username_in_token(test_viewer):
     auth_dict = {"sub": test_viewer.user_username}
     token = create_token(auth_dict)
@@ -247,7 +247,7 @@ async def test_get_current_user_missing_username_in_token(test_viewer):
     assert "This token is malformed" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_get_current_active_user_inactive_user(
     test_user_repository, test_inactive_user
 ):
@@ -262,7 +262,7 @@ async def test_get_current_active_user_inactive_user(
     assert "is inactive" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 @patch('backend.app.core.auth.jwt.decode')
 async def test_validate_refresh_token_JWT_error(mock_jwt_decode):
     # Mock jwt.decode to raise JWTError
@@ -276,7 +276,7 @@ async def test_validate_refresh_token_JWT_error(mock_jwt_decode):
     assert "Could not validate credentials" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_validate_refresh_token_invalid_token():
     invalid_token = "invalid_refresh_token"
 
@@ -286,7 +286,7 @@ async def test_validate_refresh_token_invalid_token():
     assert "Could not validate credentials" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_validate_refresh_token_missing_username_in_token(test_viewer):
     # Assuming this creates a refresh token (modify for your implementation)
     auth_dict = {"sub": test_viewer.user_username}
@@ -302,7 +302,7 @@ async def test_validate_refresh_token_missing_username_in_token(test_viewer):
 
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_vaildate_refresh_token_inexistent_user():
     # Create a refresh token for a user
 
@@ -315,7 +315,7 @@ async def test_vaildate_refresh_token_inexistent_user():
     assert "Could not validate credentials" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_validate_refresh_token_expired_token(test_user_repository, test_viewer):
     # Simulate an expired refresh token by modifying the expiry in the payload
     custom_expiry = timedelta(seconds=0)
@@ -330,7 +330,7 @@ async def test_validate_refresh_token_expired_token(test_user_repository, test_v
     assert "This token has expired" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_validate_refresh_token_nonexistent_user(test_viewer):
     # Create a refresh token with a username not in the test_users_db
     auth_dict = {"sub": "unknown_user"}
@@ -342,7 +342,7 @@ async def test_validate_refresh_token_nonexistent_user(test_viewer):
     assert "Could not validate credentials" in str(excinfo.value)
 
 
-@pytest.mark.asyncio("scope")
+@pytest.mark.asyncio
 async def test_role_checker_allows_authorized_role():
     # Helper class to represent a mock user object
     class MockUser:

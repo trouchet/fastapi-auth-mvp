@@ -52,17 +52,24 @@ class User(Base):
         user_roles_set = {
             role.role_name for role in self.user_roles
         }
+        
         allowed_roles_set = set(allowed_roles)
         return not user_roles_set.isdisjoint(allowed_roles_set)
 
-    def has_permissions(self, permission_names: Tuple[str]) -> bool:
-        user_permissions = {
-            permission.perm_name 
-            for role in self.user_roles 
-            for permission in role.role_permissions
+    def has_permissions(self, allowed_permissions: Tuple[str]):
+        user_permissions_set = {
+            perm.perm_name for role in self.user_roles for perm in role.role_permissions
         }
-        required_permissions = set(permission_names)
-        return required_permissions.issubset(user_permissions)
+        
+        allowed_permissions_set = set(allowed_permissions)
+        return not user_permissions_set.isdisjoint(allowed_permissions_set)
+
+    def get_permissions(self):
+        return {
+            perm.perm_name 
+            for role in self.user_roles 
+            for perm in role.role_permissions
+        }
 
     def __repr__(self):
         return f"User({self.user_username})"
@@ -91,7 +98,8 @@ class Role(Base):
     )
 
     def __repr__(self):
-        return f"Role({self.role_name})"
+        permissions = ', '.join([perm.perm_name for perm in self.role_permissions])
+        return f"Role({permissions})"
 
 class Permission(Base):
     __tablename__ = 'permissions'

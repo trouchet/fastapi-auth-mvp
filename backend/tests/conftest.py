@@ -1,9 +1,11 @@
 import pytest
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Generator
 from unittest.mock import patch
 from time import mktime
 from uuid import uuid4
+import asyncio
 
+from backend.app.database.models.base import Base
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
 from backend.app.database.models.users import User, Role
@@ -13,12 +15,20 @@ from backend.app.database.initial_data import insert_initial_data
 from backend.app.core.config import settings
 
 
+@pytest.fixture(scope="session")
+def event_loop() -> Generator:
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
 @pytest.fixture
 async def manage_database_connection():
     uri = settings.test_database_uri
 
     # Connect to your database
     database = Database(uri)
+    Base.metadata.drop_all
 
     try:
         await database.init()

@@ -2,12 +2,10 @@ from sqlalchemy import text, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import async_scoped_session
-from sqlalchemy.exc import OperationalError
 from asyncio import current_task 
 
 from backend.app.core.logging import logger
 from backend.app.database.models.base import Base
-from backend.app.utils.misc import try_do
 
 
 class Database:
