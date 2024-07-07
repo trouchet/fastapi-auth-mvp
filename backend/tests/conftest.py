@@ -15,21 +15,12 @@ from backend.app.repositories.auth import (
     RoleRepository, PermissionRepository
 )
 from backend.app.core.config import settings
-from backend.app.data.auth import ROLES_METADATA
-from backend.app.utils.repositories import get_role_permissions
 from backend.app.database.initial_data import insert_initial_data
-from backend.app.repositories.auth import (
-    get_role_repository, 
-    get_permission_repository,
-)
-
 
 @pytest.fixture
 def test_database():
-    uri = settings.test_database_uri
-
     # Connect to your database
-    database = Database(uri)
+    database = Database(settings.test_database_uri)
     database.init()
     insert_initial_data()
 
