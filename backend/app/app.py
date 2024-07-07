@@ -21,7 +21,7 @@ from backend.app.middlewares.bundler import add_middlewares
 from backend.app.core.config import settings, is_docker
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app_: FastAPI):
     # Database initialization
     await init_database()
     await insert_initial_data()
