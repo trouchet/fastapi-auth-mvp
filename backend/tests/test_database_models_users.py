@@ -28,7 +28,8 @@ def test_user_equality():
 def test_user_has_roles(test_viewer):
     assert test_viewer.has_roles(('Viewer',)) == True
     assert test_viewer.has_roles(('Admin',)) == False
+    assert test_viewer.has_roles(('Viewer', 'Admin')) == False
 
-# TODO: Change models to AsyncSQLModel
-def test_get_permissions(test_viewer):
-    assert test_viewer.get_permissions() == {"view_content", "access_public_content"}
+
+async def test_get_permissions(test_viewer, test_session):
+    assert await test_viewer.get_permissions(test_session) == {"view_content", "access_public_content"}
