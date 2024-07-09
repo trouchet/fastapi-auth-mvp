@@ -1,5 +1,6 @@
 from .base import Base
-from .users import User, Role, Permission
+from .users import User
+from .auth import Role, Permission
 from .request import RequestLog
 
 
