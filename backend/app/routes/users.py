@@ -20,7 +20,7 @@ from backend.app.core.exceptions import (
     InvalidUUIDException,
     InvalidPasswordException,
 )
-from backend.app.models.users import User, UpdateUser, CreateUser
+from backend.app.models.users import User, UnhashedUpdateUser, UpdateUser, CreateUser
 from backend.app.core.auth import get_current_user
 from backend.app.utils.security import (
     is_password_valid, 
@@ -123,11 +123,15 @@ def delete_user(
 @router.patch("/{user_id}")
 @role_checker(user_management_roles)
 def update_user(
-    user_id: str, user: UpdateUser, user_repo: UsersRepository = Depends(get_user_repository)
+    user_id: str, 
+    update_user_info: UnhashedUpdateUser, 
+    user_repo: UsersRepository = Depends(get_user_repository)
 ) -> Dict:
 
-    if not user:
+    if not update_user_info:
         raise InexistentUserIDException(user_id)
+    
+    update_user_info.to_update_user()
 
     admin_users=user_repo.get_users_by_role("admin")
     last_admin=len(admin_users)==1
@@ -164,17 +168,23 @@ def create_user(
 
 @router.post('/signup')
 async def signup(
-    user: CreateUser,
+    new_user_info: CreateUser,
     user_repo: UsersRepository=Depends(get_user_repository)
 ) -> Dict:
-    return await create_new_user(user, user_repo)
+    new_user = User(
+        user_username=new_user_info.user_username,
+        user_hashed_password=hash_string(new_user_info.user_password),
+        user_email=new_user_info.user_email,
+    )
+    
+    return await user_repo.create_user(new_user)
 
 
 @router.patch("/{user_id}")
 @role_checker(user_editor_roles)
 def update_user(
     user_id: str,
-    user: UpdateUser,
+    user: UnhashedUpdateUser,
     user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
