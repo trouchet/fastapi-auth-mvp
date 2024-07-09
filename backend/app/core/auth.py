@@ -47,7 +47,6 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
     """
     async with get_user_repository() as user_repository:
         try:
-            print(token)
             user_has_token, user = await user_repository.refresh_token_exists(token)
             
             if user_has_token:
