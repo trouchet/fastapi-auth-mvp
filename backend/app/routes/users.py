@@ -143,11 +143,10 @@ def update_user(
     if forbidden_remove_last_admin:
         raise LastAdminRemovalException()
 
-    user_repo.delete_user_by_id(user_id)
+    updated_user=user_repo.update_user(update_user_info)
     
-    message_dict={"message": f"User {user_id} deleted successfully"}
     return JSONResponse(
-        content=jsonable_encoder(message_dict),
+        content=jsonable_encoder(dict(updated_user)),
     )
 
 
@@ -271,24 +270,6 @@ def update_password(
         raise IncorrectCurrentPasswordException()
 
     return userbd_to_user(user)
-
-
-@router.get("/{user_id}/roles")
-@role_checker(user_viewer_roles)
-def get_user_roles(
-    user_id: str,
-    user_repo: UsersRepository=Depends(get_user_repository),
-    current_user: User = Depends(get_current_user)
-) -> List[str]:
-    if not is_valid_uuid(user_id): 
-        raise InvalidUUIDException(user_id)
-    
-    roles=user_repo.get_user_roles(user_id)
-    
-    if not roles:
-        raise InexistentUserIDException(user_id) 
-    else:
-        return roles
 
 
 @router.get("/{user_id}/roles")
