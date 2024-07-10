@@ -5,12 +5,19 @@ from contextlib import asynccontextmanager
 from backend.app.database.models.auth import Role, Permission
 from backend.app.database.instance import get_session
 from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import make_transient
+
+from backend.app.database.models.auth import Role, Permission
+from backend.app.database.instance import get_session
 
 class RoleRepository:
-    def __init__(self, session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create_role(self, role_name: str, permission_names: List[str]) -> Role:
+    async def create_role(
+        self, role_name: str, rate_limit: dict, permission_names: List[str]
+    ) -> Role:
         """
         Creates a new role and persists it to the database.
 
@@ -21,7 +28,8 @@ class RoleRepository:
         Returns:
             Role: The newly created role object.
         """
-        new_role = Role(role_id=str(uuid4()), role_name=role_name)
+        role_id = str(uuid4())
+        new_role = Role(role_id=role_id, role_name=role_name, role_rate_limit=rate_limit)
         
         try:
             for perm_name in permission_names:
@@ -83,7 +91,9 @@ class RoleRepository:
         Returns:
             List[Role]: A list of all role objects.
         """
-        return await self.session.query(Role).all()
+        statement = await self.session.execute(select(Role))
+        
+        return statement.scalars().all()
     
     async def update_role(self, role: Role) -> None:
         """
@@ -103,6 +113,8 @@ class RoleRepository:
         """
         await self.session.delete(role)
         await self.session.commit()
+
+        
 
 class PermissionRepository:
     def __init__(self, session):
