@@ -3,13 +3,11 @@ from typing import Tuple
 from sqlalchemy.sql import select
 from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.dialects.postgresql import JSONB
-from uuid import uuid4
-
 from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from . import Base
-
 
 # Association tables for many-to-many relationships
 users_roles_association = Table(
@@ -47,31 +45,6 @@ class User(Base):
         intersection_roles = user_roles_set.intersection(allowed_roles_set)
         
         return len(intersection_roles) == len(allowed_roles_set)
-
-    def has_permissions(self, allowed_permissions: Tuple[str]):
-        user_permissions_set = {
-            perm.perm_name for role in self.user_roles for perm in role.role_permissions
-        }
-        
-        allowed_permissions_set = set(allowed_permissions)
-        return not user_permissions_set.isdisjoint(allowed_permissions_set)
-
-    async def get_permissions(self, session):
-        result = await session.execute(
-            select(User)
-            .options(
-                joinedload(User.user_roles).joinedload(Role.role_permissions)
-            )
-            .filter(User.user_id == self.user_id)
-        )
-        user = result.unique().fetchall()[0][0]
-        
-        permissions = {
-            perm.perm_name
-            for role in user.user_roles
-            for perm in role.role_permissions
-        }
-        return permissions
 
     def __repr__(self):
         return f"User({self.user_username})"

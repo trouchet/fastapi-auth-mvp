@@ -9,6 +9,7 @@ from asyncpg.exceptions import PostgresConnectionError
 from collections.abc import AsyncIterator, Iterator
 
 from backend.app.database.models.base import Base
+from backend.app.utils.throttling import get_minute_rate_limiter
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
 from backend.app.database.models.users import User
@@ -34,7 +35,7 @@ async def manage_database_connection():
 
     # Connect to your database
     database = Database(uri)
-    Base.metadata.drop_all
+    database.init()
 
     try:
         await database.init()

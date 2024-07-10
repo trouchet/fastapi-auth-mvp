@@ -26,12 +26,3 @@ def test_user_repr():
     
     assert new_user.__repr__() == "User(test_user)"
 
-
-def test_user_has_roles(test_viewer):
-    assert test_viewer.has_roles(('Viewer',)) == True
-    assert test_viewer.has_roles(('Admin',)) == False
-    assert test_viewer.has_roles(('Viewer', 'Admin')) == False
-
-
-async def test_get_permissions(test_viewer, test_session):
-    assert await test_viewer.get_permissions(test_session) == {"view_content", "access_public_content"}

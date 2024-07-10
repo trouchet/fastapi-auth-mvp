@@ -2,6 +2,8 @@ from sqlalchemy import text, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from asyncpg.exceptions import DuplicateDatabaseError
+from sqlalchemy.ext.asyncio import async_scoped_session
+from asyncio import current_task 
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -31,6 +33,9 @@ class Database:
         )
         self.session_maker = sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
+        )
+        self.scoped_session_maker = async_scoped_session(
+            self.session_maker, scopefunc=current_task
         )
 
     async def create_database(self):
