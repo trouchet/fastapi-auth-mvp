@@ -37,3 +37,7 @@ class UnhashedUpdateUser(BaseUser):
             del update_user_data['user_password']
 
         return UpdateUser(**update_user_data)
+
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
