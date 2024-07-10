@@ -3,21 +3,27 @@ from typing import Tuple, Dict, List, Generator
 from unittest.mock import patch
 from time import mktime
 from uuid import uuid4
-import asyncio
+from asyncio import new_event_loop, AbstractEventLoop, get_event_loop_policy
+from contextlib import contextmanager
+from asyncpg.exceptions import PostgresConnectionError
+from collections.abc import AsyncIterator, Iterator
 
 from backend.app.database.models.base import Base
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
-from backend.app.database.models.users import User, Role
+from backend.app.database.models.users import User
+from backend.app.database.models.auth import Role 
 from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository, PermissionRepository
+from backend.app.data.auth import ROLES_METADATA
 from backend.app.database.initial_data import insert_initial_data
 from backend.app.core.config import settings
 
 
 @pytest.fixture(scope="session")
-def event_loop() -> Generator:
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+def event_loop(request: pytest.FixtureRequest) -> Iterator[AbstractEventLoop]:
+    event_loop_policy = get_event_loop_policy()
+    loop = event_loop_policy.new_event_loop()
     yield loop
     loop.close()
 
@@ -77,6 +83,15 @@ async def test_permission_repository(test_session):
     finally:
         await test_session.aclose()
 
+
+@pytest.fixture
+async def test_super_admin_data():
+    return {
+        "username": "super_admin_",
+        "password": "Super_Admin_password_shh123!",
+        "email": "super_admin_@example.com"
+    }
+    
 
 @pytest.fixture
 def test_admin_data():
@@ -186,22 +201,19 @@ async def test_inactive_user(test_user_repository, viewer_role, test_inactive_us
 
 
 @pytest.fixture
+async def test_users(
+    test_super_admin, test_admin, test_viewer, test_inactive_user
+):
+    return [
+        test_super_admin, test_admin, test_viewer, test_inactive_user
+    ]
+    
+
+
+@pytest.fixture
 def logs_foldername():
     return "log_tmp"
 
-
-"""
-def user_dict(
-    username, password, email, roles: Set[str] = {"Admin"}, is_active: bool = True
-):
-    return {
-        "username": username,
-        "hashed_password": hash_string(password),
-        "email": email,
-        "roles": roles,
-        "is_active": is_active,
-    }
-"""    
 
 @pytest.fixture
 def test_time_tuple():
@@ -239,7 +251,5 @@ def mock_strftime():
 
         return strftime("%Y-%m-%d", time_tuple)
 
-    with patch(
-        "backend.app.utils.logging.strftime", side_effect=strftime
-    ) as mock_strftime:
+    with patch("backend.app.utils.logging.strftime", side_effect=strftime) as mock_strftime:
         yield mock_strftime
