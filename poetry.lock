@@ -19,6 +19,21 @@ typing-extensions = "*"
 hiredis = ["hiredis (>=1.0)"]
 
 [[package]]
+name = "aiosmtplib"
+version = "2.0.2"
+description = "asyncio SMTP client"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "aiosmtplib-2.0.2-py3-none-any.whl", hash = "sha256:1e631a7a3936d3e11c6a144fb8ffd94bb4a99b714f2cb433e825d88b698e37bc"},
+    {file = "aiosmtplib-2.0.2.tar.gz", hash = "sha256:138599a3227605d29a9081b646415e9e793796ca05322a78f69179f0135016a3"},
+]
+
+[package.extras]
+docs = ["sphinx (>=5.3.0,<6.0.0)", "sphinx_autodoc_typehints (>=1.7.0,<2.0.0)"]
+uvloop = ["uvloop (>=0.14,<0.15)", "uvloop (>=0.14,<0.15)", "uvloop (>=0.17,<0.18)"]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 description = "Reusable constraint types to use with typing.Annotated"
@@ -257,6 +272,17 @@ files = [
 [package.extras]
 tests = ["pytest (>=3.2.1,!=3.3.0)"]
 typecheck = ["mypy"]
+
+[[package]]
+name = "blinker"
+version = "1.8.2"
+description = "Fast, simple object-to-object and broadcast signaling"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "blinker-1.8.2-py3-none-any.whl", hash = "sha256:1779309f71bf239144b9399d06ae925637cf6634cf6bd131104184531bf67c01"},
+    {file = "blinker-1.8.2.tar.gz", hash = "sha256:8f77b09d3bf7c795e969e9486f39c2c5e9c39d4ee07424be2bc594ece9642d83"},
+]
 
 [[package]]
 name = "certifi"
@@ -689,6 +715,30 @@ fastapi = ">=0,<1"
 itsdangerous = ">=2.0.1,<3.0.0"
 pydantic = ">=2.0.0,<3.0.0"
 pydantic-settings = ">=2.0.0,<3.0.0"
+
+[[package]]
+name = "fastapi-mail"
+version = "1.4.1"
+description = "Simple lightweight mail library for FastApi"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = [
+    {file = "fastapi_mail-1.4.1-py3-none-any.whl", hash = "sha256:fa5ef23b2dea4d3ba4587f4bbb53f8f15274124998fb4e40629b3b636c76c398"},
+    {file = "fastapi_mail-1.4.1.tar.gz", hash = "sha256:9095b713bd9d3abb02fe6d7abb637502aaf680b52e177d60f96273ef6bc8bb70"},
+]
+
+[package.dependencies]
+aiosmtplib = ">=2.0,<3.0"
+blinker = ">=1.5,<2.0"
+email-validator = ">=2.0,<3.0"
+Jinja2 = ">=3.0,<4.0"
+pydantic = ">=2.0,<3.0"
+pydantic_settings = ">=2.0,<3.0"
+starlette = ">=0.24,<1.0"
+
+[package.extras]
+httpx = ["httpx[httpx] (>=0.23,<0.24)"]
+redis = ["redis[redis] (>=4.3,<5.0)"]
 
 [[package]]
 name = "greenlet"
@@ -2789,5 +2839,5 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.8"
-content-hash = "5fba4143d3ea5c455ac4b2f02c49af25f4e7949af6e862c24c88e676fbff5b00"
+python-versions = ">=3.8.1,<4.0"
+content-hash = "b989f0910a22848471b30abc8d5c5b998b028cabb5f75e4d7dfadbddc7b3841e"
