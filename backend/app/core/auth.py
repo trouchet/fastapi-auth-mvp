@@ -16,7 +16,7 @@ from backend.app.core.exceptions import (
     MalformedTokenException,
     MissingRequiredClaimException,
 )
-from backend.app.repositories.users import get_user_repo
+from backend.app.repositories.users import get_user_repository
 from backend.app.models.users import User
 from backend.app.database.models.users import User
 from backend.app.utils.misc import is_async
@@ -45,22 +45,22 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
         CredentialsException: If the token is invalid or the user credentials are incorrect.
         InactiveUserException: If the user is inactive.
     """
-    with get_user_repo() as user_repository:
+    async with get_user_repository() as user_repository:
         try:
-            user_has_token, user = user_repository.refresh_token_exists(token)
-
+            user_has_token, user = await user_repository.refresh_token_exists(token)
+            
             if user_has_token:
                 payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
                 username: str = payload.get("sub")
                 expiration_date_int = payload.get("exp")
-
                 expiration_date = datetime.fromtimestamp(expiration_date_int)
 
+                
                 if expiration_date < datetime.now():
                     raise ExpiredTokenException()
 
                 invalid_credentials = username is None or user.user_username != username
-
+                
                 if invalid_credentials:
                     raise CredentialsException()
             else:
@@ -69,7 +69,7 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
         except JWTError:
             raise ExpiredTokenException()
 
-        current_user = user_repository.get_user_by_username(username)
+        current_user = await user_repository.get_user_by_username(username)
 
         if current_user is None:
             raise CredentialsException()
@@ -91,7 +91,7 @@ async def get_user(username: str) -> User | None:
     Returns:
         User | None: The retrieved user if found, otherwise None.
     """
-    with get_user_repo() as user_repository:
+    async with get_user_repository() as user_repository:
         user = await user_repository.get_user_by_username(username)
 
         if not user:
@@ -147,7 +147,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         InexistentUsernameException: If the username does not exist in the database.
         InactiveUserException: If the user is inactive.
     """
-    async with get_user_repo() as user_repository:
+    async with get_user_repository() as user_repository:
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
             
@@ -166,11 +166,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
             raise MalformedTokenException()
 
         # Get the user from the database
-        user = user_repository.get_user_by_username(username=username)
-
+        user = await user_repository.get_user_by_username(username=username)
+        
         # Check if the user exists and is active
         if user is None:
             raise InexistentUsernameException(username)
+
         if not user.user_is_active:
             raise InactiveUserException(user.user_username)
 

@@ -4,16 +4,12 @@ from fastapi_limiter.depends import RateLimiter
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
-from aioredis import create_redis_pool
-from typing import Callable
+import aioredis
+from typing import Callable, Union
 from fnmatch import fnmatch
 
 from backend.app.utils.request import get_route_and_token
-from backend.app.core.exceptions import (
-    MissingTokenException,
-    TooManyRequestsException,
-)
-from backend.app.utils.request import route_requires_authentication
+from backend.app.core.exceptions import MissingTokenException, TooManyRequestsException
 from backend.app.core.config import settings, is_docker
 from backend.app.data.auth import ROLES_METADATA
 
@@ -34,7 +30,7 @@ class RateLimiterPolicy:
 
 
 async def init_redis_pool():
-    return await create_redis_pool(settings.redis_url)
+    return await aioredis.Redis.from_url(settings.redis_url)
 
 
 async def init_rate_limiter():
@@ -54,7 +50,8 @@ def get_throughput(rate_limiter: RateLimiterPolicy):
 
 
 def get_rate_limiter(
-    user_identifier: str, policy: RateLimiterPolicy = RateLimiterPolicy()
+    user_identifier: Union[str, None], 
+    policy: RateLimiterPolicy = RateLimiterPolicy()
 ):
     return RateLimiter(
         times=policy.times, 
@@ -71,10 +68,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.identifier_callable = identifier_callable
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        route, token=get_route_and_token(request)
-        
+        route, token = get_route_and_token(request)
+
         # Check if the route requires authentication
-        if route_requires_authentication(route):
+        if settings.route_requires_authentication(route):
             if not token:
                 raise MissingTokenException()
 

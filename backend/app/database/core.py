@@ -1,8 +1,11 @@
-from sqlalchemy import pool, text, inspect
+from sqlalchemy import text, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from asyncpg.exceptions import DuplicateDatabaseError
+from sqlalchemy.ext.asyncio import async_scoped_session
+from asyncio import current_task 
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.dialects.postgresql import UUID
 
 from backend.app.core.logging import logger
 from backend.app.database.models.base import Base
@@ -22,58 +25,49 @@ class Database:
         self.uri = uri
         self.engine = create_async_engine(
             uri,
+            future=True,               # Use the new asyncio-based execution strategy
             pool_size=20,              # Adjust pool size based on your workload
             max_overflow=10,           # Adjust maximum overflow connections
             pool_recycle=3600,         # Periodically recycle connections (optional)
+            pool_pre_ping=True,        # Check the connection status before using it (optional)
         )
-        self.session_maker = sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
+        self.session_maker = sessionmaker(
+            self.engine, class_=AsyncSession, expire_on_commit=False
+        )
+        self.scoped_session_maker = async_scoped_session(
+            self.session_maker, scopefunc=current_task
+        )
 
-    async def database_exists(self, uri):
-        """
-        Checks if the database exists for the given URI.
-
-        Args:
-            uri: The database connection URI string.
-
-        Returns:
-            True if the database exists, False otherwise.
-        """
-        engine = create_async_engine(uri, echo=False)  # Create engine without echo
-        try:
-            await engine.connect()
-            await engine.execute(text("SELECT 1"))  # Execute a simple query
-            return True
-        except Exception:
-            return False
-        finally:
-            await engine.dispose()  # Close the engine connection
-
-    
     async def create_database(self):
         # Create the database if it does not exist
         async def create_database_alias():
             # Split the URI to get the database name
             database_name = self.uri.split("/")[-1]
             uri_without_database = '/'.join(self.uri.split("/")[:-1])
-
+            
             # Create a new engine without specifying a database
-            engine = create_async_engine(uri_without_database, echo=False)
+            engine = create_async_engine(
+                uri_without_database,
+                future=True,               # Use the new asyncio-based execution strategy
+                pool_size=20,              # Adjust pool size based on your workload
+                max_overflow=10,           # Adjust maximum overflow connections
+                pool_recycle=3600,         # Periodically recycle connections (optional)
+                pool_pre_ping=True,        # Check the connection status before using it
+            )
 
             # Create a new connection to execute the CREATE DATABASE statement
-            async with engine.begin() as conn:
-                try:
+            try:
+                async with engine.begin() as conn:
                     await conn.execute(text("COMMIT"))
                     await conn.execute(text(f"CREATE DATABASE {database_name}"))
                     logger.info(f"Database '{database_name}' created successfully.")
-                except DuplicateDatabaseError:
-                    logger.warning(f"Database '{database_name}' already exists.")
-                except OperationalError as e:
-                    logger.error(f"Error creating database '{database_name}': {e}")
-                    
-        await try_do(create_database_alias, "create database")
+            except DuplicateDatabaseError:
+                logger.warning(f"Database '{database_name}' already exists.")
+
+        await try_do(create_database_alias, "creating database")
 
     async def test_connection(self):
-        async def test_connection():
+        try:
             async with self.engine.connect() as conn:
                 query = text("SELECT 1")
 
@@ -81,8 +75,9 @@ class Database:
                 await conn.execute(query)
 
                 logger.info("Connection to the database established!")
-
-        await try_do(test_connection, "testing connection")
+        except Exception as e:
+            logger.error(f"Error connecting to the database: {str(e)}")
+            
 
     async def create_tables(self):
         """
@@ -93,29 +88,25 @@ class Database:
             None: If there was an error connecting to the database.
 
         """
-
         async def create_tables_alias():
             async with self.engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
 
             # Print available tables
-            for table in Base.metadata.tables:
-                logger.info(f"Table created: {table}")
-            
+            logger.info(f"Tables created: {Base.metadata.tables}")
 
-        await try_do(create_tables_alias, "creating tables")
-        
     async def print_tables(self):
         """
         Print the available tables in the database.
         """
         try:
             async with self.engine.connect() as conn:
-                inspector = await conn.run_sync(lambda conn: inspect(conn))
-                tables = inspector.get_table_names()
-                logger.info(f"Available tables: {tables}")
+                # Use a synchronous context to run the inspector
+                result = await conn.run_sync(self.get_tables)
+                logger.info(f"Available tables: {result}")
         except Exception as e:
             logger.error(f"Error fetching table names: {str(e)}")
+
 
     async def init(self):
         """

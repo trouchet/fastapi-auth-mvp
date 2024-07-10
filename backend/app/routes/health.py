@@ -12,6 +12,7 @@ from backend.app.utils.healthcheck import (
 router=APIRouter(prefix='/health', tags=["Health"])
 
 
+
 @router.get("/")
 async def health():
     is_db_healthy, db_error = await is_database_healthy()

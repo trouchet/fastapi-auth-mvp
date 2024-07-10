@@ -1,18 +1,18 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import (
     AnyUrl,
     BeforeValidator,
     computed_field,
     model_validator,
 )
-
 from typing import Union, Annotated, Any, List, Tuple
 from typing_extensions import Self
 from datetime import timedelta
-import re
+from fnmatch import fnmatch
 from warnings import warn
 import toml
-
+import re
 
 POSTGRES_DSN_SCHEME = "postgresql+asyncpg"
 
@@ -94,6 +94,12 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = DEFAULT_SECRET_KEY
     JWT_ALGORITHM: str = 'HS256'
     
+    MAIL_USERNAME: str = "your_email@example.com"
+    MAIL_PASSWORD: str = "your_password"
+    MAIL_FROM: str = "email@example.com"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.example.com"
+    
     FIRST_SUPER_ADMIN_USERNAME: str = DEFAULT_FIRST_SUPER_ADMIN_USERNAME
     FIRST_SUPER_ADMIN_PASSWORD: str = DEFAULT_FIRST_SUPER_ADMIN_PASSWORD
     FIRST_SUPER_ADMIN_EMAIL: str = DEFAULT_FIRST_SUPER_ADMIN_EMAIL
@@ -108,6 +114,19 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: Annotated[
         Union[List[AnyUrl], str], BeforeValidator(parse_cors)
     ] = []
+    
+    AUTH_PATTERNS: List = [
+            f"/favicon.ico",
+            f"{API_V1_STR}/openapi.json",
+            f"{API_V1_STR}/docs",
+            f"{API_V1_STR}/redoc",
+            f"{API_V1_STR}/public/*",
+            f"{API_V1_STR}/health",
+            f"{API_V1_STR}/health/*",
+            f"{API_V1_STR}/system/",
+            f"{API_V1_STR}/token", 
+            f"{API_V1_STR}/refresh",
+        ]
 
     @computed_field
     @property
@@ -115,6 +134,21 @@ class Settings(BaseSettings):
         # Use HTTPS for anything other than local development
         protocol = "http" if is_sandbox(self.ENVIRONMENT) else "https"
         return f"{protocol}://{self.DOMAIN}"
+    
+    @classmethod
+    def email_configuration(cls):
+        return ConnectionConfig(
+            MAIL_USERNAME = cls.MAIL_USERNAME,
+            MAIL_PASSWORD = cls.MAIL_PASSWORD,
+            MAIL_FROM = cls.MAIL_FROM,
+            MAIL_PORT = cls.MAIL_PORT,
+            MAIL_SERVER = cls.MAIL_SERVER,
+            MAIL_TLS = True,
+            MAIL_SSL = False,
+            USE_CREDENTIALS = True,
+            VALIDATE_CERTS = True
+        )
+
 
     @classmethod
     def get_redis_host(cls):
@@ -173,11 +207,21 @@ class Settings(BaseSettings):
 
         return f"{scheme}://{credentials}@{url}"
 
-    def _warn_default_value(self, var_name: str, default_value: Any):
+    def route_requires_authentication(self, route: str) -> bool:
+        has_match = lambda pattern: fnmatch(route, pattern)
+        non_token_route_list = list(map(has_match, self.AUTH_PATTERNS))
+        
+        return not any(non_token_route_list)
+    
+    def _warn_default_value(self, var_names: List[str]):
         environment = self.ENVIRONMENT
+        variable_token = f"variables {var_names} are" if len(var_names) > 1 \
+            else f"variable {var_names[0]} is"
+        pronoun = "them" if len(var_names) > 1 else "it"
+        
         message = (
-            f'The value of {var_name} is "{default_value}", '
-            "for security, please change it, at least for deployments."
+            f'The value of {variable_token} unchanged from default.", '
+            f"for security, please change {pronoun}, at least for deployments."
         )
 
         if is_sandbox(environment):
@@ -188,9 +232,15 @@ class Settings(BaseSettings):
     def _check_default_values(
         self, default_tuples: List[Tuple[str, Any, Any]] = None
     ) -> None:
-        for var_name, value, default_value in default_tuples:
-            if value == default_value:
-                self._warn_default_value(var_name, value)
+        unchanged_values_tuples = list(
+            filter(lambda x: x[1] == x[2], default_tuples)
+        )
+        unchanged_keys = list(
+            map(lambda x: x[0], unchanged_values_tuples)
+        )
+        
+        if unchanged_keys:
+            self._warn_default_value(unchanged_keys)
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:

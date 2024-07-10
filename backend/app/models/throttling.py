@@ -13,3 +13,15 @@ class RateLimiterPolicy:
         self.minutes = minutes
         self.seconds = seconds
         self.milliseconds = milliseconds
+
+    def __dict__(self):
+        return {
+            "times": self.times,
+            "hours": self.hours,
+            "minutes": self.minutes,
+            "seconds": self.seconds,
+            "milliseconds": self.milliseconds
+        }
+        
+    def to_dict(self):
+        return self.__dict__()

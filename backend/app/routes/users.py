@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from typing import List, Dict
 
 from backend.app.core.auth import role_checker
-from backend.app.repositories.users import get_user_repo
+from backend.app.repositories.users import get_user_repository
 from backend.app.database.models.users import User
 from backend.app.repositories.users import UsersRepository
 from backend.app.core.exceptions import (
@@ -20,7 +20,7 @@ from backend.app.core.exceptions import (
     InvalidUUIDException,
     InvalidPasswordException,
 )
-from backend.app.models.users import User, UpdateUser, CreateUser
+from backend.app.models.users import User, UnhashedUpdateUser, UpdateUser, CreateUser
 from backend.app.core.auth import get_current_user
 from backend.app.utils.security import (
     is_password_valid, 
@@ -60,7 +60,7 @@ def userbd_to_user(user: User):
 @role_checker(user_management_roles)
 def read_all_users(
     current_user: User = Depends(get_current_user),
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     limit: int = 10,
     offset: int = 0
 ) -> List[Dict]:
@@ -74,7 +74,7 @@ def read_all_users(
 def read_user_by_id(
     current_user: User = Depends(get_current_user),
     user_id: str = Path(..., description="The ID of the user to retrieve"),
-    user_repo: UsersRepository=Depends(get_user_repo)
+    user_repo: UsersRepository=Depends(get_user_repository)
 ):
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
@@ -92,7 +92,7 @@ def read_user_by_id(
 def delete_user(
     user_id: str,
     current_user: User = Depends(get_current_user),
-    user_repo: UsersRepository=Depends(get_user_repo)
+    user_repo: UsersRepository=Depends(get_user_repository)
 ):
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
@@ -123,11 +123,15 @@ def delete_user(
 @router.patch("/{user_id}")
 @role_checker(user_management_roles)
 def update_user(
-    user_id: str, user: UpdateUser, user_repo: UsersRepository = Depends(get_user_repo)
+    user_id: str, 
+    update_user_info: UnhashedUpdateUser, 
+    user_repo: UsersRepository = Depends(get_user_repository)
 ) -> Dict:
 
-    if not user:
+    if not update_user_info:
         raise InexistentUserIDException(user_id)
+    
+    update_user_info.to_update_user()
 
     admin_users=user_repo.get_users_by_role("admin")
     last_admin=len(admin_users)==1
@@ -139,11 +143,10 @@ def update_user(
     if forbidden_remove_last_admin:
         raise LastAdminRemovalException()
 
-    user_repo.delete_user_by_id(user_id)
+    updated_user=user_repo.update_user(update_user_info)
     
-    message_dict={"message": f"User {user_id} deleted successfully"}
     return JSONResponse(
-        content=jsonable_encoder(message_dict),
+        content=jsonable_encoder(dict(updated_user)),
     )
 
 
@@ -151,7 +154,7 @@ def update_user(
 @role_checker(user_management_roles)
 def create_user(
     user: CreateUser,
-    user_repo: UsersRepository = Depends(get_user_repo),
+    user_repo: UsersRepository = Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     new_user = User(
@@ -164,18 +167,24 @@ def create_user(
 
 @router.post('/signup')
 async def signup(
-    user: CreateUser,
-    user_repo: UsersRepository=Depends(get_user_repo)
+    new_user_info: CreateUser,
+    user_repo: UsersRepository=Depends(get_user_repository)
 ) -> Dict:
-    return await create_new_user(user, user_repo)
+    new_user = User(
+        user_username=new_user_info.user_username,
+        user_hashed_password=hash_string(new_user_info.user_password),
+        user_email=new_user_info.user_email,
+    )
+    
+    return await user_repo.create_user(new_user)
 
 
 @router.patch("/{user_id}")
 @role_checker(user_editor_roles)
 def update_user(
     user_id: str,
-    user: UpdateUser,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user: UnhashedUpdateUser,
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     if not is_valid_uuid(user_id): 
@@ -194,7 +203,7 @@ def update_user(
 def update_username(
     user_id: str,
     new_username: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     if not is_valid_uuid(user_id): 
@@ -213,7 +222,7 @@ def update_username(
 def update_email(
     user_id: str, 
     new_email: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     if not is_valid_uuid(user_id): 
@@ -236,7 +245,7 @@ def update_password(
     user_id: str,
     old_password: str,
     new_password: str,
-    user_repo: UsersRepository = Depends(get_user_repo),
+    user_repo: UsersRepository = Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     if not is_valid_uuid(user_id): 
@@ -267,25 +276,7 @@ def update_password(
 @role_checker(user_viewer_roles)
 def get_user_roles(
     user_id: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
-    current_user: User = Depends(get_current_user)
-) -> List[str]:
-    if not is_valid_uuid(user_id): 
-        raise InvalidUUIDException(user_id)
-    
-    roles=user_repo.get_user_roles(user_id)
-    
-    if not roles:
-        raise InexistentUserIDException(user_id) 
-    else:
-        return roles
-
-
-@router.get("/{user_id}/roles")
-@role_checker(user_viewer_roles)
-def get_user_roles(
-    user_id: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> List[str]:
     if not is_valid_uuid(user_id): 
@@ -303,7 +294,7 @@ def get_user_roles(
 @role_checker(user_editor_roles)
 def activate_user(
     user_id: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     if not is_valid_uuid(user_id): 
@@ -321,7 +312,7 @@ def activate_user(
 @role_checker(user_editor_roles)
 def deactivate_user(
     user_id: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> Dict:
     if not is_valid_uuid(user_id): 
@@ -339,7 +330,7 @@ def deactivate_user(
 @role_checker(user_management_roles)
 def get_users_by_role(
     role: str,
-    user_repo: UsersRepository=Depends(get_user_repo),
+    user_repo: UsersRepository=Depends(get_user_repository),
     current_user: User = Depends(get_current_user)
 ) -> List[Dict]:
     users = user_repo.get_users_by_role(role)

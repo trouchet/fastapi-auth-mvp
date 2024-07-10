@@ -35,6 +35,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "$APP_PORT:$APP_PORT"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi-app.rule=Host(`yourdomain.com`)"
+      - "traefik.http.services.fastapi-app.loadbalancer.server.port=8000"
     networks:
       - my_net
     restart: unless-stopped
@@ -46,9 +50,26 @@ services:
       timeout: 10s
       retries: 3
 
+  auth-traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - web
+
 networks:
     my_net:
         driver: bridge
+      external: true
 
 
 volumes:

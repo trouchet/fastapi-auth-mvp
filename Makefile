@@ -43,11 +43,7 @@ run: ## Run the application. Usage: make run
 	uvicorn backend.app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
 
 search: ## Searchs for a token in the code. Usage: make search token=your_token
-	grep -rnw . \
-	--exclude-dir=venv \
-	--exclude-dir=.git \
-	--exclude=poetry.lock \
-	-e "$(token)"
+	grep -rnw . --exclude-dir=venv --exclude-dir=.git --exclude=poetry.lock -e "$(token)"
 
 replace: ## Replaces a token in the code. Usage: make replace token=your_token
 	sed -i 's/$(token)/$(new_token)/g' $$(grep -rl "$(token)" . \
@@ -56,19 +52,19 @@ replace: ## Replaces a token in the code. Usage: make replace token=your_token
 		--exclude=poetry.lock)
 
 ip: ## Get the IP of a container. Usage: make ip container="db-cron-task"
-	docker inspect $(container) | jq -r '.[0].NetworkSettings.Networks[].IPAddress'
+	docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(container)
 
 ip-db: ## Get the database IP. Usage: make db-ip
 	$(MAKE) ip container=auth-db
 
 kill-container: ## Kill the database container. Usage: make kill-db
-	docker inspect $(container) | jq -r '.[0].State.Pid' | sudo xargs kill -9
+	docker inspect --format '{{.State.Pid}}' $(container) | sudo xargs kill -9
 
 kill-db: ## Kill the database container. Usage: make kill-db
 	$(MAKE) kill-container container=auth-db
 
-kill-nginx: ## Kill the database container. Usage: make kill-db
-	$(MAKE) kill-container container=auth-nginx
+kill-redis: ## Kill the database container. Usage: make kill-db
+	$(MAKE) kill-container container=auth-redis
 
 kill-app: ## Kill the database container. Usage: make kill-db
 	$(MAKE) kill-container container=auth-app
