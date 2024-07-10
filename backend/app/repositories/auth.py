@@ -30,7 +30,7 @@ class RoleRepository:
         """
         role_id = str(uuid4())
         new_role = Role(role_id=role_id, role_name=role_name, role_rate_limit=rate_limit)
-        
+
         try:
             for perm_name in permission_names:
                 condition = Permission.perm_name == perm_name
@@ -38,10 +38,11 @@ class RoleRepository:
 
                 permission = await self.session.execute(statement)
                 existing_permission = permission.scalars().first()
-                
+
                 if not existing_permission:
-                    new_permission = Permission(perm_id=str(uuid4()), perm_name=perm_name)
-                    
+                    perm_id=str(uuid4())
+                    new_permission = Permission(perm_id=perm_id, perm_name=perm_name)
+
                     self.session.add(new_permission)
                     await self.session.flush()
                     new_role.role_permissions.append(new_permission)

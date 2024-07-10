@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.future import select
 from sqlalchemy import delete
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import selectinload
 
 from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
@@ -55,7 +56,9 @@ class UsersRepository:
         statement = select(User).where(User.user_username == username)
         result = await self.session.execute(statement)
         user = result.scalars().first()
-        return user
+
+        if user:
+            return user
 
     async def create_user(self, user: User):
         self.session.add(user)
@@ -69,7 +72,6 @@ class UsersRepository:
             self.session.add(user)
             
             await self.session.commit()
-            await self.session.refresh(user)
 
     async def update_user(self, user_id: str, update_user: UpdateUser):
         statement = select(User).where(User.user_id == user_id)
@@ -95,22 +97,14 @@ class UsersRepository:
         return deleted_count.rowcount
 
     async def delete_user_by_username(self, username: str):
-        statement = select(User).where(User.user_username == username)
-        result = await self.session.execute(statement)
-        user_to_delete = result.scalars().first()
-
-        if user_to_delete:
-            await self.session.delete(user_to_delete)
-            await self.session.commit()
+        statement = delete(User).where(User.user_username == username)
+        deleted_count = await self.session.execute(statement)
+        return deleted_count.rowcount
             
     async def delete_user_by_email(self, email: str):
-        statement = select(User).where(User.user_email == email)
-        result = await self.session.execute(statement)
-        user_to_delete = result.scalars().first()
-
-        if user_to_delete:
-            await self.session.delete(user_to_delete)
-            await self.session.commit()
+        statement = delete(User).where(User.user_email == email)
+        deleted_count = await self.session.execute(statement)
+        return deleted_count.rowcount
 
     async def update_user_active_status(self, user_id: str, new_status: bool):
         statement = select(User).where(User.user_id == user_id)
@@ -129,25 +123,18 @@ class UsersRepository:
         users = result.scalars().all()
         return users
 
-    async def get_all_roles(self):
-        query = select(User.roles).distinct()
-        result = await self.session.execute(query)
-        roles = [row[0] for row in result.unique().all()]
-        return roles
-
     async def get_user_roles(self, user_id: str):
-        query = select(User).where(User.user_id == user_id)
+        query = select(User).options(selectinload(User.user_roles)).where(User.user_id == user_id)
         result = await self.session.execute(query)
         user = result.scalars().first()
         if user:
-            return [
-                role for role in user.user_roles
-            ]
+            return [role for role in user.user_roles]
+        return []
 
     async def get_users_by_role(self, role: Role):
         query = select(User).join(users_roles_association).join(Role).filter(Role.role_name == role.role_name)
         result = await self.session.execute(query)
-        users_with_role = await result.scalars().all()
+        users_with_role = result.scalars().all()
         
         return users_with_role
 
@@ -167,6 +154,7 @@ class UsersRepository:
         if user:
             user.user_hashed_password = hash_string(password)
             await self.session.commit()
+            await self.session.refresh(user)
             return user
 
     async def update_user_username(self, user_id: str, username: str):
@@ -176,6 +164,7 @@ class UsersRepository:
         if user:
             user.user_username = username
             await self.session.commit()
+            await self.session.refresh(user)
             return user
 
     async def update_user_roles(self, user_id: str, roles: List[Role]):
@@ -185,6 +174,7 @@ class UsersRepository:
         if user:
             user.user_roles = roles
             await self.session.commit()
+            await self.session.refresh(user)
             return user
 
     async def is_user_active_by_id(self, user_id: str) -> bool:
@@ -232,6 +222,7 @@ class UsersRepository:
         if user:
             user.user_last_login_at = datetime.now()
             await self.session.commit()
+            await self.session.refresh(user)
 
         return user
 
@@ -244,6 +235,8 @@ class UsersRepository:
             user.user_access_token = access_token
             await self.session.commit()
             await self.session.refresh(user)
+            
+        return user
 
     async def update_user_refresh_token(self, username: str, refresh_token: str):
         user = await self.get_user_by_username(username)

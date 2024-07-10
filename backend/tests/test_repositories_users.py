@@ -3,6 +3,10 @@ import pytest
 from backend.app.core.config import settings
 from backend.app.models.users import UnhashedUpdateUser
 from backend.app.utils.security import hash_string
+from backend.app.core.auth import create_token
+
+from .conftest import user_factory 
+
 
 @pytest.mark.asyncio
 async def test_get_user_by_username(test_user_repository):
@@ -96,3 +100,85 @@ async def test_update_user_username(test_user_repository, test_viewer):
     updated_user = await test_user_repository.update_user_username(test_user_id, old_username)
     
     assert updated_user.user_username == old_username
+
+
+@pytest.mark.asyncio
+async def test_create_users(test_user_repository, test_dummy_data, admin_role):
+    dummy_user=user_factory(test_dummy_data, [admin_role])
+    deleted_count = await test_user_repository.delete_user_by_email(dummy_user.user_email)
+
+    await test_user_repository.create_users([dummy_user])
+    
+    user=await test_user_repository.get_user_by_username(dummy_user.user_username)
+    assert user
+    await test_user_repository.delete_user_by_username(dummy_user.user_username)
+
+
+@pytest.mark.asyncio
+async def test_delete_user_by_id(test_user_repository, test_viewer):
+    test_user_id = test_viewer.user_id
+    
+    deleted_count = await test_user_repository.delete_user_by_id(test_user_id)
+    
+    assert deleted_count == 1
+    
+    user=await test_user_repository.get_user_by_id(test_user_id)
+    
+    assert user is None
+
+
+@pytest.mark.asyncio
+async def test_delete_user_by_email(test_user_repository, test_viewer):
+    test_user_email = test_viewer.user_email
+    
+    deleted_count = await test_user_repository.delete_user_by_email(test_user_email)
+    
+    assert deleted_count == 1
+    
+    user=await test_user_repository.get_user_by_email(test_user_email)
+    
+    assert user is None
+
+
+@pytest.mark.asyncio
+async def test_get_all_users(test_user_repository, test_users):
+    users=await test_user_repository.get_users()
+    assert len(users) == len(test_users)+1
+
+
+@pytest.mark.asyncio
+async def test_get_users_by_role(test_user_repository, super_admin_role):
+    users=await test_user_repository.get_users_by_role(super_admin_role)
+    assert len(users) == 1
+
+    
+@pytest.mark.asyncio
+async def test_get_user_roles(test_user_repository, test_admin):
+    roles=await test_user_repository.get_user_roles(test_admin.user_id)
+    assert len(roles) == 1
+
+@pytest.mark.asyncio
+async def test_update_user_password(test_user_repository, test_viewer):
+    old_hashed_password=test_viewer.user_hashed_password
+    new_password="new_password"
+
+    updated_user=await test_user_repository.update_user_password(test_viewer.user_id, new_password)
+    
+    assert old_hashed_password != updated_user.user_hashed_password
+
+@pytest.mark.asyncio
+async def test_user_access_token(test_user_repository, test_viewer):
+    new_access_token=create_token({})
+    updated_user=await test_user_repository.update_user_access_token(test_viewer.user_username, new_access_token)
+    
+    assert updated_user.user_access_token == new_access_token
+
+@pytest.mark.asyncio
+async def test_update_user_last_login(test_user_repository, dummy_user):
+    last_login_at=dummy_user.user_last_login_at
+
+    updated_user=await test_user_repository.update_user_last_login(dummy_user.user_username)
+
+    assert last_login_at is not updated_user.user_last_login_at
+
+# 83%   132, 171-178, 181-184, 187-190, 200, 206-207

@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -93,6 +94,12 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = DEFAULT_SECRET_KEY
     JWT_ALGORITHM: str = 'HS256'
     
+    MAIL_USERNAME: str = "your_email@example.com"
+    MAIL_PASSWORD: str = "your_password"
+    MAIL_FROM: str = "email@example.com"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.example.com"
+    
     FIRST_SUPER_ADMIN_USERNAME: str = DEFAULT_FIRST_SUPER_ADMIN_USERNAME
     FIRST_SUPER_ADMIN_PASSWORD: str = DEFAULT_FIRST_SUPER_ADMIN_PASSWORD
     FIRST_SUPER_ADMIN_EMAIL: str = DEFAULT_FIRST_SUPER_ADMIN_EMAIL
@@ -127,6 +134,21 @@ class Settings(BaseSettings):
         # Use HTTPS for anything other than local development
         protocol = "http" if is_sandbox(self.ENVIRONMENT) else "https"
         return f"{protocol}://{self.DOMAIN}"
+    
+    @classmethod
+    def email_configuration(cls):
+        return ConnectionConfig(
+            MAIL_USERNAME = cls.MAIL_USERNAME,
+            MAIL_PASSWORD = cls.MAIL_PASSWORD,
+            MAIL_FROM = cls.MAIL_FROM,
+            MAIL_PORT = cls.MAIL_PORT,
+            MAIL_SERVER = cls.MAIL_SERVER,
+            MAIL_TLS = True,
+            MAIL_SSL = False,
+            USE_CREDENTIALS = True,
+            VALIDATE_CERTS = True
+        )
+
 
     @classmethod
     def get_redis_host(cls):

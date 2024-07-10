@@ -105,7 +105,7 @@ def test_admin_data():
 @pytest.fixture
 def test_viewer_data():
     return {
-        "username": "test_user",
+        "username": "test_viewer",
         "password": "User_password_shh123!",
         "email": "test_@example.com"
     }
@@ -122,6 +122,15 @@ def test_inactive_user_data():
 
 
 @pytest.fixture
+def test_dummy_data():
+    return {
+        "username": "dummy_user",
+        "email": "dummy@example.com",
+        "password": "dummy_password",
+        "is_active": False
+    }
+
+@pytest.fixture
 async def super_admin_role(test_role_repository):
     super_admin_role = await test_role_repository.get_role_by_name("SuperAdmin")
     return super_admin_role
@@ -134,6 +143,22 @@ async def admin_role(test_role_repository):
 
 
 @pytest.fixture
+async def new_role(test_role_repository):
+    permission_names = ["access_public_content"]
+    rate_limit = get_minute_rate_limiter(1)
+    rate_limit_dict=rate_limit.to_dict()
+    
+    role_name="Banned"
+
+    existing_role = await test_role_repository.get_role_by_name(role_name)
+    if(not existing_role):
+        existing_role = await test_role_repository.create_role(role_name, rate_limit_dict, permission_names)
+
+    yield existing_role
+    await test_role_repository.delete_role(existing_role)
+
+
+@pytest.fixture
 async def viewer_role(test_role_repository):
     viewer_role = await test_role_repository.get_role_by_name("Viewer")
     return viewer_role
@@ -141,7 +166,7 @@ async def viewer_role(test_role_repository):
 
 def user_factory(user_data: Dict, roles: List[Role]):
     return User(
-        user_id=uuid4(),
+        user_id=str(uuid4()),
         user_username=user_data['username'],
         user_email=user_data['email'],
         user_roles=roles,
@@ -185,6 +210,16 @@ async def test_viewer(test_user_repository, viewer_role, test_viewer_data):
     await test_user_repository.create_user(viewer_user)
     yield viewer_user
     await test_user_repository.delete_user_by_username(viewer_user.user_username)
+
+@pytest.fixture
+async def dummy_user(test_user_repository, test_dummy_data, admin_role):
+    dummy_user=user_factory(test_dummy_data, [admin_role])
+    await test_user_repository.delete_user_by_username(dummy_user.user_username)
+    await test_user_repository.delete_user_by_email(dummy_user.user_email)
+    
+    await test_user_repository.create_user(dummy_user)
+    yield dummy_user
+    await test_user_repository.delete_user_by_username(dummy_user.user_username)
 
 
 @pytest.fixture

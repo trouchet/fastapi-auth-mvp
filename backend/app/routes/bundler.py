@@ -7,6 +7,7 @@ from backend.app.routes import (
     data_router,
     users_router,
     system_router,
+    email_router,
 )
 from backend.app.core.config import settings
 
@@ -18,6 +19,7 @@ routers = [
     auth_router,
     data_router,
     users_router,
+    email_router,
 ]
 
 prefix = f"{settings.API_V1_STR}"

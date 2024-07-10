@@ -25,7 +25,7 @@ class User(Base):
     user_id = Column(UUID, primary_key=True, index=True, default=uuid4)
     user_created_at = Column(DateTime(timezone=True), default=datetime.now(timezone.utc))
     user_updated_at = Column(DateTime(timezone=True), default=None, onupdate=datetime.now(timezone.utc))
-    user_last_login = Column(DateTime, default=None, nullable=True)
+    user_last_login_at = Column(DateTime, default=None, nullable=True)
     user_username = Column(String, unique=True, index=True, nullable=False)
     user_email = Column(String, unique=True, index=True, nullable=False)
     user_hashed_password = Column(String, nullable=False)
