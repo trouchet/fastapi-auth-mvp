@@ -3,7 +3,9 @@ import pytest
 from uuid import uuid4
 
 from backend.app.utils.security import hash_string
+from backend.app.data.auth import ROLES_METADATA
 from backend.app.database.models.users import User
+from backend.app.database.models.auth import Permission
 
 
 def test_user_strings():
@@ -15,7 +17,7 @@ def test_user_strings():
     assert new_user.__repr__() == "User(test_user)"
     assert new_user.__str__() == "User(test_user)"
 
-def test_user_equality():
+def test_user_repr():
     new_user = User(
         user_username='test_user',
         user_hashed_password=hash_string('Secret_password_123'),

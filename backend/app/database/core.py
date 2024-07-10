@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from backend.app.core.logging import logger
 from backend.app.database.models.base import Base
+from backend.app.utils.misc import try_do
 
 
 class Database:

@@ -37,12 +37,12 @@ async def test_get_user_nonexistent(test_user_repository):
 
 @pytest.mark.asyncio
 async def test_authenticate_user_correct_credentials(
-    test_user_repository, test_viewer, test_viewer_data
+    test_user_repository, test_admin, test_admin_data
 ):
-    username = test_viewer.user_username
+    username = test_admin.user_username
 
     is_authentic = await test_user_repository.is_user_credentials_authentic(
-        username, test_viewer_data['password']
+        username, test_admin_data['password']
     )
 
     assert is_authentic
@@ -75,10 +75,8 @@ def test_create_token_with_custom_expiry(test_viewer):
     assert expire_time > datetime.now() + timedelta(minutes=25)
 
 
-
 def test_create_token_default_expiry(test_viewer):
     auth_data = {"sub": test_viewer.user_username}
-
     token = create_token(auth_data)
 
     # decode the token and check expiration (should be 15 minutes)

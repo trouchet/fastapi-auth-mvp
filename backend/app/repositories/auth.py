@@ -2,8 +2,7 @@ from typing import List
 from uuid import uuid4
 from contextlib import asynccontextmanager
 
-from backend.app.database.models.users import Role
-from backend.app.database.models.users import Permission
+from backend.app.database.models.auth import Role, Permission
 from backend.app.database.instance import get_session
 from sqlalchemy.future import select
 

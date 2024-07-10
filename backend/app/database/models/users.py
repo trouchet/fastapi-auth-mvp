@@ -1,13 +1,8 @@
 from sqlalchemy import Column, String, Boolean, DateTime, UUID, ForeignKey, Table
 from typing import Tuple
-<<<<<<< HEAD
 from sqlalchemy.sql import select
 from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.dialects.postgresql import JSONB
-=======
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSON, JSONB
->>>>>>> 6748974 (refactor: move Role and Permission models to database/models/auth.py file)
 from uuid import uuid4
 
 from datetime import datetime, timezone
