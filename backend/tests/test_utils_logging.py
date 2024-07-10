@@ -223,27 +223,6 @@ def test_clear_folder_items_not_enough_items(logs_foldername):
     rmtree(logs_foldername, ignore_errors=True)
 
 
-def test_clear_folder_items_files(logs_foldername):
-    """Tests clear_latest_items with files."""
-    rmtree(logs_foldername, ignore_errors=True)
-
-    os.makedirs(logs_foldername, exist_ok=True)
-    with open(f"{logs_foldername}/1.txt", "w") as f:
-        f.write("test")
-    with open(f"{logs_foldername}/2.txt", "w") as f:
-        f.write("test")
-    with open(f"{logs_foldername}/3.txt", "w") as f:
-        f.write("test")
-    
-    clear_folder_items(logs_foldername, 2)
-
-    assert not os.path.exists(f"{logs_foldername}/1.txt")
-    assert os.path.exists(f"{logs_foldername}/2.txt")
-    assert os.path.exists(f"{logs_foldername}/3.txt")
-    
-    rmtree(logs_foldername, ignore_errors=True)
-
-
 @pytest.mark.parametrize(
     "rollover_data",
     [

@@ -67,17 +67,16 @@ class Database:
         await try_do(create_database_alias, "creating database")
 
     async def test_connection(self):
-        try:
+        async def test_connection_alias():
             async with self.engine.connect() as conn:
                 query = text("SELECT 1")
 
                 # Test the connection
                 await conn.execute(query)
 
-                logger.info("Connection to the database established!")
-        except Exception as e:
-            logger.error(f"Error connecting to the database: {str(e)}")
-            
+                logger.info("Connection to the database established!") 
+
+        await try_do(test_connection_alias, "testing connection")    
 
     async def create_tables(self):
         """
@@ -95,17 +94,19 @@ class Database:
             # Print available tables
             logger.info(f"Tables created: {Base.metadata.tables}")
 
+        await try_do(create_tables_alias, "creating tables")
+
     async def print_tables(self):
         """
         Print the available tables in the database.
         """
-        try:
+        async def print_tables_alias():
             async with self.engine.connect() as conn:
                 # Use a synchronous context to run the inspector
                 result = await conn.run_sync(self.get_tables)
                 logger.info(f"Available tables: {result}")
-        except Exception as e:
-            logger.error(f"Error fetching table names: {str(e)}")
+        
+        await try_do(print_tables_alias, "printing tables")
 
 
     async def init(self):

@@ -35,7 +35,6 @@ async def manage_database_connection():
 
     # Connect to your database
     database = Database(uri)
-    database.init()
 
     try:
         await database.init()
