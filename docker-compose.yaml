@@ -64,13 +64,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - web
+      - my_net
 
 networks:
     my_net:
         driver: bridge
-      external: true
-
 
 volumes:
   postgres_data:
