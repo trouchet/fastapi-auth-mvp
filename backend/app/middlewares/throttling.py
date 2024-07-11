@@ -4,7 +4,7 @@ from fastapi_limiter.depends import RateLimiter
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
-import aioredis
+from redis import asyncio as aioredis
 from typing import Callable, Union
 from fnmatch import fnmatch
 
