@@ -51,7 +51,7 @@ services:
       retries: 3
 
   auth-traefik:
-    image: traefik:v2.5
+    image: traefik:v2.11
     container_name: traefik
     restart: always
     command:
