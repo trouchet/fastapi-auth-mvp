@@ -4,10 +4,10 @@ from sqlalchemy.orm import sessionmaker
 from asyncpg.exceptions import DuplicateDatabaseError
 from sqlalchemy.ext.asyncio import async_scoped_session
 from asyncio import current_task 
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.dialects.postgresql import UUID
 
-from backend.app.core.logging import logger
+from backend.app.base.logging import logger
 from backend.app.database.models.base import Base
 from backend.app.utils.misc import try_do
 
@@ -61,7 +61,7 @@ class Database:
                     await conn.execute(text("COMMIT"))
                     await conn.execute(text(f"CREATE DATABASE {database_name}"))
                     logger.info(f"Database '{database_name}' created successfully.")
-            except DuplicateDatabaseError:
+            except (DuplicateDatabaseError, ProgrammingError):
                 logger.warning(f"Database '{database_name}' already exists.")
 
         await try_do(create_database_alias, "creating database")
@@ -92,9 +92,22 @@ class Database:
                 await conn.run_sync(Base.metadata.create_all)
 
             # Print available tables
-            logger.info(f"Tables created: {Base.metadata.tables}")
+            logger.info(f"Tables created: {list(Base.metadata.tables.keys())}")
 
         await try_do(create_tables_alias, "creating tables")
+
+    def __get_tables(self, conn):
+        """
+        Get the available tables in the database.
+
+        Args:
+            conn: The connection object.
+
+        Returns:
+            List: A list of table names.
+        """
+        inspector = inspect(conn)
+        return inspector.get_table_names()
 
     async def print_tables(self):
         """
@@ -103,7 +116,7 @@ class Database:
         async def print_tables_alias():
             async with self.engine.connect() as conn:
                 # Use a synchronous context to run the inspector
-                result = await conn.run_sync(self.get_tables)
+                result = await conn.run_sync(self.__get_tables)
                 logger.info(f"Available tables: {result}")
         
         await try_do(print_tables_alias, "printing tables")

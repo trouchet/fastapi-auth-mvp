@@ -4,8 +4,8 @@ from fastapi import FastAPI
 
 from .request import RequestLoggingMiddleware
 from backend.app.middlewares.throttling import RateLimitMiddleware
-from backend.app.core.auth import get_current_user
-from backend.app.core.config import settings
+from backend.app.base.auth import get_current_user
+from backend.app.base.config import settings
 
 def add_middlewares(app: FastAPI):
     # Add middlewares

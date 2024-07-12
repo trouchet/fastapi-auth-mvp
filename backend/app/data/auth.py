@@ -6,7 +6,7 @@ from backend.app.utils.throttling import (
 )
 from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role, Permission
-from backend.app.core.config import settings
+from backend.app.base.config import settings
 from backend.app.utils.security import hash_string
 
 # Rate limiter policies

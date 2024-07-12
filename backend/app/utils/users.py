@@ -10,7 +10,7 @@ from backend.app.utils.security import (
     is_email_valid,
     is_valid_uuid,
 )
-from backend.app.core.exceptions import (
+from backend.app.base.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
     IncorrectCurrentPasswordException,

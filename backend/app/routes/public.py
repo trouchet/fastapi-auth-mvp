@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory="backend/templates")
 
 from backend.app.database.instance import get_session
-from backend.app.core.logging import logger
+from backend.app.base.logging import logger
 from backend.app.utils.misc import get_cat_image_url, fetch_image
 from backend.app.utils.healthcheck import (
     is_server_live,

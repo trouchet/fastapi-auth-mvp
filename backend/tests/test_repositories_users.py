@@ -1,9 +1,9 @@
 import pytest
 
-from backend.app.core.config import settings
+from backend.app.base.config import settings
 from backend.app.models.users import UnhashedUpdateUser
 from backend.app.utils.security import hash_string
-from backend.app.core.auth import create_token
+from backend.app.base.auth import create_token
 
 from .conftest import user_factory 
 

@@ -8,8 +8,8 @@ from backend.app.database.core import Database
 from backend.app.database.models.users import User
 from .models.auth import Role, Permission
 from backend.app.utils.security import hash_string
-from backend.app.core.config import settings
-from backend.app.core.logging import logger
+from backend.app.base.config import settings
+from backend.app.base.logging import logger
 from backend.app.data.auth import ROLES_METADATA
 from backend.app.repositories.auth import get_role_repository, get_permission_repository
 from backend.app.repositories.users import get_user_repository

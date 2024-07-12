@@ -2,17 +2,19 @@ from fastapi import FastAPI, BackgroundTasks, Depends
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import BaseModel, EmailStr
 
+from backend.app.base.config import settings
+
 class EmailSchema(BaseModel):
     email: EmailStr
 
 conf = ConnectionConfig(
-    MAIL_USERNAME = "your_email@example.com",
-    MAIL_PASSWORD = "your_password",
-    MAIL_FROM = "your_email@example.com",
-    MAIL_PORT = 587,
-    MAIL_SERVER = "smtp.example.com",
-    MAIL_TLS = True,
-    MAIL_SSL = False,
+    MAIL_USERNAME = settings.MAIL_USERNAME,
+    MAIL_PASSWORD = settings.MAIL_PASSWORD,
+    MAIL_FROM = settings.MAIL_FROM,
+    MAIL_PORT = settings.MAIL_PORT,
+    MAIL_SERVER = settings.MAIL_SERVER,
+    MAIL_STARTTLS = True,
+    MAIL_SSL_TLS = False,
     USE_CREDENTIALS = True,
     VALIDATE_CERTS = True
 )

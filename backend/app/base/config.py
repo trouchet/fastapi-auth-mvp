@@ -175,6 +175,8 @@ class Settings(BaseSettings):
     POSTGRES_USER_TEST: str = 'postgres'
     POSTGRES_PASSWORD_TEST: str = 'postgres'
     POSTGRES_DBNAME_TEST: str = "auth_db"
+    
+    RETENTION_PERIOD_DAYS: int = 7
 
     @property
     def REDIS_HOST(self):

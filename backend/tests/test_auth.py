@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from backend.app.utils.database import model_to_dict
 
-from backend.app.core.auth import (
+from backend.app.base.auth import (
     get_current_user,
     validate_refresh_token,
     create_token,

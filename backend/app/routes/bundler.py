@@ -9,7 +9,7 @@ from backend.app.routes import (
     system_router,
     email_router,
 )
-from backend.app.core.config import settings
+from backend.app.base.config import settings
 
 # Include all routers in the API
 routers = [

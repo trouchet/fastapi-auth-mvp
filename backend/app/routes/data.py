@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from backend.app.models.users import User
-from backend.app.core.auth import role_checker, get_current_user
+from backend.app.base.auth import role_checker, get_current_user
 from .roles_bundler import (
     user_management_roles,
     user_viewer_roles,
