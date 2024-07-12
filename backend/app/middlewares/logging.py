@@ -14,8 +14,9 @@ def should_log_request(request: Request, response: Response):
     log_verbs = ['GET', 'POST', 'PUT', 'DELETE']
     is_log_verb = request.method in log_verbs
     is_error_response = response.status_code >= 200
+    must_log_route = settings.route_is_logged(request.url.path)
 
-    return is_log_verb or is_error_response
+    return must_log_route and (is_log_verb or is_error_response)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

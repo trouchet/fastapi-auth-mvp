@@ -127,6 +127,15 @@ class Settings(BaseSettings):
             f"{API_V1_STR}/token", 
             f"{API_V1_STR}/refresh",
         ]
+    
+    NON_LOG_PATTERNS: List = [
+            f"/favicon.ico",
+            f"{API_V1_STR}/openapi.json",
+            f"{API_V1_STR}/docs",
+            f"{API_V1_STR}/redoc",
+            f"{API_V1_STR}/health",
+            f"{API_V1_STR}/health/*",
+        ]
 
     @computed_field
     @property
@@ -209,11 +218,17 @@ class Settings(BaseSettings):
 
         return f"{scheme}://{credentials}@{url}"
 
-    def route_requires_authentication(self, route: str) -> bool:
+    def route_matches_patterns(self, route: str, patterns: List[str]) -> bool:
         has_match = lambda pattern: fnmatch(route, pattern)
-        non_token_route_list = list(map(has_match, self.AUTH_PATTERNS))
+        non_token_route_list = list(map(has_match, patterns))
         
         return not any(non_token_route_list)
+
+    def route_requires_authentication(self, route: str) -> bool:
+        return self.route_matches_patterns(route, self.AUTH_PATTERNS)
+    
+    def route_is_logged(self, route: str) -> bool:
+        return self.route_matches_patterns(route, self.NON_LOG_PATTERNS)
     
     def _warn_default_value(self, var_names: List[str]):
         environment = self.ENVIRONMENT

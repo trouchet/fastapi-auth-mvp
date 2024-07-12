@@ -12,7 +12,11 @@ class LogRepository:
         self.session = session
 
     async def create_request_log(self, user_id, request: Request):
-        body = await request.body()
+        try:
+            body = await request.body()
+        except Exception:
+            body = ''
+        
         log = RequestLog(
             relo_user_id=user_id,
             relo_client_host=request.client.host,

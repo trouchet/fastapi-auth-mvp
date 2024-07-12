@@ -205,7 +205,7 @@ async def test_validate_refresh_token_valid_token(
 
 
 @pytest.mark.asyncio
-@patch('backend.app.core.auth.jwt.decode')
+@patch('backend.app.base.auth.jwt.decode')
 async def test_validate_refresh_token_JWT_error(
     mock_jwt_decode, test_user_repository
 ):
@@ -261,7 +261,7 @@ async def test_get_current_active_user_inactive_user(
 
 
 @pytest.mark.asyncio
-@patch('backend.app.core.auth.jwt.decode')
+@patch('backend.app.base.auth.jwt.decode')
 async def test_validate_refresh_token_JWT_error(mock_jwt_decode):
     # Mock jwt.decode to raise JWTError
     mock_jwt_decode.side_effect = JWTError
@@ -358,7 +358,7 @@ async def test_role_checker_allows_authorized_role():
     mock_user = MockUser(roles=["Admin"])
     CurrentUserDependency=Depends(get_current_user)
 
-    with patch("backend.app.core.auth.get_current_user", return_value=mock_user):
+    with patch("backend.app.base.auth.get_current_user", return_value=mock_user):
         @role_checker(allowed_roles)
         async def protected_view(current_user: CurrentUserDependency):
             return "Success"

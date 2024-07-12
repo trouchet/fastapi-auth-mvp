@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.middlewares.request import RequestLoggingMiddleware
+from backend.app.middlewares.logging import RequestLoggingMiddleware
 from backend.app.middlewares.throttling import RateLimitMiddleware
 from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.middlewares.bundler import add_middlewares
