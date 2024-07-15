@@ -52,7 +52,7 @@ services:
 
   auth-traefik:
     image: traefik:v2.11
-    container_name: traefik
+    container_name: auth-traefik
     restart: always
     command:
       - "--api.insecure=true"
