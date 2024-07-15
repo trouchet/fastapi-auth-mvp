@@ -33,8 +33,6 @@ async def test_get_user_by_email(test_user_repository):
 
     assert user_by_id == user_by_email
 
-
-
 @pytest.mark.asyncio
 async def test_get_user_id_by_email(test_user_repository):
     user_email = settings.FIRST_SUPER_ADMIN_EMAIL
@@ -61,7 +59,7 @@ async def test_update_password(test_user_repository, test_viewer):
     new_password='New_password_123'
     user=await test_user_repository.update_user_password(test_viewer.user_id, new_password)
     
-    assert test_user_repository.is_user_credentials_authentic(user.user_username, new_password)
+    assert await test_user_repository.is_user_credentials_authentic(user.user_username, new_password)
 
 @pytest.mark.asyncio
 async def test_update_user_with_none_user(test_user_repository, test_viewer):
@@ -79,7 +77,6 @@ async def test_update_status_user(test_user_repository, test_viewer, new_status)
     
     updated_user = await test_user_repository.update_user_active_status(test_user_id, new_status)
     assert updated_user.user_is_active == new_status
-
 
 @pytest.mark.asyncio
 async def test_update_user_email(test_user_repository, test_viewer):
@@ -122,6 +119,22 @@ async def test_create_users(test_user_repository, test_dummy_data, admin_role):
     assert user
     await test_user_repository.delete_user_by_username(dummy_user.user_username)
 
+@pytest.mark.asyncio
+async def test_user_has_roles(test_user_repository, test_viewer, admin_role):
+    roles=await test_user_repository.get_user_roles(test_viewer.user_id)
+    role_names=[role.role_name for role in roles]
+    
+    assert await test_user_repository.has_user_roles(
+        test_viewer.user_username, role_names
+    )
+    assert not await test_user_repository.has_user_roles(
+        test_viewer.user_username, [admin_role.role_name]
+    )
+    
+@pytest.mark.asyncio
+async def test_get_user_roles(test_user_repository, test_viewer):
+    viewer_roles=await test_user_repository.get_user_roles(test_viewer.user_id)
+    assert len(viewer_roles) == 1
 
 @pytest.mark.asyncio
 async def test_delete_user_by_id(test_user_repository, test_viewer):
@@ -134,7 +147,6 @@ async def test_delete_user_by_id(test_user_repository, test_viewer):
     user=await test_user_repository.get_user_by_id(test_user_id)
     
     assert user is None
-
 
 @pytest.mark.asyncio
 async def test_delete_user_by_email(test_user_repository, test_viewer):
@@ -160,7 +172,7 @@ async def test_get_users_by_role(test_user_repository, super_admin_role):
     users=await test_user_repository.get_users_by_role(super_admin_role)
     assert len(users) == 1
 
-    
+
 @pytest.mark.asyncio
 async def test_get_user_roles(test_user_repository, test_admin):
     roles=await test_user_repository.get_user_roles(test_admin.user_id)
@@ -204,4 +216,4 @@ async def test_update_user_last_login(test_user_repository, dummy_user):
 
     assert last_login_at is not updated_user.user_last_login_at
 
-# 83%   132, 171-178, 181-184, 187-190, 200, 206-207
+

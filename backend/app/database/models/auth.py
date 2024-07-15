@@ -14,7 +14,7 @@ roles_permissions_association = Table(
 
 class Role(Base):
     __tablename__ = 'roles'
-    role_id = Column(UUID, primary_key=True)
+    role_id = Column(UUID, primary_key=True, default=uuid4)
     role_name = Column(String, unique=True, nullable=False)
     role_rate_limit = Column(JSON, nullable=False)
     role_permissions = relationship(
@@ -29,7 +29,7 @@ class Role(Base):
 
 class Permission(Base):
     __tablename__ = 'permissions'
-    perm_id = Column(UUID, primary_key=True)
+    perm_id = Column(UUID, primary_key=True, default=uuid4)
     perm_name = Column(String, unique=True, nullable=False)
     perm_roles = relationship(
         'Role', secondary=roles_permissions_association, back_populates='role_permissions'

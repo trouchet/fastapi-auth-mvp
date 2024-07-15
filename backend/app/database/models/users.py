@@ -36,16 +36,6 @@ class User(Base):
     )
     user_request_logs = relationship('RequestLog', back_populates='relo_user')
 
-    def has_roles(self, allowed_roles: Tuple[str]):
-        user_roles_set = {
-            role.role_name for role in self.user_roles
-        }
-        
-        allowed_roles_set = set(allowed_roles)
-        intersection_roles = user_roles_set.intersection(allowed_roles_set)
-        
-        return len(intersection_roles) == len(allowed_roles_set)
-
     def __repr__(self):
         return f"User({self.user_username})"
 

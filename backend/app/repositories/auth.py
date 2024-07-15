@@ -123,7 +123,6 @@ class RoleRepository:
         await self.session.delete(role)
         await self.session.commit()
 
-        
 
 class PermissionRepository:
     def __init__(self, session):
@@ -140,7 +139,8 @@ class PermissionRepository:
             Permission: The newly created permission object.
         """
         new_permission = Permission(perm_name=permission_name)
-        await self.session.add(new_permission)
+        
+        self.session.add(new_permission)
         await self.session.commit()
 
         return new_permission
@@ -155,7 +155,10 @@ class PermissionRepository:
         Returns:
             Permission: The retrieved permission object or None if not found.
         """
-        return await self.session.query(Permission).filter_by(perm_name=permission_name).first()
+        query = select(Permission).where(Permission.perm_name == permission_name)
+        result = await self.session.execute(query)
+        permission = result.scalars().first()
+        return permission
 
     async def get_all_permissions(self) -> List[Permission]:
         """
@@ -164,7 +167,10 @@ class PermissionRepository:
         Returns:
             List[Permission]: A list of all permission objects.
         """
-        return await self.session.query(Permission).all()
+        query = select(Permission)
+        result = await self.session.execute(query)
+        permissions = result.scalars().all()
+        return permissions
     
     async def update_permission(self, permission: Permission) -> None:
         """

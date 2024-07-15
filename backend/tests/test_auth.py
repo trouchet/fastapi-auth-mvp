@@ -115,6 +115,7 @@ async def test_get_current_user_inexistent_user(
     assert f"Username {unknown_username} does not exist" in str(excinfo.value)
 
 
+
 @pytest.mark.asyncio
 async def test_get_current_user_incomplete_data(
     test_user_repository, test_viewer
