@@ -16,9 +16,10 @@ COPY .env .
 
 # Command to run the FastAPI application
 CMD [\
-    "uvicorn", \
+    "gunicorn", \
     "backend.app.main:app", \
-    "--workers", "1", \
+    "--workers", "3", \
+    "--worker-class" "uvicorn.workers.UvicornWorker", \ 
     "--host", "0.0.0.0", \
     "--port", "8001" \
 ]
