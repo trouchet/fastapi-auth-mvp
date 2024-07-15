@@ -12,8 +12,6 @@ from backend.app.core.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
     IncorrectCurrentPasswordException,
-    ExistentUsernameException,
-    ExistentEmailException,
     LastAdminRemovalException,
     InvalidPasswordException,
     InvalidEmailException,
