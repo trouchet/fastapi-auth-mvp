@@ -177,6 +177,15 @@ class UsersRepository:
             await self.session.commit()
             await self.session.refresh(user)
             return user
+        
+    async def get_role_permissions(self, role: Role):
+        query = select(Role).options(selectinload(Role.role_permissions))\
+            .where(Role.role_id == role.role_id)
+        result = await self.session.execute(query)
+        role = result.scalars().first()
+        if role:
+            return [permission for permission in role.role_permissions]
+        return []
 
     async def is_user_active_by_id(self, user_id: str) -> bool:
         query = select(User).where(User.user_id == user_id)
@@ -271,3 +280,4 @@ class UsersRepository:
 async def get_user_repository():
     async with get_session() as session:
         yield UsersRepository(session)
+

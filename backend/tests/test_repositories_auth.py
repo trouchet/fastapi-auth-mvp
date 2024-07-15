@@ -10,7 +10,7 @@ async def test_get_all_roles(test_role_repository, new_role):
 
 
 @pytest.mark.asyncio
-async def test_create_role(test_role_repository, test_permission_repository, super_admin_role):
+async def test_create_role(test_role_repository, test_permission_repository, super_admin_role, admin_role):
     rate_limit_dict=get_minute_rate_limiter(99999).to_dict()
     new_role_name = 'Unlimited'
     
@@ -24,10 +24,11 @@ async def test_create_role(test_role_repository, test_permission_repository, sup
     roles=await test_role_repository.get_all_roles()
     sadmin_permission_names=[
         perm.perm_name for perm in sadmin_permissions
-    ]
+    ]    
     
-    
-    new_role=await test_role_repository.create_role(new_role_name, rate_limit_dict, sadmin_permission_names)
+    new_role=await test_role_repository.create_role(
+        new_role_name, rate_limit_dict, sadmin_permission_names
+    )
     new_roles=await test_role_repository.get_all_roles()
 
     assert len(roles) == len(new_roles)-1
@@ -35,7 +36,22 @@ async def test_create_role(test_role_repository, test_permission_repository, sup
     assert new_role is not None
     assert new_role.role_name == 'Unlimited'
     assert new_role.role_rate_limit == rate_limit_dict
+
+    admin_permissions=await test_role_repository.get_role_permissions(new_role)
+
+    updated_role=await test_role_repository.update_role_permissions(
+        new_role, admin_permissions
+    )
+    updated_role_permissions=await test_role_repository.get_role_permissions(updated_role)
     
+    assert {
+        permission.perm_name
+        for permission in updated_role_permissions
+    } == {
+        permission.perm_name
+        for permission in admin_permissions
+    }
+
     await test_role_repository.delete_role(new_role)
 
 def test_check_at_least_one_not_null():
@@ -71,5 +87,3 @@ async def test_get_all_permissions(test_permission_repository):
     all_permissions=await test_permission_repository.get_all_permissions()
     assert len(all_permissions) > 0
 
-# 44-49, 114, 167, 176, 190-191
-# 44-49, 114, 167, 176, 190-191
