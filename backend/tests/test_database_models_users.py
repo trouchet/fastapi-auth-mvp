@@ -1,11 +1,7 @@
-import pytest
 
-from uuid import uuid4
 
 from backend.app.utils.security import hash_string
-from backend.app.data.auth import ROLES_METADATA
 from backend.app.database.models.users import User
-from backend.app.database.models.auth import Permission
 
 
 def test_user_strings():

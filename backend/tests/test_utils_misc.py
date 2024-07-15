@@ -1,7 +1,6 @@
 import pytest
 import respx
 import httpx
-from unittest.mock import AsyncMock
 
 from backend.app.utils.misc import (
     get_cat_image_url, 

@@ -34,7 +34,6 @@ async def is_server_live() -> bool:
     """
     try:
         # Simple check (consider platform-specific methods for robustness)
-        import backend.app.main as main
         return True, ''
     except Exception as e:
         return False, f'Server is not live: {str(e)}'

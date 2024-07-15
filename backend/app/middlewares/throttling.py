@@ -5,12 +5,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
 from redis import asyncio as aioredis
-from typing import Callable, Union
-from fnmatch import fnmatch
+from typing import Union
 
 from backend.app.utils.request import get_route_and_token
 from backend.app.base.exceptions import MissingTokenException, TooManyRequestsException
-from backend.app.base.config import settings, is_docker
+from backend.app.base.config import settings
 from backend.app.data.auth import ROLES_METADATA
 from backend.app.base.logging import logger
 

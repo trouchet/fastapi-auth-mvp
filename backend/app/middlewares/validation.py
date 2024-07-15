@@ -1,8 +1,5 @@
 from fastapi import Request, FastAPI, HTTPException, status
-from typing import Awaitable
-from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Callable
 
 class RouteValidationMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: FastAPI):
@@ -11,7 +8,8 @@ class RouteValidationMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         actual_app = self.app.app if hasattr(self.app, 'app') else self.app
-        normalize_map = lambda route_path: route_path.rstrip('/') 
+        def normalize_map(route_path):
+            return route_path.rstrip('/') 
         
         normalized_route_path = normalize_map(request.url.path)
 

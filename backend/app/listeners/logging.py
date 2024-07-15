@@ -1,6 +1,5 @@
 from backend.app.repositories.logging import get_log_repository
 
-from backend.app.base.logging import logger
 
 async def job_listener(event):
     async with get_log_repository() as log_repo:        

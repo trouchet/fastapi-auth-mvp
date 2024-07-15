@@ -1,12 +1,8 @@
-from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 
-from backend.app.repositories.logging import RequestLog
-from backend.app.database.instance import get_session
 from backend.app.listeners.logging import job_listener
 from backend.app.repositories.logging import get_log_repository
-from backend.app.base.logging import logger
 
 scheduler = AsyncIOScheduler()
 

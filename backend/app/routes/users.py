@@ -12,15 +12,12 @@ from backend.app.base.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
     IncorrectCurrentPasswordException,
-    ExistentUsernameException,
-    ExistentEmailException,
     LastAdminRemovalException,
-    InvalidPasswordException,
     InvalidEmailException,
     InvalidUUIDException,
     InvalidPasswordException,
 )
-from backend.app.models.users import User, UnhashedUpdateUser, UpdateUser, CreateUser
+from backend.app.models.users import User, UnhashedUpdateUser, CreateUser
 from backend.app.base.auth import get_current_user
 from backend.app.utils.security import (
     is_password_valid, 
@@ -30,10 +27,6 @@ from backend.app.utils.security import (
 )
 
 from backend.app.utils.security import (
-    is_password_valid, 
-    apply_password_validity_dict, 
-    is_email_valid,
-    is_valid_uuid,
     hash_string,
 )
 from .roles_bundler import (

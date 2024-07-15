@@ -1,14 +1,11 @@
 import pytest
-from typing import Tuple, Dict, List, Generator
+from typing import Tuple, Dict, List
 from unittest.mock import patch
 from time import mktime
 from uuid import uuid4
-from asyncio import new_event_loop, AbstractEventLoop, get_event_loop_policy
-from contextlib import contextmanager
-from asyncpg.exceptions import PostgresConnectionError
-from collections.abc import AsyncIterator, Iterator
+from asyncio import AbstractEventLoop, get_event_loop_policy
+from collections.abc import Iterator
 
-from backend.app.database.models.base import Base
 from backend.app.utils.throttling import get_minute_rate_limiter
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
@@ -16,7 +13,6 @@ from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role 
 from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository, PermissionRepository
-from backend.app.data.auth import ROLES_METADATA
 from backend.app.database.initial_data import insert_initial_data
 from backend.app.base.config import settings
 

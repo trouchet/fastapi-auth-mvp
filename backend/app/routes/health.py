@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from backend.app.utils.healthcheck import (
     is_server_live,

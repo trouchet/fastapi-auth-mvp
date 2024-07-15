@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, model_validator, ValidationError
+from pydantic import BaseModel, model_validator
 from typing import Optional
 
 from backend.app.utils.security import hash_string
@@ -23,7 +23,7 @@ class UnhashedUpdateUser(BaseUser):
     @model_validator(mode='before')
     def check_at_least_one_not_null(cls, values):
         field_names=['user_username', 'user_email', 'user_password']
-        field_names_str = ', '.join(field_names)
+        ', '.join(field_names)
         if not any(values.get(field_name) for field_name in field_names):
             raise ValueError('At least one of fields {field_names_str} must be provided')
 

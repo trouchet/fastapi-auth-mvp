@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from fastapi_mail import ConnectionConfig
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     ] = []
     
     AUTH_PATTERNS: List = [
-            f"/favicon.ico",
+            "/favicon.ico",
             f"{API_V1_STR}/openapi.json",
             f"{API_V1_STR}/docs",
             f"{API_V1_STR}/redoc",
@@ -129,7 +129,7 @@ class Settings(BaseSettings):
         ]
     
     NON_LOG_PATTERNS: List = [
-            f"/favicon.ico",
+            "/favicon.ico",
             f"{API_V1_STR}/openapi.json",
             f"{API_V1_STR}/docs",
             f"{API_V1_STR}/redoc",
@@ -219,7 +219,8 @@ class Settings(BaseSettings):
         return f"{scheme}://{credentials}@{url}"
 
     def route_matches_patterns(self, route: str, patterns: List[str]) -> bool:
-        has_match = lambda pattern: fnmatch(route, pattern)
+        def has_match(pattern):
+            return fnmatch(route, pattern)
         non_token_route_list = list(map(has_match, patterns))
         
         return not any(non_token_route_list)

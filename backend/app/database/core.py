@@ -4,8 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from asyncpg.exceptions import DuplicateDatabaseError
 from sqlalchemy.ext.asyncio import async_scoped_session
 from asyncio import current_task 
-from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.exc import ProgrammingError
 
 from backend.app.base.logging import logger
 from backend.app.database.models.base import Base

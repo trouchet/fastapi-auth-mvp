@@ -4,7 +4,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
 from backend.app.utils.request import get_route_and_token
-from backend.app.repositories.logging import LogRepository
 from backend.app.repositories.logging import get_log_repository
 from backend.app.base.config import settings
 

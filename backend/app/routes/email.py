@@ -6,7 +6,6 @@ from backend.app.services.email import (
     EmailServiceDependency,
     EmailService, 
 )
-from backend.app.base.config import settings
 
 router=APIRouter(prefix='/email', tags=["E-mail"])
 

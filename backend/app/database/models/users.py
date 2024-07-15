@@ -1,8 +1,5 @@
 from sqlalchemy import Column, String, Boolean, DateTime, UUID, ForeignKey, Table
-from typing import Tuple
-from sqlalchemy.sql import select
-from sqlalchemy.orm import relationship, joinedload
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4

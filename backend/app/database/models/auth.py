@@ -1,7 +1,6 @@
-from sqlalchemy import Column, String, Boolean, DateTime, UUID, ForeignKey, Table
-from typing import Tuple
+from sqlalchemy import Column, String, UUID, ForeignKey, Table
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.dialects.postgresql import JSON
 from uuid import uuid4
 
 from .users import Base, users_roles_association

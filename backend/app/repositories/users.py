@@ -1,4 +1,3 @@
-from passlib.context import CryptContext
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple

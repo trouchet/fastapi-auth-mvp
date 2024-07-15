@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, Depends
+from fastapi import BackgroundTasks, Depends
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import BaseModel, EmailStr
 

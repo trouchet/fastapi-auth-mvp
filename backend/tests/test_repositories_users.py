@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from backend.app.base.config import settings
 from backend.app.models.users import UpdateUser
-from backend.app.utils.security import hash_string
 from backend.app.base.auth import create_token
 
 from .conftest import user_factory 
@@ -111,7 +110,7 @@ async def test_update_user_username(test_user_repository, test_viewer):
 @pytest.mark.asyncio
 async def test_create_users(test_user_repository, test_dummy_data, admin_role):
     dummy_user=user_factory(test_dummy_data, [admin_role])
-    deleted_count = await test_user_repository.delete_user_by_email(dummy_user.user_email)
+    await test_user_repository.delete_user_by_email(dummy_user.user_email)
 
     await test_user_repository.create_users([dummy_user])
     
