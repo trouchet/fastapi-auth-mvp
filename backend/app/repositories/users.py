@@ -203,7 +203,7 @@ class UsersRepository:
         return is_hash_from_string(plain_password, hashed_password)
 
     async def has_user_roles(self, username: str, roles: List[str]) -> bool:
-        user = await self.get_user(username)
+        user = await self.get_user_by_username(username)
         return not set(roles).isdisjoint(set(user.user_roles))
 
     async def refresh_token_exists(self, token: str) -> Tuple[bool | None, User | None]:
@@ -242,7 +242,6 @@ class UsersRepository:
         user = await self.get_user_by_username(username)
         if user:
             user.user_refresh_token = refresh_token
-            print(user.user_refresh_token)
             await self.session.commit()
             await self.session.refresh(user)
 

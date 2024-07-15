@@ -10,6 +10,7 @@ from sqlalchemy.orm import make_transient
 
 from backend.app.database.models.auth import Role, Permission
 from backend.app.database.instance import get_session
+from backend.app.database.models.auth import roles_permissions_association
 
 class RoleRepository:
     def __init__(self, session: AsyncSession):
@@ -30,7 +31,7 @@ class RoleRepository:
         """
         role_id = str(uuid4())
         new_role = Role(role_id=role_id, role_name=role_name, role_rate_limit=rate_limit)
-
+        
         try:
             for perm_name in permission_names:
                 condition = Permission.perm_name == perm_name
@@ -76,14 +77,21 @@ class RoleRepository:
     async def get_permissions_by_role(self, role: Role) -> List[Permission]:
         """
         Retrieves all permissions associated with a role.
-    
+
         Args:
             role (Role): The role object to retrieve permissions for.
-    
+
         Returns:
             List[Permission]: A list of all permission objects associated with the role.
         """
-        return role.role_permissions
+        # Query to get the role with its permissions
+        query = select(Permission).join(roles_permissions_association)\
+                                .join(Role).where(Role.role_id == role.role_id)
+        result = await self.session.execute(query)
+        
+        # Fetch all permissions
+        permissions = result.scalars().all()
+        return permissions
 
     async def get_all_roles(self) -> List[Role]:
         """

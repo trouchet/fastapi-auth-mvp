@@ -12,7 +12,7 @@ class User(BaseUser):
 class CreateUser(User):
     user_password: str
 
-class UpdateUser(CreateUser):
+class UpdateUser(User):
     user_email: Optional[str] = None
     user_hashed_password: Optional[str] = None
 
