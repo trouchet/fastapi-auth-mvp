@@ -1,7 +1,8 @@
 import pytest
+from uuid import uuid4
 
 from backend.app.base.config import settings
-from backend.app.models.users import UnhashedUpdateUser
+from backend.app.models.users import UpdateUser
 from backend.app.utils.security import hash_string
 from backend.app.base.auth import create_token
 
@@ -33,6 +34,7 @@ async def test_get_user_by_email(test_user_repository):
     assert user_by_id == user_by_email
 
 
+
 @pytest.mark.asyncio
 async def test_get_user_id_by_email(test_user_repository):
     user_email = settings.FIRST_SUPER_ADMIN_EMAIL
@@ -44,16 +46,23 @@ async def test_get_user_id_by_email(test_user_repository):
 @pytest.mark.asyncio
 async def test_update_user(test_user_repository, test_viewer):
     test_user_id = test_viewer.user_id
-    update_user=UnhashedUpdateUser(
+    update_user=UpdateUser(
         user_username=test_viewer.user_username,
         user_email="new_mail@example.com",
-        user_hashed_password=hash_string(test_viewer.user_hashed_password)
+        user_hashed_password=test_viewer.user_hashed_password
     )
 
     updated_user = await test_user_repository.update_user(test_user_id, update_user)
 
     assert updated_user.user_email == update_user.user_email
+
+@pytest.mark.asyncio
+async def test_update_password(test_user_repository, test_viewer):
+    new_password='New_password_123'
+    user=await test_user_repository.update_user_password(test_viewer.user_id, new_password)
     
+    assert test_user_repository.is_user_credentials_authentic(user.user_username, new_password)
+
 @pytest.mark.asyncio
 async def test_update_user_with_none_user(test_user_repository, test_viewer):
     test_user_id = test_viewer.user_id
@@ -156,15 +165,29 @@ async def test_get_users_by_role(test_user_repository, super_admin_role):
 async def test_get_user_roles(test_user_repository, test_admin):
     roles=await test_user_repository.get_user_roles(test_admin.user_id)
     assert len(roles) == 1
+    
+@pytest.mark.asyncio
+async def test_get_user_roles_unknown_id(test_user_repository):
+    roles = await test_user_repository.get_user_roles(uuid4())
+    
+    assert roles == []
 
 @pytest.mark.asyncio
-async def test_update_user_password(test_user_repository, test_viewer):
-    old_hashed_password=test_viewer.user_hashed_password
-    new_password="new_password"
+async def test_is_user_active_by_id(test_user_repository, test_viewer):
+    is_active=await test_user_repository.is_user_active_by_id(test_viewer.user_id)
+    assert is_active
 
-    updated_user=await test_user_repository.update_user_password(test_viewer.user_id, new_password)
+@pytest.mark.asyncio
+async def test_is_user_active_by_username(test_user_repository, test_viewer):
+    is_active=await test_user_repository.is_user_active_by_username(test_viewer.user_username)
     
-    assert old_hashed_password != updated_user.user_hashed_password
+    assert is_active
+
+@pytest.mark.asyncio
+async def test_is_user_credentials_authentic(test_user_repository):
+    is_authentic=await test_user_repository.is_user_credentials_authentic('unknown_user', 'password_shh123')
+    
+    assert not is_authentic
 
 @pytest.mark.asyncio
 async def test_user_access_token(test_user_repository, test_viewer):
