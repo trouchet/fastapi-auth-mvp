@@ -3,14 +3,16 @@ from fastapi import APIRouter, BackgroundTasks
 from backend.app.services.email import (
     EmailSchema, 
     MessageSchema, 
-    EmailServiceDependency,
-    EmailService, 
+    EmailService,
 )
-from backend.app.core.config import settings
+from backend.app.dependencies.email import EmailServiceDependency
+from backend.app.core.auth import role_checker
+from .roles_bundler import user_management_roles
 
 router=APIRouter(prefix='/email', tags=["E-mail"])
 
 @router.post("/send")
+@role_checker(user_management_roles)
 async def send_in_background(
     background_tasks: BackgroundTasks, 
     email: EmailSchema,
