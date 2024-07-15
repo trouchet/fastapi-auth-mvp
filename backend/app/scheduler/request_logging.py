@@ -1,24 +1,19 @@
-from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 
-from backend.app.repositories.request import (
-    RequestLog
-)
-from backend.app.database.instance import get_session
+from backend.app.listeners.logging import job_listener
+from backend.app.repositories.logging import get_log_repository
 
 scheduler = AsyncIOScheduler()
 
-async def delete_old_logs(retention_period_days=30):
-    cutoff_date = datetime.now() - timedelta(days=retention_period_days)
-
-    with get_session() as session:
-        datetime_filter = RequestLog.relo_timestamp < cutoff_date
-        session.query(RequestLog).filter(datetime_filter).delete()
-        session.commit()
-        session.close()
-
 
 async def setup_log_cleanup():
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(delete_old_logs, 'interval', days=1)
+    async with get_log_repository() as log_repo:
+        scheduler.add_listener(job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        
+        async def delete_old_logs_wrapper():
+            await log_repo.delete_old_logs()
+        
+        scheduler.add_job(delete_old_logs_wrapper, 'interval', days=1)
+        scheduler.start()
     

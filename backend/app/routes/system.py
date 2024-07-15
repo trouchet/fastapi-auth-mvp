@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 import toml
 
-from backend.app.core.auth import role_checker, get_current_user
-from backend.app.core.config import settings
+from backend.app.base.auth import role_checker, get_current_user
+from backend.app.base.config import settings
 from .roles_bundler import system_management_roles
 from backend.app.models.users import User
 

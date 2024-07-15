@@ -6,7 +6,7 @@ from backend.app.services.email import (
     EmailService,
 )
 from backend.app.dependencies.email import EmailServiceDependency
-from backend.app.core.auth import role_checker
+from backend.app.services.auth import role_checker
 from .roles_bundler import user_management_roles
 
 router=APIRouter(prefix='/email', tags=["E-mail"])

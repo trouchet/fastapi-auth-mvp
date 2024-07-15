@@ -6,20 +6,11 @@ from backend.app.database.models.users import UserDB
 from backend.app.models.users import CreateUser
 from backend.app.utils.security import (
     is_password_valid, 
-    apply_password_validity_dict, 
-    is_email_valid,
-    is_valid_uuid,
+    apply_password_validity_dict,
 )
-from backend.app.core.exceptions import (
-    InexistentUserIDException,
-    InactiveUserException,
-    IncorrectCurrentPasswordException,
+from backend.app.base.exceptions import (
     ExistentUsernameException,
     ExistentEmailException,
-    LastAdminRemovalException,
-    InvalidPasswordException,
-    InvalidEmailException,
-    InvalidUUIDException,
     InvalidPasswordException,
 )
 from backend.app.utils.security import hash_string

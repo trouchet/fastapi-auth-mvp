@@ -7,7 +7,7 @@ from typing import Annotated, Tuple
 from functools import wraps
 from time import time
 
-from backend.app.core.exceptions import (
+from backend.app.base.exceptions import (
     CredentialsException, 
     PrivilegesException, 
     InexistentUsernameException,
@@ -21,7 +21,7 @@ from backend.app.models.users import User
 from backend.app.database.models.users import User
 from backend.app.utils.misc import is_async
 
-from backend.app.core.config import settings
+from backend.app.base.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

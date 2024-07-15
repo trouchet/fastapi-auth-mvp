@@ -1,4 +1,3 @@
-from passlib.context import CryptContext
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
@@ -124,7 +123,8 @@ class UsersRepository:
         return users
 
     async def get_user_roles(self, user_id: str):
-        query = select(User).options(selectinload(User.user_roles)).where(User.user_id == user_id)
+        query = select(User).options(selectinload(User.user_roles))\
+            .where(User.user_id == user_id)
         result = await self.session.execute(query)
         user = result.scalars().first()
         if user:
@@ -132,7 +132,8 @@ class UsersRepository:
         return []
 
     async def get_users_by_role(self, role: Role):
-        query = select(User).join(users_roles_association).join(Role).filter(Role.role_name == role.role_name)
+        query = select(User).join(users_roles_association).join(Role)\
+            .filter(Role.role_name == role.role_name)
         result = await self.session.execute(query)
         users_with_role = result.scalars().all()
         
@@ -176,6 +177,15 @@ class UsersRepository:
             await self.session.commit()
             await self.session.refresh(user)
             return user
+        
+    async def get_role_permissions(self, role: Role):
+        query = select(Role).options(selectinload(Role.role_permissions))\
+            .where(Role.role_id == role.role_id)
+        result = await self.session.execute(query)
+        role = result.scalars().first()
+        if role:
+            return [permission for permission in role.role_permissions]
+        return []
 
     async def is_user_active_by_id(self, user_id: str) -> bool:
         query = select(User).where(User.user_id == user_id)
@@ -202,9 +212,30 @@ class UsersRepository:
         hashed_password = user.user_hashed_password
         return is_hash_from_string(plain_password, hashed_password)
 
-    async def has_user_roles(self, username: str, roles: List[str]) -> bool:
-        user = await self.get_user(username)
-        return not set(roles).isdisjoint(set(user.user_roles))
+    async def get_user_roles(self, user_id: str) -> List[Role]:
+        """
+        Retrieves all roles associated with a user.
+        
+        Args:
+        """
+        query = select(User).options(selectinload(User.user_roles))\
+            .where(User.user_id == user_id)
+        result = await self.session.execute(query)
+        user = result.scalars().first()
+        if user:
+            return [role for role in user.user_roles]
+        return []
+
+    async def has_user_roles(self, username: str, roles_names: List[str]) -> bool:
+        user = await self.get_user_by_username(username)
+        user_roles = await self.get_user_roles(user.user_id)
+        
+        user_roles_names = [
+            user_role.role_name
+            for user_role in user_roles
+        ]
+
+        return not set(roles_names).isdisjoint(set(user_roles_names))
 
     async def refresh_token_exists(self, token: str) -> Tuple[bool | None, User | None]:
         query = select(User).where(User.user_refresh_token == token)
@@ -242,7 +273,6 @@ class UsersRepository:
         user = await self.get_user_by_username(username)
         if user:
             user.user_refresh_token = refresh_token
-            print(user.user_refresh_token)
             await self.session.commit()
             await self.session.refresh(user)
 
@@ -250,3 +280,4 @@ class UsersRepository:
 async def get_user_repository():
     async with get_session() as session:
         yield UsersRepository(session)
+

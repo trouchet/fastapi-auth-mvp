@@ -4,22 +4,21 @@ from fastapi.encoders import jsonable_encoder
 
 from typing import List, Dict
 
-from backend.app.core.auth import role_checker
+from backend.app.base.auth import role_checker
 from backend.app.repositories.users import get_user_repository
 from backend.app.database.models.users import User
 from backend.app.repositories.users import UsersRepository
-from backend.app.core.exceptions import (
+from backend.app.base.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
     IncorrectCurrentPasswordException,
     LastAdminRemovalException,
-    InvalidPasswordException,
     InvalidEmailException,
     InvalidUUIDException,
     InvalidPasswordException,
 )
-from backend.app.models.users import User, UnhashedUpdateUser, UpdateUser, CreateUser
-from backend.app.core.auth import get_current_user
+from backend.app.models.users import User, UnhashedUpdateUser, CreateUser
+from backend.app.base.auth import get_current_user
 from backend.app.utils.security import (
     is_password_valid, 
     apply_password_validity_dict, 
@@ -28,10 +27,6 @@ from backend.app.utils.security import (
 )
 
 from backend.app.utils.security import (
-    is_password_valid, 
-    apply_password_validity_dict, 
-    is_email_valid,
-    is_valid_uuid,
     hash_string,
 )
 from .roles_bundler import (

@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from backend.app.core.config import settings
+from backend.app.base.config import settings
 from backend.app.database.core import Database
 
 # Load environment variables from the .env file
@@ -33,5 +33,8 @@ async def get_session():
     async with database.scoped_session_maker() as session:
         try:
             yield session
+        except Exception as e:
+            await session.rollback()
+            raise e
         finally:
             await session.close()

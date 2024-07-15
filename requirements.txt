@@ -1,7 +1,7 @@
 aioredis==2.0.1
 apscheduler==3.10.4
 asyncpg==0.29.0
-fastapi==0.111.00
+fastapi==0.111.1
 fastapi-csrf-protect==0.3.4
 fastapi-limiter==0.1.6
 fastapi-mail==1.4.1

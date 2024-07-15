@@ -51,6 +51,10 @@ replace: ## Replaces a token in the code. Usage: make replace token=your_token
 		--exclude-dir=.git \
 		--exclude=poetry.lock)
 
+codecov: # Send coverage report to codecov
+	curl -Os https://cli.codecov.io/latest/linux/codecov
+	chmod +x codecov 
+
 ip: ## Get the IP of a container. Usage: make ip container="db-cron-task"
 	docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(container)
 

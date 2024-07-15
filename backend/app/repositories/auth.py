@@ -1,15 +1,14 @@
 from typing import List
 from uuid import uuid4
 from contextlib import asynccontextmanager
-
-from backend.app.database.models.auth import Role, Permission
-from backend.app.database.instance import get_session
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import make_transient
+from sqlalchemy.orm import joinedload
 
 from backend.app.database.models.auth import Role, Permission
 from backend.app.database.instance import get_session
+
+from backend.app.database.models.auth import roles_permissions_association
 
 class RoleRepository:
     def __init__(self, session: AsyncSession):
@@ -30,7 +29,7 @@ class RoleRepository:
         """
         role_id = str(uuid4())
         new_role = Role(role_id=role_id, role_name=role_name, role_rate_limit=rate_limit)
-
+        
         try:
             for perm_name in permission_names:
                 condition = Permission.perm_name == perm_name
@@ -76,14 +75,21 @@ class RoleRepository:
     async def get_permissions_by_role(self, role: Role) -> List[Permission]:
         """
         Retrieves all permissions associated with a role.
-    
+
         Args:
             role (Role): The role object to retrieve permissions for.
-    
+
         Returns:
             List[Permission]: A list of all permission objects associated with the role.
         """
-        return role.role_permissions
+        # Query to get the role with its permissions
+        query = select(Permission).join(roles_permissions_association)\
+                                .join(Role).where(Role.role_id == role.role_id)
+        result = await self.session.execute(query)
+        
+        # Fetch all permissions
+        permissions = result.scalars().all()
+        return permissions
 
     async def get_all_roles(self) -> List[Role]:
         """
@@ -96,13 +102,42 @@ class RoleRepository:
         
         return statement.scalars().all()
     
-    async def update_role(self, role: Role) -> None:
+    async def get_role_permissions(self, role: Role) -> List[Permission]:
         """
-        Updates an existing role in the database.
+        Retrieves all permissions associated with a role.
     
         Args:
-            role (Role): The role object with updated attributes.
+            role (Role): The role object to retrieve permissions for.
+    
+        Returns:
+            List[Permission]: A list of all permission objects associated with the role.
         """
+        query = select(Permission).join(roles_permissions_association)\
+            .join(Role).where(Role.role_id == role.role_id)
+        result = await self.session.execute(query)
+        permissions = result.scalars().all()
+        return permissions
+    
+    async def update_role_permissions(self, role: Role, new_permissions: List[Permission]):
+        query = select(Role).where(Role.role_id == role.role_id)\
+            .options(joinedload(Role.role_permissions))
+        result = await self.session.execute(query)
+        role = result.scalars().first()
+        
+        if role:
+            role.role_permissions = new_permissions
+            await self.session.commit()
+            await self.session.refresh(role)
+            return role
+    
+    async def update_role(self, role: Role):
+        """
+        Updates a role in the database.
+        
+        Args:
+            role (Role): The role object to update.
+        """
+        await self.session.merge(role)
         await self.session.commit()
     
     async def delete_role(self, role: Role) -> None:
@@ -115,7 +150,6 @@ class RoleRepository:
         await self.session.delete(role)
         await self.session.commit()
 
-        
 
 class PermissionRepository:
     def __init__(self, session):
@@ -132,7 +166,8 @@ class PermissionRepository:
             Permission: The newly created permission object.
         """
         new_permission = Permission(perm_name=permission_name)
-        await self.session.add(new_permission)
+        
+        self.session.add(new_permission)
         await self.session.commit()
 
         return new_permission
@@ -147,7 +182,10 @@ class PermissionRepository:
         Returns:
             Permission: The retrieved permission object or None if not found.
         """
-        return await self.session.query(Permission).filter_by(perm_name=permission_name).first()
+        query = select(Permission).where(Permission.perm_name == permission_name)
+        result = await self.session.execute(query)
+        permission = result.scalars().first()
+        return permission
 
     async def get_all_permissions(self) -> List[Permission]:
         """
@@ -156,7 +194,10 @@ class PermissionRepository:
         Returns:
             List[Permission]: A list of all permission objects.
         """
-        return await self.session.query(Permission).all()
+        query = select(Permission)
+        result = await self.session.execute(query)
+        permissions = result.scalars().all()
+        return permissions
     
     async def update_permission(self, permission: Permission) -> None:
         """
@@ -165,8 +206,9 @@ class PermissionRepository:
         Args:
             permission (Permission): The permission object with updated attributes.
         """
+        await self.session.merge(permission)
         await self.session.commit()
-    
+
     async def delete_permission(self, permission: Permission) -> None:
         """
         Deletes a permission from the database.

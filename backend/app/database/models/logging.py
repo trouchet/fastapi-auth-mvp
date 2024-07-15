@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import UUID
@@ -23,3 +23,13 @@ class RequestLog(Base):
     relo_timestamp = Column(DateTime(timezone=True), default=datetime.now(timezone.utc))
 
     relo_user = relationship('User', back_populates='user_request_logs')
+
+class TaskLog(Base):
+    __tablename__ = "task_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String, index=True)
+    task_name = Column(String, index=True)
+    executed_at = Column(DateTime, default=datetime.now(timezone.utc))
+    success = Column(Boolean)
+    message = Column(String)

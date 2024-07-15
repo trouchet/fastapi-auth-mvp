@@ -4,20 +4,20 @@ from fastapi_limiter.depends import RateLimiter
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
-import aioredis
-from typing import Callable, Union
-from fnmatch import fnmatch
+from redis import asyncio as aioredis
+from typing import Union
 
 from backend.app.utils.request import get_route_and_token
-from backend.app.core.exceptions import MissingTokenException, TooManyRequestsException
-from backend.app.core.config import settings, is_docker
+from backend.app.base.exceptions import MissingTokenException, TooManyRequestsException
+from backend.app.base.config import settings
 from backend.app.data.auth import ROLES_METADATA
+from backend.app.base.logging import logger
 
 class RateLimiterPolicy:
     def __init__(
         self, 
         times: int = 5, 
-        hours: int = 0, 
+        hours: int = 0,     
         minutes: int = 1, 
         seconds: int = 0, 
         milliseconds: int = 0
@@ -36,6 +36,8 @@ async def init_redis_pool():
 async def init_rate_limiter():
     redis = await init_redis_pool()
     await FastAPILimiter.init(redis)
+    
+    logger.info("Rate limiter initialized!")
 
 
 # Given rate limiter, find throughput

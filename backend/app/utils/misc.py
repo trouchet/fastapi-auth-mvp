@@ -1,8 +1,7 @@
 from httpx import AsyncClient
 import inspect
-import re
 
-from backend.app.core.logging import logger 
+from backend.app.base.logging import logger 
 
 def get_cat_image_url(status_code: int):
     return f"https://http.cat/images/{status_code}.jpg"

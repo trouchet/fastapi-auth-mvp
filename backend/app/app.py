@@ -1,24 +1,19 @@
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.middlewares.request import RequestLoggingMiddleware
-from backend.app.middlewares.throttling import RateLimitMiddleware
 from backend.app.middlewares.throttling import init_rate_limiter
 from backend.app.middlewares.bundler import add_middlewares
 from backend.app.routes.bundler import api_router
-from backend.app.core.auth import get_current_user
-from backend.app.core.logging import logger
+from backend.app.base.logging import logger
 from backend.app.scheduler.bundler import start_schedulers
 
 from backend.app.database.instance import init_database
 from backend.app.database.initial_data import insert_initial_data
 
-from backend.app.middlewares.bundler import add_middlewares
-from backend.app.core.config import settings, is_docker
+from backend.app.base.config import settings, is_docker
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
@@ -55,26 +50,21 @@ def create_app():
 
 def configure_app(app_: FastAPI):
 
-    # Include routers in the app
-    app_.include_router(api_router)
-
-    # Add middlewares
-    add_middlewares(app_)
-
     # Add static files
     obj = StaticFiles(directory="backend/static")
     app_.mount("/static", obj, name="static")
 
+    # Add exception handlers
     @app_.exception_handler(status.HTTP_404_NOT_FOUND)
     async def not_found_handler(request: Request, exc: HTTPException):
-        warning_msg=f"The requested resource could not be found."
+        warning_msg="The requested resource could not be found."
         suggestion_msg=f"Refer to the API documentation at {settings.API_V1_STR}/docs for available endpoints."
         return JSONResponse(
             f"{warning_msg} {suggestion_msg}",
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
-    @app_.exception_handler(Exception)  # Catch all exceptions
+    @app_.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
         """Handles all uncaught exceptions."""
         # Log the exception details
@@ -83,6 +73,12 @@ def configure_app(app_: FastAPI):
         # Return a generic error response to the client
         code=status.HTTP_500_INTERNAL_SERVER_ERROR
         return JSONResponse(f"An unexpected error occurred: {exc}.", status_code=code)
+    
+    # Include routers in the app
+    app_.include_router(api_router)
+
+    # Add middlewares
+    add_middlewares(app_)
     
 def init_app():
     # Get the number of applications from the environment variable

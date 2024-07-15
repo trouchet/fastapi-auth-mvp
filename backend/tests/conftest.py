@@ -1,4 +1,5 @@
 import pytest
+from fastapi.testclient import TestClient
 from typing import Tuple, Dict, List, Generator
 from unittest.mock import patch
 from time import mktime
@@ -18,7 +19,8 @@ from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository, PermissionRepository
 from backend.app.data.auth import ROLES_METADATA
 from backend.app.database.initial_data import insert_initial_data
-from backend.app.core.config import settings
+from backend.app.base.config import settings
+from backend.app.main import app
 
 
 @pytest.fixture(scope="session")
@@ -28,6 +30,8 @@ def event_loop(request: pytest.FixtureRequest) -> Iterator[AbstractEventLoop]:
     yield loop
     loop.close()
 
+def test_client():
+    return TestClient(app)
 
 @pytest.fixture
 async def manage_database_connection():
@@ -66,7 +70,6 @@ async def test_user_repository(test_session):
         yield UsersRepository(session=test_session)
     finally:
         await test_session.aclose()
-
 
 @pytest.fixture
 async def test_role_repository(test_session):

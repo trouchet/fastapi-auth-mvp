@@ -3,18 +3,18 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 
-from backend.app.core.auth import create_token
+from backend.app.base.auth import create_token
 from backend.app.models.users import Token
 from backend.app.dependencies.auth import RefreshTokenDependency
 from backend.app.dependencies.users import UsersRepositoryDepends
 
 
 from backend.app.repositories.users import get_user_repository
-from backend.app.core.exceptions import (
+from backend.app.base.exceptions import (
     InexistentUsernameException, 
     CredentialsException,
 )
-from backend.app.core.config import settings
+from backend.app.base.config import settings
 
 # Create an instance of the FastAPI class
 router=APIRouter(prefix='/auth', tags=["Authorization"])
