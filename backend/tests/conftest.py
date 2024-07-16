@@ -1,4 +1,5 @@
 import pytest
+from pytest import FixtureRequest
 from fastapi.testclient import TestClient
 from typing import Tuple, Dict, List, Generator
 from unittest.mock import patch
@@ -8,6 +9,8 @@ from asyncio import new_event_loop, AbstractEventLoop, get_event_loop_policy
 from contextlib import contextmanager
 from asyncpg.exceptions import PostgresConnectionError
 from collections.abc import AsyncIterator, Iterator
+from unittest.mock import patch, AsyncMock
+from httpx import AsyncClient
 
 from backend.app.database.models.base import Base
 from backend.app.utils.throttling import get_minute_rate_limiter
@@ -24,14 +27,16 @@ from backend.app.main import app
 
 
 @pytest.fixture(scope="session")
-def event_loop(request: pytest.FixtureRequest) -> Iterator[AbstractEventLoop]:
+def event_loop(request: FixtureRequest) -> Iterator[AbstractEventLoop]:
     event_loop_policy = get_event_loop_policy()
     loop = event_loop_policy.new_event_loop()
     yield loop
     loop.close()
 
-def test_client():
-    return TestClient(app)
+@pytest.fixture
+async def test_client():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
 
 @pytest.fixture
 async def manage_database_connection():
@@ -60,6 +65,15 @@ async def test_session(manage_database_connection):
     finally:
         await session.aclose()
 
+@pytest.fixture
+def mock_get_cat_image_url():
+    with patch("backend.app.utils.misc.get_cat_image_url") as mock:
+        yield mock
+
+@pytest.fixture
+def mock_fetch_image():
+    with patch("backend.app.utils.misc.fetch_image", new_callable=AsyncMock) as mock:
+        yield mock
 
 @pytest.fixture
 async def test_user_repository(test_session):

@@ -115,7 +115,7 @@ class Settings(BaseSettings):
         Union[List[AnyUrl], str], BeforeValidator(parse_cors)
     ] = []
     
-    AUTH_PATTERNS: List = [
+    NON_AUTH_PATTERNS: List = [
             "/favicon.ico",
             f"{API_V1_STR}/openapi.json",
             f"{API_V1_STR}/docs",
@@ -221,15 +221,15 @@ class Settings(BaseSettings):
     def route_matches_patterns(self, route: str, patterns: List[str]) -> bool:
         def has_match(pattern):
             return fnmatch(route, pattern)
-        non_token_route_list = list(map(has_match, patterns))
         
-        return not any(non_token_route_list)
+        non_token_route_list = list(map(has_match, patterns))
+        return any(non_token_route_list)
 
     def route_requires_authentication(self, route: str) -> bool:
-        return self.route_matches_patterns(route, self.AUTH_PATTERNS)
+        return not self.route_matches_patterns(route, self.NON_AUTH_PATTERNS)
     
     def route_is_logged(self, route: str) -> bool:
-        return self.route_matches_patterns(route, self.NON_LOG_PATTERNS)
+        return not self.route_matches_patterns(route, self.NON_LOG_PATTERNS)
     
     def _warn_default_value(self, var_names: List[str]):
         environment = self.ENVIRONMENT

@@ -71,7 +71,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         route, token = get_route_and_token(request)
-
+        
         # Check if the route requires authentication
         if settings.route_requires_authentication(route):
             if not token:
@@ -92,7 +92,5 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 raise TooManyRequestsException()
 
         response = await call_next(request)
+        
         return response
-
-    
-

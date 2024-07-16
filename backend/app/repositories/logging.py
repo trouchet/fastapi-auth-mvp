@@ -40,13 +40,13 @@ class LogRepository:
         
         datetime_filter = RequestLog.relo_timestamp < cutoff_date
         self.session.query(RequestLog).filter(datetime_filter).delete()
-        await self.session.commit()
+        self.session.commit()
         
         datetime_filter = TaskLog.relo_timestamp < cutoff_date
         self.session.query(TaskLog).filter(datetime_filter).delete()
         await self.session.commit()
 
-    def create_task_log(self, job_id, task_name, success, message):
+    async def create_task_log(self, job_id, task_name, success, message):
         log = TaskLog(
             job_id=job_id,
             task_name=task_name,
@@ -56,8 +56,8 @@ class LogRepository:
         )
         
         self.session.add(log)
-        self.session.commit()
-        self.session.refresh(log)
+        await self.session.commit()
+        await self.session.refresh(log)
 
         return log
 

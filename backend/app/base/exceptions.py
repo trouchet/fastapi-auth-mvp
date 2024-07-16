@@ -155,3 +155,11 @@ class InvalidUUIDException(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"String {uuid} is an invalid UUID",
         )
+
+
+class InvalidRouteException(HTTPException):
+    def __init__(self, route):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Route {route} is invalid",
+        )
