@@ -27,9 +27,19 @@ class RequestLog(Base):
 class TaskLog(Base):
     __tablename__ = "task_logs"
     
-    id = Column(Integer, primary_key=True, index=True)
-    job_id = Column(String, index=True)
-    task_name = Column(String, index=True)
-    executed_at = Column(DateTime, default=datetime.now(timezone.utc))
-    success = Column(Boolean)
-    message = Column(String)
+    talo_id = Column(Integer, primary_key=True, index=True)
+    talo_job_id = Column(String, index=True)
+    talo_task_name = Column(String, index=True)
+    talo_executed_at = Column(DateTime, default=datetime.now(timezone.utc))
+    talo_success = Column(Boolean)
+    talo_message = Column(String)
+
+class RateLimitLog(Base):
+    __tablename__ = "rate_limit_logs"
+    
+    rali_id = Column(Integer, primary_key=True, index=True)
+    rali_user_id = Column(UUID, ForeignKey('users.user_id'))
+    rali_route = Column(String, index=True)
+    rali_timestamp = Column(
+        DateTime(timezone), default=datetime.now(timezone.utc)
+    )

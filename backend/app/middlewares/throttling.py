@@ -8,9 +8,12 @@ from redis import asyncio as aioredis
 from typing import Union
 
 from backend.app.utils.request import get_route_and_token
-from backend.app.base.exceptions import MissingTokenException, TooManyRequestsException
+from backend.app.base.exceptions import (
+    MissingTokenException, TooManyRequestsException,
+)
+from backend.app.repositories.logging import get_log_repository
+from backend.app.repositories.users import get_user_repository
 from backend.app.base.config import settings
-from backend.app.data.auth import ROLES_METADATA
 from backend.app.base.logging import logger
 
 class RateLimiterPolicy:
@@ -40,17 +43,6 @@ async def init_rate_limiter():
     logger.info("Rate limiter initialized!")
 
 
-# Given rate limiter, find throughput
-def get_throughput(rate_limiter: RateLimiterPolicy):
-    times = rate_limiter.times
-    interval_seconds = rate_limiter.hours * 3600 + \
-        rate_limiter.minutes * 60 + \
-        rate_limiter.seconds + \
-        rate_limiter.milliseconds / 1000
-    
-    return times / interval_seconds
-
-
 def get_rate_limiter(
     user_identifier: Union[str, None], 
     policy: RateLimiterPolicy = RateLimiterPolicy()
@@ -77,22 +69,27 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if not token:
                 raise MissingTokenException()
 
-            current_user = await self.identifier_callable(token)
-            user_identifier = current_user.user_username
-            roles = current_user.user_roles
-            rate_policies = [
-                ROLES_METADATA[role]['rate_policy'] for role in roles
-            ]
+            try:
+                current_user = await self.identifier_callable(token)
+                user_identifier = current_user.user_username
 
-            # Get the most permissive rate policy
-            rate_policy = max(rate_policies, key=get_throughput)
-            limiter = get_rate_limiter(user_identifier, rate_policy)
+                with get_user_repository() as user_repo:
+                    user_rate_limit = await user_repo.get_user_rate_limit_policy(
+                        user_identifier
+                    )
 
-            if not await limiter.check(request, route):
-                raise TooManyRequestsException()
+                # Get the most permissive rate policy
+                limiter_policy=RateLimiterPolicy(**user_rate_limit)
+                limiter = get_rate_limiter(user_identifier, limiter_policy)
+
+                if not await limiter.check(request, route):
+                    with get_log_repository() as log_repo:
+                        log_repo.create_rate_limit_log(current_user.user_id, route)
+
+                    raise TooManyRequestsException()
+            except Exception as e:
+                logger.error(f"Error processing rate limit for user {user_identifier}: {e}")
+                raise
 
         response = await call_next(request)
         return response
-
-    
-

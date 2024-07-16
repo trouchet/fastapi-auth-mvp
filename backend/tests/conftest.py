@@ -1,15 +1,20 @@
 import pytest
 from fastapi.testclient import TestClient
-from typing import Tuple, Dict, List, Generator
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from typing import Tuple, Dict, List
 from unittest.mock import patch
 from time import mktime
 from uuid import uuid4
-from asyncio import new_event_loop, AbstractEventLoop, get_event_loop_policy
-from contextlib import contextmanager
-from asyncpg.exceptions import PostgresConnectionError
-from collections.abc import AsyncIterator, Iterator
+from asyncio import AbstractEventLoop, get_event_loop_policy
+from collections.abc import Iterator
 
-from backend.app.database.models.base import Base
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from httpx import AsyncClient
+from backend.app.middlewares.throttling import (
+    RateLimitMiddleware, init_rate_limiter
+)
 from backend.app.utils.throttling import get_minute_rate_limiter
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
@@ -32,6 +37,40 @@ def event_loop(request: pytest.FixtureRequest) -> Iterator[AbstractEventLoop]:
 
 def test_client():
     return TestClient(app)
+
+# Mocked identifier callable
+async def mock_identifier_callable(token: str):
+    class MockUser:
+        user_username = "test_user"
+        user_id = 1
+        user_roles = ["Viewer"]
+    return MockUser()
+
+@pytest.fixture
+async def app_with_middleware():
+    # Define a simple FastAPI app for testing
+    app = FastAPI()
+
+    # Initialize the Redis pool and rate limiter
+    await init_rate_limiter()
+    
+    # Add the RateLimitMiddleware with mocked dependencies
+    app.add_middleware(
+        RateLimitMiddleware, identifier_callable=mock_identifier_callable
+    )
+
+    @app.get("/test")
+    async def test_endpoint():
+        return JSONResponse({"message": "success"})
+    
+    yield app
+
+@pytest.fixture
+async def async_client(app_with_middleware):
+    async with AsyncClient(
+        app=app_with_middleware, base_url="http://test"
+    ) as ac:
+        yield ac
 
 @pytest.fixture
 async def manage_database_connection():
@@ -247,6 +286,24 @@ async def test_users(
     ]
     
 
+@pytest.fixture
+async def app_with_middleware():
+    # Define a simple FastAPI app for testing
+    app = FastAPI()
+
+    # Initialize the Redis pool and rate limiter
+    await init_rate_limiter()
+    
+    # Add the RateLimitMiddleware with mocked dependencies
+    app.add_middleware(
+        RateLimitMiddleware, identifier_callable=mock_identifier_callable
+    )
+
+    @app.get("/test")
+    async def test_endpoint():
+        return JSONResponse({"message": "success"})
+    
+    yield app
 
 @pytest.fixture
 def logs_foldername():

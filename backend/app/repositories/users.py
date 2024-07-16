@@ -11,10 +11,10 @@ from contextlib import asynccontextmanager
 from sqlalchemy.orm import selectinload
 
 from backend.app.utils.security import hash_string, is_hash_from_string
+from backend.app.utils.throttling import get_throughput
 from backend.app.models.users import UpdateUser
 from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role
-
 from backend.app.database.instance import get_session
 from backend.app.database.models.users import users_roles_association
 
@@ -225,6 +225,15 @@ class UsersRepository:
         if user:
             return [role for role in user.user_roles]
         return []
+    
+    async def get_user_rate_limit_policy(self, user_username: str):
+        user = await self.get_user_by_username(user_username)
+        user_roles = await self.get_user_roles(user.user_id)
+        rate_policies = [
+            role.role_rate_limit for role in user_roles
+        ]
+
+        return max(rate_policies, key=get_throughput)
 
     async def has_user_roles(self, username: str, roles_names: List[str]) -> bool:
         user = await self.get_user_by_username(username)

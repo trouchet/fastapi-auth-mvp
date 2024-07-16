@@ -2,7 +2,9 @@ from fastapi import Request
 from datetime import datetime, timezone, timedelta
 from contextlib import asynccontextmanager
 
-from backend.app.database.models.logging import RequestLog, TaskLog
+from backend.app.database.models.logging import (
+    RequestLog, TaskLog, RateLimitLog,
+)
 from backend.app.database.instance import get_session
 from backend.app.base.config import settings
 
@@ -48,12 +50,20 @@ class LogRepository:
 
     def create_task_log(self, job_id, task_name, success, message):
         log = TaskLog(
-            job_id=job_id,
-            task_name=task_name,
-            executed_at=datetime.now(timezone.utc),
-            success=success,
-            message=message
+            talo_job_id=job_id,
+            talo_task_name=task_name,
+            talo_executed_at=datetime.now(timezone.utc),
+            talo_success=success
         )
+        
+        self.session.add(log)
+        self.session.commit()
+        self.session.refresh(log)
+
+        return log
+    
+    def create_rate_limit_log(self, user_id, route):
+        log = RateLimitLog(rali_user_id=user_id, rali_route=route)
         
         self.session.add(log)
         self.session.commit()
