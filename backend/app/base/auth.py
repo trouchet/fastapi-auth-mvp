@@ -16,9 +16,9 @@ from backend.app.base.exceptions import (
     MalformedTokenException,
     MissingRequiredClaimException,
 )
-from backend.app.repositories.users import get_user_repository
+from backend.app.repositories.users import get_users_repository
 from backend.app.models.users import User
-from backend.app.database.models.users import User
+from backend.app.database.models.users import User as UserDB
 from backend.app.utils.misc import is_async
 
 from backend.app.base.config import settings
@@ -45,7 +45,7 @@ async def validate_refresh_token(token: Annotated[str, Depends(oauth2_scheme)]):
         CredentialsException: If the token is invalid or the user credentials are incorrect.
         InactiveUserException: If the user is inactive.
     """
-    async with get_user_repository() as user_repository:
+    async with get_users_repository() as user_repository:
         try:
             user_has_token, user = await user_repository.refresh_token_exists(token)
             
@@ -91,7 +91,7 @@ async def get_user(username: str) -> User | None:
     Returns:
         User | None: The retrieved user if found, otherwise None.
     """
-    async with get_user_repository() as user_repository:
+    async with get_users_repository() as user_repository:
         user = await user_repository.get_user_by_username(username)
 
         if not user:
@@ -147,7 +147,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
         InexistentUsernameException: If the username does not exist in the database.
         InactiveUserException: If the user is inactive.
     """
-    async with get_user_repository() as user_repository:
+    async with get_users_repository() as user_repository:
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
             
@@ -197,7 +197,7 @@ def role_checker(required_roles: Tuple[str]):
 def permissions_checker(required_permissions: Tuple[str]):
     def wrapper(func):
         @wraps(func)
-        async def decorated_view(*args, current_user: User, **kwargs):
+        async def decorated_view(*args, current_user: UserDB, **kwargs):
             if not current_user.has_permissions(required_permissions):
                 raise PrivilegesException()
 

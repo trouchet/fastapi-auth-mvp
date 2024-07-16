@@ -1,7 +1,7 @@
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
-from typing import List
+from typing import List, Union
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import UUID
@@ -51,12 +51,14 @@ class UsersRepository:
         user = result.scalars().first()
         return user.user_id
 
-    async def get_user_by_username(self, username: str) -> User:
+    async def get_user_by_username(self, username: str) -> Union[User, None]:
         statement = select(User).where(User.user_username == username)
         result = await self.session.execute(statement)
         user = result.scalars().first()
-
+        
         if user:
+            print(user)
+            print('---------------><-----------------')
             return user
 
     async def create_user(self, user: User):
@@ -131,9 +133,13 @@ class UsersRepository:
             return [role for role in user.user_roles]
         return []
 
-    async def get_users_by_role(self, role: Role):
+    async def get_users_by_role(
+        self, role: Role, limit: int = 10, offset: int = 0
+    ):
         query = select(User).join(users_roles_association).join(Role)\
-            .filter(Role.role_name == role.role_name)
+            .filter(Role.role_name == role.role_name)\
+            .limit(limit)\
+            .offset(offset)
         result = await self.session.execute(query)
         users_with_role = result.scalars().all()
         
@@ -205,7 +211,7 @@ class UsersRepository:
         query = select(User).where(User.user_username == username)
         result = await self.session.execute(query)
         user = result.scalars().first()
-        
+
         if not user:
             return False
         
@@ -277,7 +283,18 @@ class UsersRepository:
             await self.session.refresh(user)
 
 @asynccontextmanager
-async def get_user_repository():
+async def get_users_repository():
     async with get_session() as session:
-        yield UsersRepository(session)
+        try:
+            yield UsersRepository(session)
+        finally:
+            pass
+        
+async def get_users_repository_dep():
+    async with get_session() as session:
+        try:
+            yield UsersRepository(session)
+        finally:
+            pass
 
+UsersRepositoryDependency=Annotated[UsersRepository, Depends(get_users_repository)]

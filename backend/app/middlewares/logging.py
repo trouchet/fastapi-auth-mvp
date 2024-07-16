@@ -32,8 +32,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             if should_log_request(request, response):
                 route, token = get_route_and_token(request)
 
-                print(route)
-                print(settings.route_requires_authentication(route))
                 if settings.route_requires_authentication(route):
                     current_user = await self.identifier_callable(token)
                     user_id = current_user.user_id

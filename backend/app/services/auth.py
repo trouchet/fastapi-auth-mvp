@@ -16,7 +16,7 @@ from backend.app.base.exceptions import (
     MalformedTokenException,
     MissingRequiredClaimException,
 )
-from backend.app.repositories.users import get_user_repository
+from backend.app.repositories.users import get_users_repository
 from backend.app.models.users import User
 from backend.app.database.models.users import User
 from backend.app.utils.misc import is_async
@@ -34,8 +34,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 class JWTService:
     @staticmethod
     def create_token(
-        data: dict, 
-        expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES,
+        data: dict, expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES,
     ):
         """
         Create a JSON Web Token (JWT) with the provided data and expiration time.
@@ -77,7 +76,7 @@ class JWTService:
             CredentialsException: If the token is invalid or the user credentials are incorrect.
             InactiveUserException: If the user is inactive.
         """
-        async with get_user_repository() as user_repository:
+        async with get_users_repository() as user_repository:
             try:
                 user_has_token, user = await user_repository.refresh_token_exists(token)
                 
@@ -130,7 +129,7 @@ class JWTService:
             InexistentUsernameException: If the username does not exist in the database.
             InactiveUserException: If the user is inactive.
         """
-        async with get_user_repository() as user_repository:
+        async with get_users_repository() as user_repository:
             try:
                 payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
                 
@@ -163,6 +162,12 @@ class JWTService:
 
 def get_jwt_service() -> JWTService:
     return JWTService()
+
+CurrentUserDependency=Annotated[User, Depends(JWTService().get_current_user)]
+
+class AuthService:
+    def __init__(self):
+        pass
 
 
 def role_checker(required_roles: Tuple[str]):

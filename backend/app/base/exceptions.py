@@ -36,7 +36,7 @@ class PrivilegesException(HTTPException):
 class InexistentUsernameException(HTTPException):
     def __init__(self, username):
         super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Username {username} does not exist",
         )
 
@@ -162,4 +162,20 @@ class InvalidRouteException(HTTPException):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Route {route} is invalid",
+        )
+        
+        
+class DuplicateEntryException(HTTPException):
+    def __init__(self, classifier, entry):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{classifier} {entry} already exists",
+        )
+
+
+class InternalDatabaseError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal database error",
         )

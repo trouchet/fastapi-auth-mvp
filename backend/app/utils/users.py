@@ -1,7 +1,7 @@
 from fastapi import Depends
 from typing import Dict
 
-from backend.app.repositories.users import get_user_repository, UsersRepository
+from backend.app.repositories.users import get_users_repository, UsersRepository
 from backend.app.database.models.users import UserDB
 from backend.app.models.users import CreateUser
 from backend.app.utils.security import (
@@ -26,7 +26,7 @@ def userbd_to_user(user: UserDB):
     }
 
 async def create_new_user(
-    user: CreateUser, user_repo: UsersRepository = Depends(get_user_repository)
+    user: CreateUser, user_repo: UsersRepository = Depends(get_users_repository)
 ) -> Dict:
     # Check if the username already exists
     user_db = user_repo.get_user_by_username(user.user_username)

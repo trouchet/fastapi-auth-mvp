@@ -9,11 +9,12 @@ scheduler = AsyncIOScheduler()
 
 async def setup_log_cleanup():
     async with get_log_repository() as log_repo:
-        scheduler.add_listener(job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        event_at=EVENT_JOB_EXECUTED | EVENT_JOB_ERROR
+        scheduler.add_listener(job_listener, event_at)
         
         async def delete_old_logs_wrapper():
             await log_repo.delete_old_logs()
-        
+
         scheduler.add_job(delete_old_logs_wrapper, 'interval', days=1)
         scheduler.start()
-    
+

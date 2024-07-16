@@ -63,7 +63,7 @@ async def test_cat_by_status_generic_exception(test_client):
             assert response.status_code == 500
             assert response.json() == "Internal Server Error"
 
-# backend/app/routes/auth.py                    42     24    43%   34-63, 72-83
+# backend/app/routes/auth.py                    42     24    43%   33-62, 71-82
 # backend/app/routes/bundler.py                  8      0   100%
 # backend/app/routes/data.py                    13      2    85%   17, 25
 # backend/app/routes/email.py                    8      3    62%   18-27
@@ -71,4 +71,4 @@ async def test_cat_by_status_generic_exception(test_client):
 # backend/app/routes/public.py                  28      0   100%
 # backend/app/routes/roles_bundler.py            4      0   100%
 # backend/app/routes/system.py                  20      8    60%   13-16, 28-35
-# backend/app/routes/users.py                  152     95    38%   42, 60-62, 72-80, 90-111, 124-141, 153-159, 166-172, 183-191, 202-210, 221-232, 244-265, 275-283, 293-301, 311-319, 329-331
+# backend/app/routes/users.py                   74     15    80%   42, 60, 70, 80, 90, 100, 107, 118, 129, 140, 152, 161, 171, 181, 193

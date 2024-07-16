@@ -1,6 +1,7 @@
 import pytest
 from pytest import FixtureRequest
 from fastapi.testclient import TestClient
+from fastapi import FastAPI
 from typing import Tuple, Dict, List, Generator
 from unittest.mock import patch
 from time import mktime
@@ -12,10 +13,12 @@ from collections.abc import AsyncIterator, Iterator
 from unittest.mock import patch, AsyncMock
 from httpx import AsyncClient
 
-from backend.app.database.models.base import Base
+from backend.app.routes.auth import router as auth_router
+from backend.app.models.users import ValidationUser
 from backend.app.utils.throttling import get_minute_rate_limiter
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
+from backend.app.database.models.base import Base
 from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role 
 from backend.app.repositories.users import UsersRepository
@@ -24,6 +27,7 @@ from backend.app.data.auth import ROLES_METADATA
 from backend.app.database.initial_data import insert_initial_data
 from backend.app.base.config import settings
 from backend.app.main import app
+from backend.app.utils.request import list_routes
 
 
 @pytest.fixture(scope="session")
@@ -33,10 +37,27 @@ def event_loop(request: FixtureRequest) -> Iterator[AbstractEventLoop]:
     yield loop
     loop.close()
 
+
+@pytest.fixture
+def auth_app() -> FastAPI:
+    app = FastAPI()
+    
+    prefix=settings.API_V1_STR
+    app.include_router(auth_router, prefix=prefix)
+    
+    return app
+
+
+@pytest.fixture
+async def auth_client(auth_app):
+    async with AsyncClient(app=auth_app, base_url="http://test") as ac:
+        yield ac
+
 @pytest.fixture
 async def test_client():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+
 
 @pytest.fixture
 async def manage_database_connection():
@@ -74,6 +95,7 @@ def mock_get_cat_image_url():
 def mock_fetch_image():
     with patch("backend.app.utils.misc.fetch_image", new_callable=AsyncMock) as mock:
         yield mock
+
 
 @pytest.fixture
 async def test_user_repository(test_session):
@@ -127,7 +149,7 @@ def test_viewer_data():
         "email": "test_@example.com"
     }
     
-    
+
 @pytest.fixture
 def test_inactive_user_data():
     return {
