@@ -10,7 +10,7 @@ from backend.app.models.throttling import RateLimiterPolicy
 from backend.app.database.instance import get_session
 from backend.app.database.models.auth import (
     roles_permissions_association,
-    Role, Permission,
+    Profile, Role, Permission,
 )
 
 class RoleRepository:
@@ -153,7 +153,6 @@ class RoleRepository:
         await self.session.delete(role)
         await self.session.commit()
 
-
 class PermissionRepository:
     def __init__(self, session):
         self.session = session
@@ -231,3 +230,30 @@ async def get_permission_repository():
 async def get_role_repository():
     async with get_session() as session:
         yield RoleRepository(session)
+
+
+class ProfileRepository:
+    def __init__(self, session):
+        self.session = session
+
+    async def create_profile(self, profile_name: str, roles: List[str]):
+        # Create a new Profile object
+        new_profile = Profile(prof_name=profile_name)
+
+        # Assign roles to the profile
+        async with get_role_repository() as role_repository:
+            for role_name in roles:
+                role = self.get_role_by_name(role_name)
+                new_profile.prof_roles.append(role)
+            
+        # Persist the new profile to the database
+        self.session.add(new_profile)
+        self.session.commit()
+        
+        return new_profile
+
+
+@asynccontextmanager
+async def get_profile_repository():
+    async with get_session() as session:
+        yield ProfileRepository(session)
