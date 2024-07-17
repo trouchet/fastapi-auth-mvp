@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request
 from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
@@ -8,26 +7,16 @@ from redis import asyncio as aioredis
 from typing import Union
 
 from backend.app.utils.request import get_route_and_token
-from backend.app.base.exceptions import MissingTokenException, TooManyRequestsException
+from backend.app.base.exceptions import (
+    MissingTokenException, TooManyRequestsException,
+)
+from backend.app.utils.throttling import get_rate_limiter
+from backend.app.services.auth import get_current_user
 from backend.app.base.config import settings
 from backend.app.data.auth import ROLES_METADATA
+from backend.app.models.throttling import RateLimiterPolicy
 from backend.app.base.logging import logger
-
-class RateLimiterPolicy:
-    def __init__(
-        self, 
-        times: int = 5, 
-        hours: int = 0,     
-        minutes: int = 1, 
-        seconds: int = 0, 
-        milliseconds: int = 0
-    ):
-        self.times = times
-        self.hours = hours
-        self.minutes = minutes
-        self.seconds = seconds
-        self.milliseconds = milliseconds
-
+from backend.app.repositories.users import get_users_repository_cmanager
 
 async def init_redis_pool():
     return await aioredis.Redis.from_url(settings.redis_url)
@@ -36,39 +25,11 @@ async def init_redis_pool():
 async def init_rate_limiter():
     redis = await init_redis_pool()
     await FastAPILimiter.init(redis)
-    
+
     logger.info("Rate limiter initialized!")
 
 
-# Given rate limiter, find throughput
-def get_throughput(rate_limiter: RateLimiterPolicy):
-    times = rate_limiter.times
-    interval_seconds = rate_limiter.hours * 3600 + \
-        rate_limiter.minutes * 60 + \
-        rate_limiter.seconds + \
-        rate_limiter.milliseconds / 1000
-    
-    return times / interval_seconds
-
-
-def get_rate_limiter(
-    user_identifier: Union[str, None], 
-    policy: RateLimiterPolicy = RateLimiterPolicy()
-):
-    return RateLimiter(
-        times=policy.times, 
-        hours=policy.hours,
-        minutes=policy.minutes,
-        seconds=policy.seconds,
-        milliseconds=policy.milliseconds,
-        identifier=user_identifier
-    )
-
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: FastAPI, identifier_callable: Callable[[str], Awaitable]):
-        super().__init__(app)
-        self.identifier_callable = identifier_callable
-
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         route, token = get_route_and_token(request)
         
@@ -77,15 +38,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if not token:
                 raise MissingTokenException()
 
-            current_user = await self.identifier_callable(token)
+            current_user = await get_current_user(token)
             user_identifier = current_user.user_username
-            roles = current_user.user_roles
-            rate_policies = [
-                ROLES_METADATA[role]['rate_policy'] for role in roles
-            ]
 
-            # Get the most permissive rate policy
-            rate_policy = max(rate_policies, key=get_throughput)
+            async with get_users_repository_cmanager() as user_repository:
+                rate_policy=await user_repository.get_user_loosest_rate_limit(
+                        current_user.user_username
+                )
+
             limiter = get_rate_limiter(user_identifier, rate_policy)
 
             if not await limiter.check(request, route):

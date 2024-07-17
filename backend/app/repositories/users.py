@@ -10,6 +10,7 @@ from sqlalchemy import delete
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import selectinload
 
+from backend.app.utils.throttling import RateLimiterPolicy
 from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
 from backend.app.database.models.users import User
@@ -38,7 +39,7 @@ class UsersRepository:
         result = await self.session.execute(statement)
         user = result.scalars().first()
         return user.user_id
-
+    
     async def get_user_by_email(self, email: str) -> User:
         statement = select(User).where(User.user_email == email)
         result = await self.session.execute(statement)
@@ -57,8 +58,6 @@ class UsersRepository:
         user = result.scalars().first()
         
         if user:
-            print(user)
-            print('---------------><-----------------')
             return user
 
     async def create_user(self, user: User):
@@ -123,15 +122,6 @@ class UsersRepository:
         result = await self.session.execute(query)
         users = result.scalars().all()
         return users
-
-    async def get_user_roles(self, user_id: str):
-        query = select(User).options(selectinload(User.user_roles))\
-            .where(User.user_id == user_id)
-        result = await self.session.execute(query)
-        user = result.scalars().first()
-        if user:
-            return [role for role in user.user_roles]
-        return []
 
     async def get_users_by_role(
         self, role: Role, limit: int = 10, offset: int = 0
@@ -218,12 +208,7 @@ class UsersRepository:
         hashed_password = user.user_hashed_password
         return is_hash_from_string(plain_password, hashed_password)
 
-    async def get_user_roles(self, user_id: str) -> List[Role]:
-        """
-        Retrieves all roles associated with a user.
-        
-        Args:
-        """
+    async def get_user_roles_by_id(self, user_id: str) -> List[Role]:
         query = select(User).options(selectinload(User.user_roles))\
             .where(User.user_id == user_id)
         result = await self.session.execute(query)
@@ -231,10 +216,31 @@ class UsersRepository:
         if user:
             return [role for role in user.user_roles]
         return []
+    
+    async def get_user_roles_by_username(self, user_username: str):
+        query = select(User).options(selectinload(User.user_roles))\
+            .where(User.user_username == user_username)
+        result = await self.session.execute(query)
+        user = result.scalars().first()
+        if user:
+            return [role for role in user.user_roles]
+        return []
+
+    async def get_user_loosest_rate_limit(self, user_username):
+        roles=self.get_user_roles_by_username(user_username)
+        
+        rate_limits = [
+            RateLimiterPolicy(**role.role_rate_limit) for role in roles
+        ]
+        loosest_rate_limit = max(
+            rate_limits, key=lambda x: x.get_throughput()
+        )
+        
+        return loosest_rate_limit.to_dict()
 
     async def has_user_roles(self, username: str, roles_names: List[str]) -> bool:
         user = await self.get_user_by_username(username)
-        user_roles = await self.get_user_roles(user.user_id)
+        user_roles = await self.get_user_roles_by_id(user.user_id)
         
         user_roles_names = [
             user_role.role_name
@@ -283,18 +289,16 @@ class UsersRepository:
             await self.session.refresh(user)
 
 @asynccontextmanager
-async def get_users_repository():
-    async with get_session() as session:
-        try:
-            yield UsersRepository(session)
-        finally:
-            pass
-        
-async def get_users_repository_dep():
+async def get_users_repository_cmanager():
     async with get_session() as session:
         try:
             yield UsersRepository(session)
         finally:
             pass
 
-UsersRepositoryDependency=Annotated[UsersRepository, Depends(get_users_repository)]
+async def get_users_repository():
+    async with get_session() as session:
+        try:
+            yield UsersRepository(session)
+        finally:
+            pass

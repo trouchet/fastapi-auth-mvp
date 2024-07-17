@@ -41,6 +41,3 @@ class UnhashedUpdateUser(BaseUser):
 
         return UpdateUser(**update_user_data)
 
-class Token(BaseModel):
-    access_token: str
-    refresh_token: str

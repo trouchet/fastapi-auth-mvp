@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from backend.app.base.config import settings
 from backend.app.models.users import UpdateUser
-from backend.app.base.auth import create_token
+from backend.app.services.auth import create_token
 
 from .conftest import user_factory 
 
@@ -19,7 +19,9 @@ async def test_get_user_by_username(test_user_repository):
 @pytest.mark.asyncio
 async def test_get_user_id_by_username(test_user_repository):
     user_username = settings.FIRST_SUPER_ADMIN_USERNAME
-    user_id_by_username = await test_user_repository.get_user_id_by_username(user_username)
+    user_id_by_username = await test_user_repository.get_user_id_by_username(
+        user_username
+    )
     user_by_id = await test_user_repository.get_user_by_id(user_id_by_username)
 
     assert user_by_id.user_id == user_id_by_username
@@ -56,9 +58,13 @@ async def test_update_user(test_user_repository, test_viewer):
 @pytest.mark.asyncio
 async def test_update_password(test_user_repository, test_viewer):
     new_password='New_password_123'
-    user=await test_user_repository.update_user_password(test_viewer.user_id, new_password)
+    user=await test_user_repository.update_user_password(
+        test_viewer.user_id, new_password
+    )
     
-    assert await test_user_repository.is_user_credentials_authentic(user.user_username, new_password)
+    assert await test_user_repository.is_user_credentials_authentic(
+        user.user_username, new_password
+    )
 
 @pytest.mark.asyncio
 async def test_update_user_with_none_user(test_user_repository, test_viewer):
@@ -190,20 +196,26 @@ async def test_is_user_active_by_id(test_user_repository, test_viewer):
 
 @pytest.mark.asyncio
 async def test_is_user_active_by_username(test_user_repository, test_viewer):
-    is_active=await test_user_repository.is_user_active_by_username(test_viewer.user_username)
+    is_active=await test_user_repository.is_user_active_by_username(
+        test_viewer.user_username
+    )
     
     assert is_active
 
 @pytest.mark.asyncio
 async def test_is_user_credentials_authentic(test_user_repository):
-    is_authentic=await test_user_repository.is_user_credentials_authentic('unknown_user', 'password_shh123')
+    is_authentic=await test_user_repository.is_user_credentials_authentic(
+        'unknown_user', 'password_shh123'
+    )
     
     assert not is_authentic
 
 @pytest.mark.asyncio
 async def test_user_access_token(test_user_repository, test_viewer):
     new_access_token=create_token({})
-    updated_user=await test_user_repository.update_user_access_token(test_viewer.user_username, new_access_token)
+    updated_user=await test_user_repository.update_user_access_token(
+        test_viewer.user_username, new_access_token
+    )
     
     assert updated_user.user_access_token == new_access_token
 
@@ -211,7 +223,9 @@ async def test_user_access_token(test_user_repository, test_viewer):
 async def test_update_user_last_login(test_user_repository, dummy_user):
     last_login_at=dummy_user.user_last_login_at
 
-    updated_user=await test_user_repository.update_user_last_login(dummy_user.user_username)
+    updated_user=await test_user_repository.update_user_last_login(
+        dummy_user.user_username
+    )
 
     assert last_login_at is not updated_user.user_last_login_at
 

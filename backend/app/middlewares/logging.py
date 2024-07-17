@@ -5,6 +5,7 @@ from typing import Callable
 
 from backend.app.utils.request import get_route_and_token
 from backend.app.repositories.logging import get_log_repository
+from backend.app.services.auth import get_current_user
 from backend.app.base.config import settings
 
 
@@ -19,10 +20,6 @@ def should_log_request(request: Request, response: Response):
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: FastAPI, identifier_callable: Callable = None):
-        super().__init__(app)
-        self.identifier_callable = identifier_callable
-
     async def dispatch(self, request: Request, call_next: Callable):
         async with get_log_repository() as log_repository:
 
@@ -33,7 +30,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 route, token = get_route_and_token(request)
 
                 if settings.route_requires_authentication(route):
-                    current_user = await self.identifier_callable(token)
+                    current_user = await get_current_user(token)
                     user_id = current_user.user_id
                 else:
                     user_id = None

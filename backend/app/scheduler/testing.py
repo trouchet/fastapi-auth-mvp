@@ -15,4 +15,4 @@ async def dummy_task():
     if execution_count % 3 == 0:
         raise Exception("Intentional failure for testing")
 
-    logger.info("Dummy task executed successfully")
+    logger.info("TEsting task executed successfully")

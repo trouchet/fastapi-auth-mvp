@@ -7,10 +7,10 @@ from fastapi import HTTPException
 from jose import jwt, JWTError
 from unittest.mock import patch
 
-
+from backend.app.dependencies.auth import CurrentUserDependency
 from backend.app.utils.database import model_to_dict
 
-from backend.app.base.auth import (
+from backend.app.services.auth import (
     get_current_user,
     validate_refresh_token,
     create_token,
@@ -357,7 +357,6 @@ async def test_role_checker_allows_authorized_role():
     # Mock get_current_active_user to return a user with an allowed role
     allowed_roles = ("Admin",)
     mock_user = MockUser(roles=["Admin"])
-    CurrentUserDependency=Depends(get_current_user)
 
     with patch("backend.app.base.auth.get_current_user", return_value=mock_user):
         @role_checker(allowed_roles)

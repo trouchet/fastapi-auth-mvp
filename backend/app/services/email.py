@@ -1,11 +1,8 @@
 from fastapi import BackgroundTasks, Depends
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic import BaseModel, EmailStr
 
+from backend.app.models.email import EmailSchema
 from backend.app.base.config import settings
-
-class EmailSchema(BaseModel):
-    email: EmailStr
 
 conf = ConnectionConfig(
     MAIL_USERNAME = settings.MAIL_USERNAME,
@@ -23,16 +20,12 @@ class EmailService:
     def __init__(self):
         self.mail = FastMail(conf)
 
-    async def send_message(self, email: EmailSchema, background_tasks: BackgroundTasks):
-        message = MessageSchema(
-            subject="FastAPI Mail Module",
-            recipients=[email.email],
-            body="This is a test email sent from FastAPI using the FastAPI Mail module."
-        )
-
+    async def send_message(
+        self, email: EmailSchema, message: MessageSchema,
+        background_tasks: BackgroundTasks
+    ):
         background_tasks.add_task(self.mail.send_message, message)
         
 def get_email_service_dependency():
     return EmailService()
-        
-EmailServiceDependency = Depends(get_email_service_dependency)
+

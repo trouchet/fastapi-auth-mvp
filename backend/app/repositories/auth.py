@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from backend.app.database.models.auth import Role, Permission
-from backend.app.database.instance import get_session
+from backend.app.models.throttling import RateLimiterPolicy
 
+from backend.app.database.instance import get_session
 from backend.app.database.models.auth import roles_permissions_association
 
 class RoleRepository:
