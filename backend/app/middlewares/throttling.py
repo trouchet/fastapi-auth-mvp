@@ -6,17 +6,16 @@ from typing import Callable, Awaitable
 from redis import asyncio as aioredis
 from typing import Union
 
-from backend.app.utils.request import get_route_and_token
 from backend.app.base.exceptions import (
     MissingTokenException, TooManyRequestsException,
 )
-from backend.app.utils.throttling import get_rate_limiter
-from backend.app.services.auth import get_current_user
 from backend.app.base.config import settings
-from backend.app.data.auth import ROLES_METADATA
-from backend.app.models.throttling import RateLimiterPolicy
 from backend.app.base.logging import logger
+from backend.app.utils.throttling import get_rate_limiter
+from backend.app.utils.request import get_route_and_token
 from backend.app.repositories.users import get_users_repository_cmanager
+from backend.app.services.auth import get_current_user
+from backend.app.models.throttling import RateLimiterPolicy
 
 async def init_redis_pool():
     return await aioredis.Redis.from_url(settings.redis_url)

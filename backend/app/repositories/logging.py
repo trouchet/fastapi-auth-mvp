@@ -2,7 +2,9 @@ from fastapi import Request
 from datetime import datetime, timezone, timedelta
 from contextlib import asynccontextmanager
 
-from backend.app.database.models.logging import RequestLog, TaskLog, AuthLog
+from backend.app.database.models.logging import (
+    RequestLog, TaskLog, AuthLog,
+)
 from backend.app.database.instance import get_session
 from backend.app.base.config import settings
 
@@ -18,15 +20,15 @@ class LogRepository:
             body = ''
         
         log = RequestLog(
-            relo_user_id=user_id,
-            relo_client_host=request.client.host,
-            relo_client_port=request.client.port,
-            relo_headers=dict(request.headers),
-            relo_body=body.decode("utf-8") if body else None,
-            relo_method=request.method,
-            relo_url=str(request.url),
-            relo_path=request.url.path,
-            relo_query_params=dict(request.query_params),
+            lore_user_id=user_id,
+            lore_client_host=request.client.host,
+            lore_client_port=request.client.port,
+            lore_headers=dict(request.headers),
+            lore_body=body.decode("utf-8") if body else None,
+            lore_method=request.method,
+            lore_url=str(request.url),
+            lore_path=request.url.path,
+            lore_query_params=dict(request.query_params),
         )
 
         self.session.add(log)
@@ -48,11 +50,10 @@ class LogRepository:
 
     async def create_task_log(self, job_id, task_name, success, message):
         log = TaskLog(
-            job_id=job_id,
-            task_name=task_name,
-            executed_at=datetime.now(timezone.utc),
-            success=success,
-            message=message
+            lota_job_id=job_id,
+            lota_task_name=task_name,
+            lota_success=success,
+            lota_message=message
         )
         
         self.session.add(log)

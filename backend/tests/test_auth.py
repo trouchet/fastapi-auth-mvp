@@ -12,7 +12,7 @@ from backend.app.utils.database import model_to_dict
 
 from backend.app.services.auth import (
     get_current_user,
-    validate_refresh_token,
+    get_current_user_from_refresh_token,
     create_token,
     role_checker,
     JWT_ALGORITHM,
@@ -193,14 +193,14 @@ async def test_validate_refresh_token_valid_token(
     username = test_viewer.user_username
 
     auth_dict = {"sub": test_viewer.user_username}
-    refresh_token = create_token(auth_dict)
+    token = create_token(auth_dict)
 
     validated_user = await test_user_repository.update_user_refresh_token(
-        username, refresh_token
+        username, token
     )
 
     # Add token to the list
-    validated_user, _ = await validate_refresh_token(refresh_token)
+    validated_user = await get_current_user_from_refresh_token(token)
 
     assert validated_user.user_username == username
 
@@ -216,7 +216,7 @@ async def test_validate_refresh_token_JWT_error(
     token = "invalid_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(token)
+        await get_current_user_from_refresh_token(token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -226,7 +226,7 @@ async def test_validate_refresh_token_invalid_token():
     invalid_token = "invalid_refresh_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(invalid_token)
+        await get_current_user_from_refresh_token(invalid_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -270,7 +270,7 @@ async def test_validate_refresh_token_JWT_error(mock_jwt_decode):
     token = "invalid_token"
     
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(token)
+        await get_current_user_from_refresh_token(token)
     
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -280,7 +280,7 @@ async def test_validate_refresh_token_invalid_token():
     invalid_token = "invalid_refresh_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(invalid_token)
+        await get_current_user_from_refresh_token(invalid_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -295,7 +295,7 @@ async def test_validate_refresh_token_missing_username_in_token(test_viewer):
     user_len = len(f".username:{username}")
     modified_token = token[:-user_len]
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(modified_token)
+        await get_current_user_from_refresh_token(modified_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -306,10 +306,10 @@ async def test_vaildate_refresh_token_inexistent_user():
     # Create a refresh token for a user
 
     user_dict = {"sub": "inexistent user"}
-    refresh_token = create_token(user_dict)
+    token_ = create_token(user_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(refresh_token)
+        await get_current_user_from_refresh_token(token_)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -324,7 +324,7 @@ async def test_validate_refresh_token_expired_token(test_user_repository, test_v
     await test_user_repository.update_user_refresh_token(test_viewer.user_username, token)
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(token)
+        await get_current_user_from_refresh_token(token)
 
     assert "This token has expired" in str(excinfo.value)
 
@@ -336,7 +336,7 @@ async def test_validate_refresh_token_nonexistent_user(test_viewer):
     token = create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await validate_refresh_token(token)
+        await get_current_user_from_refresh_token(token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 

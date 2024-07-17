@@ -23,7 +23,7 @@ from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role 
 from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository, PermissionRepository
-from backend.app.data.auth import ROLES_METADATA
+from backend.app.database.data.auth import ROLES_METADATA
 from backend.app.database.initial_data import insert_initial_data
 from backend.app.base.config import settings
 from backend.app.main import app
@@ -126,9 +126,9 @@ async def test_permission_repository(test_session):
 @pytest.fixture
 async def test_super_admin_data():
     return {
-        "username": "super_admin_",
-        "password": "Super_Admin_password_shh123!",
-        "email": "super_admin_@example.com"
+        "username": settings.FIRST_SUPER_ADMIN_USERNAME,
+        "password": settings.FIRST_SUPER_ADMIN_PASSWORD,
+        "email": settings.FIRST_SUPER_ADMIN_EMAIL
     }
     
 

@@ -1,7 +1,6 @@
 # auth.py
-from fastapi import Depends
+from fastapi import Depends, Request, HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordBearer
-from fastapi import Depends, HTTPException, APIRouter
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from typing import Annotated, Tuple
@@ -19,11 +18,8 @@ from backend.app.base.exceptions import (
     MalformedTokenException,
     MissingRequiredClaimException,
 )
-from backend.app.repositories.users import UsersRepository
-from backend.app.dependencies.users import UsersRepositoryDependency
 from backend.app.repositories.users import (
-    get_users_repository_cmanager, 
-    get_users_repository,
+    UsersRepository, get_users_repository_cmanager, get_users_repository,
 )
 from backend.app.models.users import User
 from backend.app.database.models.users import User
@@ -31,12 +27,12 @@ from backend.app.utils.misc import is_async
 
 from backend.app.base.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+token_url = f"{settings.API_V1_STR}/auth/token"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=token_url)
 tokenDependency = Annotated[str, Depends(oauth2_scheme)]
 
 JWT_ALGORITHM=settings.JWT_ALGORITHM
 JWT_SECRET_KEY=settings.JWT_SECRET_KEY
-ACCESS_TOKEN_EXPIRE_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 DEFAULT_ACCESS_TIMEOUT_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 DEFAULT_REFRESH_TIMEOUT_MINUTES=settings.REFRESH_TOKEN_EXPIRE_MINUTES
@@ -71,7 +67,7 @@ def create_token(
     return encoded_jwt
 
 
-async def validate_refresh_token(token: tokenDependency):
+async def get_current_user_from_refresh_token(token: str):
     """
     Validates the refresh token and returns the current user and the token.
 
@@ -98,7 +94,6 @@ async def validate_refresh_token(token: tokenDependency):
                 expiration_date_int = payload.get("exp")
                 expiration_date = datetime.fromtimestamp(expiration_date_int)
 
-                
                 if expiration_date < datetime.now():
                     raise ExpiredTokenException()
 
@@ -120,8 +115,8 @@ async def validate_refresh_token(token: tokenDependency):
 
         if not current_user.user_is_active:
             raise InactiveUserException(current_user.user_username)
-
-    return current_user, token
+    print(current_user)
+    return current_user
 
 
 async def get_current_user(token: tokenDependency) -> User:
@@ -177,23 +172,22 @@ class AuthService:
         self.user_repository = user_repository
 
     async def login_for_access_token(
-        self, form_data: OAuth2PasswordBearer
+        self, request: Request, form_data: OAuth2PasswordBearer
     ):
         try: 
             username, password = form_data.username, form_data.password
-            
             user = await self.user_repository.get_user_by_username(username)
 
             if not user:
+                # TODO: Implement logging with database
                 print(f"User not found: {username}")
+
                 raise InexistentUsernameException(username=username)
 
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         
-        is_authentic=await self.user_repository.is_user_credentials_authentic(
-            username, password
-        )
+        is_authentic=await self.user_repository.is_user_credentials_authentic(username, password)
         
         if not is_authentic:
             raise CredentialsException()
@@ -202,12 +196,10 @@ class AuthService:
             "sub": user.user_username
         }
         access_token = create_token(
-            data=auth_data, 
-            expires_delta=DEFAULT_ACCESS_TIMEOUT_MINUTES
+            data=auth_data, expires_delta=DEFAULT_ACCESS_TIMEOUT_MINUTES
         )
         refresh_token = create_token(
-            data=auth_data, 
-            expires_delta=DEFAULT_REFRESH_TIMEOUT_MINUTES
+            data=auth_data, expires_delta=DEFAULT_REFRESH_TIMEOUT_MINUTES
         )
 
         # Update user's last login and tokens
@@ -219,27 +211,27 @@ class AuthService:
 
         return token
     
-    async def refresh_access_token(
-        self, token_data: Tuple[User, str]
-    ):
-        user, token = token_data
-        
+    async def refresh_access_token(self, refresh_token: str):
+        user = await get_current_user_from_refresh_token(refresh_token)
+
         # Validate the refresh token
         auth_data = {"sub": user.user_username}
 
         # Access token 
         access_token = create_token(
-            data=auth_data, 
-            expires_delta=DEFAULT_ACCESS_TIMEOUT_MINUTES
+            data=auth_data, expires_delta=DEFAULT_ACCESS_TIMEOUT_MINUTES
         )
-        await self.user_repository.update_user_access_token(user.user_username, access_token)
-        
+        await self.user_repository.update_user_access_token(
+            user.user_username, access_token
+        )
+
         # Refresh token
         refresh_token = create_token(
-            data=auth_data, 
-            expires_delta=DEFAULT_REFRESH_TIMEOUT_MINUTES
+            data=auth_data, expires_delta=DEFAULT_REFRESH_TIMEOUT_MINUTES
         )
-        await self.user_repository.update_user_refresh_token(user.user_username, refresh_token)
+        await self.user_repository.update_user_refresh_token(
+            user.user_username, refresh_token
+        )
         
         token=Token(access_token=access_token, refresh_token=refresh_token)
         

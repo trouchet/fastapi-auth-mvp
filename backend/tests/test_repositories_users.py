@@ -126,7 +126,7 @@ async def test_create_users(test_user_repository, test_dummy_data, admin_role):
 
 @pytest.mark.asyncio
 async def test_user_has_roles(test_user_repository, test_viewer, admin_role):
-    roles=await test_user_repository.get_user_roles(test_viewer.user_id)
+    roles=await test_user_repository.get_user_roles_by_id(test_viewer.user_id)
     role_names=[role.role_name for role in roles]
     
     assert await test_user_repository.has_user_roles(
@@ -138,7 +138,7 @@ async def test_user_has_roles(test_user_repository, test_viewer, admin_role):
     
 @pytest.mark.asyncio
 async def test_get_user_roles(test_user_repository, test_viewer):
-    viewer_roles=await test_user_repository.get_user_roles(test_viewer.user_id)
+    viewer_roles=await test_user_repository.get_user_roles_by_id(test_viewer.user_id)
     assert len(viewer_roles) == 1
 
 @pytest.mark.asyncio
@@ -180,12 +180,12 @@ async def test_get_users_by_role(test_user_repository, super_admin_role):
 
 @pytest.mark.asyncio
 async def test_get_user_roles(test_user_repository, test_admin):
-    roles=await test_user_repository.get_user_roles(test_admin.user_id)
+    roles=await test_user_repository.get_user_roles_by_id(test_admin.user_id)
     assert len(roles) == 1
     
 @pytest.mark.asyncio
 async def test_get_user_roles_unknown_id(test_user_repository):
-    roles = await test_user_repository.get_user_roles(uuid4())
+    roles = await test_user_repository.get_user_roles_by_id(uuid4())
     
     assert roles == []
 

@@ -8,9 +8,9 @@ from backend.app.database.models.users import User
 from backend.app.utils.security import hash_string
 from backend.app.base.config import settings
 from backend.app.base.logging import logger
-from backend.app.data.auth import ROLES_METADATA
+from backend.app.database.data.auth import ROLES_METADATA
 from backend.app.repositories.auth import get_role_repository
-from backend.app.repositories.users import get_users_repository
+from backend.app.repositories.users import get_users_repository_cmanager
 
 
 # Create roles and permissions
@@ -48,7 +48,7 @@ async def insert_initial_users():
 
     initial_users = [ first_super_admin_user ]
 
-    async with get_users_repository() as user_repository:
+    async with get_users_repository_cmanager() as user_repository:
         for user in initial_users:
             try:
                 await user_repository.create_user(user)

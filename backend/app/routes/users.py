@@ -25,7 +25,7 @@ from backend.app.utils.security import (
     is_email_valid,
     is_valid_uuid,
 )
-from backend.app.services.users import UsersServiceDependency
+from backend.app.dependencies.users_service import UsersServiceDependency
 from backend.app.services.auth import get_current_user
 
 from backend.app.utils.security import hash_string

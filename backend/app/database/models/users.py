@@ -30,13 +30,15 @@ class User(Base):
     user_is_active = Column(Boolean, default=True)
     user_access_token = Column(String, nullable=True)
     user_refresh_token = Column(String, nullable=True)
+    user_profile_id = Column(UUID, ForeignKey('profiles.prof_id'))
 
-    user_profile = relationship('Profile', back_populates='profile_users')
     user_roles = relationship(
-        'Role', secondary=users_roles_association, back_populates='role_users', cascade="all"
+        'Role', secondary=users_roles_association, back_populates='role_users', 
+        cascade="all"
     )
-    user_relo_logs = relationship('RequestLog', back_populates='relo_user')
-    user_aulo_logs = relationship('AuthLog', back_populates='auth_user_id')
+    user_profile = relationship('Profile', back_populates='prof_users')
+    user_lore_logs = relationship('RequestLog', back_populates='lore_user')
+    user_loau_logs = relationship('AuthLog', back_populates='loau_user')
 
     def __repr__(self):
         return f"User({self.user_username})"

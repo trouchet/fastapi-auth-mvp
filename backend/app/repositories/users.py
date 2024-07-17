@@ -15,7 +15,6 @@ from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
 from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role
-
 from backend.app.database.instance import get_session
 from backend.app.database.models.users import users_roles_association
 
@@ -56,7 +55,7 @@ class UsersRepository:
         statement = select(User).where(User.user_username == username)
         result = await self.session.execute(statement)
         user = result.scalars().first()
-        
+
         if user:
             return user
 
@@ -254,7 +253,6 @@ class UsersRepository:
         result = await self.session.execute(query)
 
         user = result.scalars().first()
-
         return user is not None, user
 
     async def update_user_last_login(self, username: str):
