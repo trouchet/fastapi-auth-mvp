@@ -37,7 +37,7 @@ services:
       - "$APP_PORT:$APP_PORT"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.fastapi-app.rule=Host(`yourdomain.com`)"
+      - "traefik.http.routers.fastapi-app.rule=Host(`localhost`)"
       - "traefik.http.services.fastapi-app.loadbalancer.server.port=8000"
     networks:
       - my_net
