@@ -243,12 +243,12 @@ class ProfileRepository:
         # Assign roles to the profile
         async with get_role_repository() as role_repository:
             for role_name in roles:
-                role = self.get_role_by_name(role_name)
+                role = await role_repository.get_role_by_name(role_name)
                 new_profile.prof_roles.append(role)
             
         # Persist the new profile to the database
         self.session.add(new_profile)
-        self.session.commit()
+        await self.session.commit()
         
         return new_profile
 
