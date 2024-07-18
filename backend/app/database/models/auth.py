@@ -27,7 +27,7 @@ class Profile(Base):
     prof_users = relationship('User', back_populates='user_profile')
 
     def __repr__(self):
-        return f"Profile({self.profile_name})"
+        return f"Profile({self.prof_name})"
 
 class Role(Base):
     __tablename__ = 'roles'
