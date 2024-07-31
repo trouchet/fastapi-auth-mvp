@@ -1,5 +1,3 @@
-
-
 from backend.app.utils.security import hash_string
 from backend.app.database.models.users import User
 

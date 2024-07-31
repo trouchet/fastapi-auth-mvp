@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 import toml
 
-from backend.app.base.auth import role_checker, get_current_user
+from backend.app.services.auth import role_checker
+from backend.app.dependencies.auth import CurrentUserDependency
 from backend.app.base.config import settings
 from .roles_bundler import system_management_roles
 from backend.app.models.users import User
@@ -23,7 +24,7 @@ async def info():
 @router.get("/credentials")
 @role_checker(system_management_roles)
 async def get_credentials(
-    current_user: User = Depends(get_current_user)
+    current_user: CurrentUserDependency
 ):
     settings_dict = settings.model_dump()
 

@@ -13,13 +13,16 @@ users_roles_association = Table(
     Column('role_id', UUID, ForeignKey('roles.role_id'))
 )
 
-
 class User(Base):
     __tablename__ = "users"
 
     user_id = Column(UUID, primary_key=True, index=True, default=uuid4)
-    user_created_at = Column(DateTime(timezone=True), default=datetime.now(timezone.utc))
-    user_updated_at = Column(DateTime(timezone=True), default=None, onupdate=datetime.now(timezone.utc))
+    user_created_at = Column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
+    user_updated_at = Column(
+        DateTime(timezone=True), default=None, onupdate=datetime.now(timezone.utc)
+    )
     user_last_login_at = Column(DateTime, default=None, nullable=True)
     user_username = Column(String, unique=True, index=True, nullable=False)
     user_email = Column(String, unique=True, index=True, nullable=False)
@@ -27,11 +30,15 @@ class User(Base):
     user_is_active = Column(Boolean, default=True)
     user_access_token = Column(String, nullable=True)
     user_refresh_token = Column(String, nullable=True)
+    user_profile_id = Column(UUID, ForeignKey('profiles.prof_id'))
 
     user_roles = relationship(
-        'Role', secondary=users_roles_association, back_populates='role_users', cascade="all"
+        'Role', secondary=users_roles_association, back_populates='role_users', 
+        cascade="all"
     )
-    user_request_logs = relationship('RequestLog', back_populates='relo_user')
+    user_profile = relationship('Profile', back_populates='prof_users')
+    user_lore_logs = relationship('RequestLog', back_populates='lore_user')
+    user_loau_logs = relationship('AuthLog', back_populates='loau_user')
 
     def __repr__(self):
         return f"User({self.user_username})"

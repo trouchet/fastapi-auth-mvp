@@ -12,10 +12,17 @@ class CredentialsException(HTTPException):
 class CSRFProtectException(HTTPException):
     def __init__(self, error: str):
         super().__init__(
-            status_code=status.HTTP_403_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="CSRF token is invalid",
         )
 
+class JWTInvalidException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 class InactiveUserException(HTTPException):
     def __init__(self, username):

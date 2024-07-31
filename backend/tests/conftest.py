@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from asyncpg.exceptions import PostgresConnectionError
 from collections.abc import AsyncIterator, Iterator
 from unittest.mock import patch, AsyncMock
+from datetime import datetime
 from httpx import AsyncClient
 
 from backend.app.routes.auth import router as auth_router
@@ -23,7 +24,7 @@ from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role 
 from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository, PermissionRepository
-from backend.app.data.auth import ROLES_METADATA
+from backend.app.database.data.auth import ROLES_METADATA
 from backend.app.database.initial_data import insert_initial_data
 from backend.app.base.config import settings
 from backend.app.main import app
@@ -52,6 +53,26 @@ def auth_app() -> FastAPI:
 async def auth_client(auth_app):
     async with AsyncClient(app=auth_app, base_url="http://test") as ac:
         yield ac
+
+@pytest.fixture
+def utils_app():
+    # Create a FastAPI app instance for testing
+    app = FastAPI()
+
+    # Define some routes for the test app
+    @app.get("/test-route", name="Test Route")
+    def test_route():
+        return {"message": "Test"}
+
+    @app.post("/another-route", name="Another Route")
+    def another_route():
+        return {"message": "Another"}
+    
+    return app
+
+@pytest.fixture
+def utils_client(utils_app):    
+    return TestClient(utils_app)
 
 @pytest.fixture
 async def test_client():
@@ -122,13 +143,27 @@ async def test_permission_repository(test_session):
     finally:
         await test_session.aclose()
 
+@pytest.fixture
+def mock_user():
+    return User(
+        user_id=1,
+        user_created_at=datetime(2024, 1, 1, 12, 0, 0),
+        user_updated_at=datetime(2024, 1, 2, 12, 0, 0),
+        user_username="test_user",
+        user_email="test@example.com",
+        user_is_active=True,
+    )
+
+@pytest.fixture
+def mock_role():
+    return Role(role_name="Admin")
 
 @pytest.fixture
 async def test_super_admin_data():
     return {
-        "username": "super_admin_",
-        "password": "Super_Admin_password_shh123!",
-        "email": "super_admin_@example.com"
+        "username": settings.FIRST_SUPER_ADMIN_USERNAME,
+        "password": settings.FIRST_SUPER_ADMIN_PASSWORD,
+        "email": settings.FIRST_SUPER_ADMIN_EMAIL
     }
     
 

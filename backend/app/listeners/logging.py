@@ -1,7 +1,7 @@
 from backend.app.repositories.logging import get_log_repository
 
 
-async def job_listener(event):
+async def task_job_listener(event):
     async with get_log_repository() as log_repo:        
         status, message = False, str(event.exception) if event.exception \
             else True, "Job executed successfully" 
