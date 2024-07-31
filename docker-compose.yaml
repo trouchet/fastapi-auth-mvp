@@ -37,7 +37,7 @@ services:
       - "$APP_PORT:$APP_PORT"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.fastapi-app.rule=Host(`yourdomain.com`)"
+      - "traefik.http.routers.fastapi-app.rule=Host($DOMAIN)"
       - "traefik.http.services.fastapi-app.loadbalancer.server.port=8000"
     networks:
       - my_net
@@ -59,7 +59,6 @@ services:
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
     ports:
-      - "80:80"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
