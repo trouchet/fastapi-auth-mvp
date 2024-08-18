@@ -31,7 +31,6 @@ class User(Base):
     user_roles = relationship(
         'Role', secondary=users_roles_association, back_populates='role_users', cascade="all"
     )
-    user_request_logs = relationship('RequestLog', back_populates='relo_user')
 
     def __repr__(self):
         return f"User({self.user_username})"

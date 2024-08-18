@@ -6,6 +6,7 @@ from pydantic import (
     computed_field,
     model_validator,
 )
+from redis import asyncio as aioredis
 from typing import Union, Annotated, Any, List, Tuple
 from typing_extensions import Self
 from datetime import timedelta
@@ -53,6 +54,9 @@ def validate_environment(environment):
         )
     else:
         return environment
+
+def is_production(environment: str):
+    return string_has_token(environment, 'prod')
 
 
 def is_sandbox(environment: str):
@@ -120,12 +124,14 @@ class Settings(BaseSettings):
             f"{API_V1_STR}/openapi.json",
             f"{API_V1_STR}/docs",
             f"{API_V1_STR}/redoc",
+            f"{API_V1_STR}/system",
             f"{API_V1_STR}/public/*",
             f"{API_V1_STR}/health",
             f"{API_V1_STR}/health/*",
             f"{API_V1_STR}/system/",
             f"{API_V1_STR}/token", 
             f"{API_V1_STR}/refresh",
+            f"{API_V1_STR}/email/send",
         ]
     
     NON_LOG_PATTERNS: List = [
@@ -143,6 +149,24 @@ class Settings(BaseSettings):
         # Use HTTPS for anything other than local development
         protocol = "http" if is_sandbox(self.ENVIRONMENT) else "https"
         return f"{protocol}://{self.DOMAIN}"
+    
+    @computed_field
+    @property
+    def is_verbose(self) -> str:
+        # Use HTTPS for anything other than local development
+        return not is_production(self.ENVIRONMENT)
+    
+    
+    @computed_field
+    @property
+    def redis_client(self) -> str:
+        # Use HTTPS for anything other than local development
+        return  aioredis.Redis(
+            host=self.REDIS_HOST,
+            port=self.REDIS_PORT,
+            db=0,
+            password=None
+        )
     
     @classmethod
     def email_configuration(cls):

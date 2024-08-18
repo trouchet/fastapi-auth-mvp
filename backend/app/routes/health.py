@@ -1,6 +1,8 @@
 
 from fastapi import APIRouter
 
+from backend.app.base.config import settings
+
 from backend.app.utils.healthcheck import (
     is_server_live,
     is_memory_usage_within_limits,
@@ -12,16 +14,17 @@ from backend.app.utils.healthcheck import (
 router=APIRouter(prefix='/health', tags=["Health"])
 
 
-
 @router.get("/")
 async def health():
     is_db_healthy, db_error = await is_database_healthy()
     is_c_healthy, cache_error = await is_cache_healthy()
+    is_m_healthy, memory_error = await is_memory_usage_within_limits()
 
     # Perform various health checks and consolidate results
     return {
         "database": healthcheck_dict(is_db_healthy, db_error),
         "cache": healthcheck_dict(is_c_healthy, cache_error),
+        "memory": healthcheck_dict(is_m_healthy, memory_error) 
     }
 
 

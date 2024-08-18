@@ -3,17 +3,12 @@ import sys
 from dotenv import load_dotenv
 from os import getenv
 from pythonjsonlogger import jsonlogger
-from backend.app.base.config import settings, is_sandbox
+from backend.app.base.config import settings
 
 from backend.app.utils.logging import DailyHierarchicalFileHandler
 
 # Use the logger
 logger = logging.getLogger(__name__)
-
-# Configure logging with a single handler
-# Set the overall logging level
-load_dotenv()
-ENVIRONMENT = getenv("ENVIRONMENT", "development")
 
 fields = [
     "name",
@@ -43,7 +38,7 @@ def field_map(field_name):
 logging_format = " ".join(map(field_map, fields))
 formatter = jsonlogger.JsonFormatter(logging_format)
 
-if is_sandbox(ENVIRONMENT):
+if settings.is_verbose:
     # Create a handler for stdout and stderr
     stdout_stream_handler = logging.StreamHandler(sys.stdout)
     stderr_stream_handler = logging.StreamHandler(sys.stderr)
@@ -62,7 +57,6 @@ environment=settings.ENVIRONMENT
 handler = DailyHierarchicalFileHandler('logs', f"{project_name}.log", when="midnight")
 
 handler.setFormatter(formatter)
-
 logger.addHandler(handler)
 
 logger.info("Logging started.")

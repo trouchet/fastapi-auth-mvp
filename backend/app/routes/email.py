@@ -17,11 +17,11 @@ async def send_in_background(
 ):
     message = MessageSchema(
         subject="FastAPI Mail Module",
-        recipients=[email.email],  # List of recipients, as many as you can pass 
+        recipients=email.emails, 
         body="This is a test email sent from FastAPI",
         subtype="plain"
     )
 
-    background_tasks.add_task(email_service.send_message, message)
+    email_service.send_message(message, background_tasks)
 
     return {"message": "Email has been sent in the background"}

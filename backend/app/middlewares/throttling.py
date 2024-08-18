@@ -7,7 +7,10 @@ from typing import Callable, Awaitable
 from redis import asyncio as aioredis
 from typing import Union
 
-from backend.app.utils.request import get_route_and_token
+from backend.app.utils.throttling import ip_identifier
+from backend.app.utils.request import get_token, get_route
+from backend.app.utils.throttling import ip_identifier
+from backend.app.base.auth import get_current_user
 from backend.app.base.exceptions import MissingTokenException, TooManyRequestsException
 from backend.app.base.config import settings
 from backend.app.data.auth import ROLES_METADATA
@@ -65,19 +68,17 @@ def get_rate_limiter(
     )
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: FastAPI, identifier_callable: Callable[[str], Awaitable]):
-        super().__init__(app)
-        self.identifier_callable = identifier_callable
-
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        route, token = get_route_and_token(request)
-        
+        route = get_route(request)
+
         # Check if the route requires authentication
         if settings.route_requires_authentication(route):
+            token = get_token(request)
+
             if not token:
                 raise MissingTokenException()
 
-            current_user = await self.identifier_callable(token)
+            current_user = await get_current_user(token)
             user_identifier = current_user.user_username
             roles = current_user.user_roles
             rate_policies = [
@@ -86,10 +87,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             # Get the most permissive rate policy
             rate_policy = max(rate_policies, key=get_throughput)
-            limiter = get_rate_limiter(user_identifier, rate_policy)
+            
+        else:
+            # Handle non-authenticated routes
+            user_identifier = await ip_identifier(request)
+            rate_policy = RateLimiterPolicy()  # Default rate policy for non-authenticated routes
+        
+        limiter = get_rate_limiter(user_identifier, rate_policy)
 
-            if not await limiter.check(request, route):
-                raise TooManyRequestsException()
+        if not await limiter.check(request, route):
+            raise TooManyRequestsException()
 
         response = await call_next(request)
         

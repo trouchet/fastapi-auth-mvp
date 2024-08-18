@@ -3,8 +3,11 @@ from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
-from backend.app.utils.request import get_route_and_token
+from backend.app.utils.request import get_token, get_route
+from backend.app.base.exceptions import MissingTokenException
 from backend.app.repositories.logging import get_log_repository
+from backend.app.utils.throttling import ip_identifier
+from backend.app.base.auth import get_current_user
 from backend.app.base.config import settings
 
 
@@ -19,10 +22,6 @@ def should_log_request(request: Request, response: Response):
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: FastAPI, identifier_callable: Callable = None):
-        super().__init__(app)
-        self.identifier_callable = identifier_callable
-
     async def dispatch(self, request: Request, call_next: Callable):
         async with get_log_repository() as log_repository:
 
@@ -30,15 +29,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
 
             if should_log_request(request, response):
-                route, token = get_route_and_token(request)
-
-                print(route)
-                print(settings.route_requires_authentication(route))
+                
+                route = get_route(request)
                 if settings.route_requires_authentication(route):
-                    current_user = await self.identifier_callable(token)
+
+                    token = get_token(request)
+                    if not token:
+                        raise MissingTokenException()
+                    
+                    current_user = await get_current_user(token)
                     user_id = current_user.user_id
                 else:
-                    user_id = None
+                    user_id = await ip_identifier(request)
 
                 await log_repository.create_request_log(user_id, request)
 
