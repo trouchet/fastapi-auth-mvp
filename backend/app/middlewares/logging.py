@@ -5,8 +5,8 @@ from typing import Callable
 
 from backend.app.utils.request import get_token, get_route
 from backend.app.base.exceptions import MissingTokenException
-from backend.app.repositories.logging import get_log_repository
-from backend.app.services.auth import get_current_user
+from backend.app.repositories.logging import log_repository_context_manager
+from backend.app.base.auth import get_current_user
 from backend.app.base.config import settings
 
 
@@ -22,13 +22,15 @@ def should_log_request(request: Request, response: Response):
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable):
-        async with get_log_repository() as log_repository:
-
+        async with log_repository_context_manager() as log_repository:
             # Process the request
             response = await call_next(request)
 
             if should_log_request(request, response):
-                route, token = get_route_and_token(request)
+                
+                route = get_route(request)
+
+                if settings.route_requires_authentication(route):
 
                 if settings.route_requires_authentication(route):
                     current_user = await get_current_user(token)

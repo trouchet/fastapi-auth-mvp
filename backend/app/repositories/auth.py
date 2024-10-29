@@ -5,13 +5,11 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from backend.app.models.throttling import RateLimiterPolicy
-
-from backend.app.database.instance import get_session
 from backend.app.database.models.auth import (
-    roles_permissions_association,
-    Profile, Role, Permission,
+    RolePermission, Role, Permission
 )
+from backend.app.database.instance import get_session
+
 
 class RoleRepository:
     def __init__(self, session: AsyncSession):
@@ -21,41 +19,44 @@ class RoleRepository:
         self, role_name: str, rate_limit: dict, permission_names: List[str]
     ) -> Role:
         """
-        Creates a new role and persists it to the database.
+        Creates a new role and assigns permissions to it.
 
         Args:
             role_name (str): The name of the role to create.
-            permission_names (List[str]): List of permission names associated with the role.
+            rate_limit (dict): Rate limit information.
+            permission_names (List[str]): List of permission names to assign to the role.
 
         Returns:
-            Role: The newly created role object.
+            Role: The newly created role object with assigned permissions.
         """
         role_id = str(uuid4())
         new_role = Role(role_id=role_id, role_name=role_name, role_rate_limit=rate_limit)
         
         try:
+            # Iterate through permission names and assign them to the role
             for perm_name in permission_names:
-                condition = Permission.perm_name == perm_name
-                statement = select(Permission).filter(condition)
+                # Check if the permission exists
+                statement = select(Permission).filter(Permission.perm_name == perm_name)
+                result = await self.session.execute(statement)
+                permission = result.scalars().first()
 
-                permission = await self.session.execute(statement)
-                existing_permission = permission.scalars().first()
+                # Create permission if it does not exist
+                if not permission:
+                    permission = Permission(perm_id=str(uuid4()), perm_name=perm_name)
+                    self.session.add(permission)
+                    await self.session.flush()  # Make sure it's persisted
 
-                if not existing_permission:
-                    perm_id=str(uuid4())
-                    new_permission = Permission(perm_id=perm_id, perm_name=perm_name)
+                # Link the permission to the role via RolePermission
+                role_permission = RolePermission(rope_role_id=role_id, rope_perm_id=permission.perm_id)
+                new_role.role_permissions.append(role_permission)
 
-                    self.session.add(new_permission)
-                    await self.session.flush()
-                    new_role.role_permissions.append(new_permission)
-                else:
-                    new_role.role_permissions.append(existing_permission)
-
+            # Add the new role with all permissions to the session
             self.session.add(new_role)
             await self.session.commit()
             await self.session.refresh(new_role)
-
+            
             return new_role
+
         except Exception as e:
             await self.session.rollback()
             raise e
@@ -85,9 +86,12 @@ class RoleRepository:
         Returns:
             List[Permission]: A list of all permission objects associated with the role.
         """
-        # Query to get the role with its permissions
-        query = select(Permission).join(roles_permissions_association)\
-                                .join(Role).where(Role.role_id == role.role_id)
+        # Query RolePermission to find all permissions linked to the role
+        query = (
+            select(Permission)
+            .join(RolePermission, Permission.perm_id == RolePermission.rope_perm_id)
+            .where(RolePermission.rope_role_id == role.role_id)
+        )
         result = await self.session.execute(query)
         
         # Fetch all permissions
@@ -108,18 +112,25 @@ class RoleRepository:
     async def get_role_permissions(self, role: Role) -> List[Permission]:
         """
         Retrieves all permissions associated with a role.
-    
+
         Args:
             role (Role): The role object to retrieve permissions for.
-    
+
         Returns:
             List[Permission]: A list of all permission objects associated with the role.
         """
-        query = select(Permission).join(roles_permissions_association)\
-            .join(Role).where(Role.role_id == role.role_id)
+        # Query to get permissions through the RolePermission model
+        query = (
+            select(Permission)
+            .join(RolePermission, RolePermission.perm_id == Permission.perm_id)
+            .where(RolePermission.role_id == role.role_id)
+        )
         result = await self.session.execute(query)
+        
+        # Fetch all permissions
         permissions = result.scalars().all()
         return permissions
+
     
     async def update_role_permissions(self, role: Role, new_permissions: List[Permission]):
         query = select(Role).where(Role.role_id == role.role_id)\
@@ -222,38 +233,21 @@ class PermissionRepository:
         await self.session.commit()
 
 @asynccontextmanager
+async def get_permission_async_context_manager():
+    async with get_session() as session:
+        yield PermissionRepository(session)
+
 async def get_permission_repository():
     async with get_session() as session:
         yield PermissionRepository(session)
 
 @asynccontextmanager
+async def role_repository_async_context_manager():
+    async with get_session() as session:
+        yield RoleRepository(session)
+
 async def get_role_repository():
     async with get_session() as session:
         yield RoleRepository(session)
 
 
-class ProfileRepository:
-    def __init__(self, session):
-        self.session = session
-
-    async def create_profile(self, profile_name: str, roles: List[str]):
-        # Create a new Profile object
-        new_profile = Profile(prof_name=profile_name)
-
-        # Assign roles to the profile
-        async with get_role_repository() as role_repository:
-            for role_name in roles:
-                role = await role_repository.get_role_by_name(role_name)
-                new_profile.prof_roles.append(role)
-            
-        # Persist the new profile to the database
-        self.session.add(new_profile)
-        await self.session.commit()
-        
-        return new_profile
-
-
-@asynccontextmanager
-async def get_profile_repository():
-    async with get_session() as session:
-        yield ProfileRepository(session)
