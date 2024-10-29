@@ -7,9 +7,7 @@ from typing import List, Dict, Annotated
 
 from backend.app.database.models.users import User
 from backend.app.database.models.auth import Role
-from backend.app.repositories.users import (
-    UsersRepository, get_users_repository
-)
+from backend.app.repositories.users import UsersRepository, get_users_repository
 from backend.app.base.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
@@ -31,8 +29,8 @@ from backend.app.utils.security import (
 )
 from backend.app.repositories.users import UsersRepository
 from backend.app.repositories.auth import RoleRepository
-from backend.app.dependencies.users import UsersRepositoryDepends
-from backend.app.dependencies.auth import RoleRepositoryDepends
+from backend.app.dependencies.users import UsersRepositoryDependency
+from backend.app.dependencies.auth import RoleRepositoryDependency
 from backend.app.base.exceptions import (
     DuplicateEntryException, InternalDatabaseError,
 )
@@ -268,6 +266,7 @@ class UserService:
     
 
 def get_users_service(
-    user_repository: UsersRepositoryDepends, role_repository: RoleRepositoryDepends
+    user_repository: UsersRepositoryDependency, 
+    role_repository: RoleRepositoryDependency
 ) -> UserService:
     return UserService(user_repository, role_repository)

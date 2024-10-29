@@ -11,9 +11,7 @@ from backend.app.dependencies.auth import CurrentUserDependency
 from backend.app.utils.database import model_to_dict
 
 from backend.app.services.auth import (
-    get_current_user,
-    get_current_user_from_refresh_token,
-    create_token,
+    JWTService,
     role_checker,
     JWT_ALGORITHM,
     JWT_SECRET_KEY,
@@ -65,7 +63,7 @@ def test_create_token_with_custom_expiry(test_viewer):
     user_dict = model_to_dict(test_viewer)
 
     auth_dict = {"sub": user_dict["user_username"]}
-    token = create_token(auth_dict, custom_expiry)
+    token = JWTService.create_token(auth_dict, custom_expiry)
 
     # decode the token and check expiration
     decoded_token = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
@@ -77,7 +75,7 @@ def test_create_token_with_custom_expiry(test_viewer):
 
 def test_create_token_default_expiry(test_viewer):
     auth_data = {"sub": test_viewer.user_username}
-    token = create_token(auth_data)
+    token = JWTService.create_token(auth_data)
 
     # decode the token and check expiration (should be 15 minutes)
     decoded_token = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
@@ -93,9 +91,9 @@ async def test_get_current_user_valid_token(
     username = test_viewer.user_username
 
     user_dict = {"sub": username}
-    token = create_token(user_dict)
+    token = JWTService.create_token(user_dict)
 
-    current_user = await get_current_user(token)
+    current_user = await JWTService.get_current_user(token)
 
     assert current_user.user_username == username
 
@@ -107,10 +105,10 @@ async def test_get_current_user_inexistent_user(
 
     unknown_username = "unknown_user"
     auth_dict = {"sub": unknown_username}
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(token)
+        await JWTService.get_current_user(token)
 
     assert f"Username {unknown_username} does not exist" in str(excinfo.value)
 
@@ -122,10 +120,10 @@ async def test_get_current_user_incomplete_data(
 ):
 
     auth_dict = {}  # inexistent claim
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(token)
+        await JWTService.get_current_user(token)
 
     assert "Token is missing required claim: sub" in str(excinfo.value)
 
@@ -135,7 +133,7 @@ async def test_get_current_user_invalid_token():
     invalid_token = "invalid_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(invalid_token)
+        await JWTService.get_current_user(invalid_token)
 
     assert "This token is malformed." in str(excinfo.value)
 
@@ -145,14 +143,14 @@ async def test_get_current_user_missing_username_in_token(test_viewer):
     auth_dict={
         'sub': test_viewer.user_username
     }
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     # modify token to remove username claim
     user_len=len(f".username:{test_viewer.user_username}")
     modified_token = token[:-user_len]
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(modified_token)
+        await JWTService.get_current_user(modified_token)
 
     assert "This token is malformed" in str(excinfo.value)
 
@@ -163,9 +161,9 @@ async def test_get_current_active_user(test_viewer):
     username = test_viewer.user_username
 
     auth_dict = {"sub": test_viewer.user_username}
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
-    current_user = await get_current_user(token)
+    current_user = await JWTService.get_current_user(token)
 
     assert current_user.user_username == username
 
@@ -177,10 +175,10 @@ async def test_get_current_active_user_inactive_user(test_inactive_user):
 
     auth_dict = {"sub": test_inactive_user.user_username}
 
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(token)
+        await JWTService.get_current_user(token)
 
     assert f"User {username} is inactive" in str(excinfo.value)
 
@@ -193,14 +191,14 @@ async def test_validate_refresh_token_valid_token(
     username = test_viewer.user_username
 
     auth_dict = {"sub": test_viewer.user_username}
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     validated_user = await test_user_repository.update_user_refresh_token(
         username, token
     )
 
     # Add token to the list
-    validated_user = await get_current_user_from_refresh_token(token)
+    validated_user = await JWTService.get_current_user(token)
 
     assert validated_user.user_username == username
 
@@ -216,7 +214,7 @@ async def test_validate_refresh_token_JWT_error(
     token = "invalid_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(token)
+        await JWTService.get_current_user(token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -226,7 +224,7 @@ async def test_validate_refresh_token_invalid_token():
     invalid_token = "invalid_refresh_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(invalid_token)
+        await JWTService.get_current_user(invalid_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -234,14 +232,14 @@ async def test_validate_refresh_token_invalid_token():
 @pytest.mark.asyncio
 async def test_get_current_user_missing_username_in_token(test_viewer):
     auth_dict = {"sub": test_viewer.user_username}
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     # modify token to remove username claim
     user_len = len(f".username:{test_viewer.user_username}")
     modified_token = token[:-user_len]
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(modified_token)
+        await JWTService.get_current_user(modified_token)
 
     assert "This token is malformed" in str(excinfo.value)
 
@@ -253,10 +251,10 @@ async def test_get_current_active_user_inactive_user(
     auth_dict={
         'sub': test_inactive_user.user_username
     }
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user(token)
+        await JWTService.get_current_user(token)
 
     assert "is inactive" in str(excinfo.value)
 
@@ -270,7 +268,7 @@ async def test_validate_refresh_token_JWT_error(mock_jwt_decode):
     token = "invalid_token"
     
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(token)
+        await JWTService.get_current_user(token)
     
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -280,7 +278,7 @@ async def test_validate_refresh_token_invalid_token():
     invalid_token = "invalid_refresh_token"
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(invalid_token)
+        await JWTService.get_current_user(invalid_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -289,13 +287,13 @@ async def test_validate_refresh_token_invalid_token():
 async def test_validate_refresh_token_missing_username_in_token(test_viewer):
     # Assuming this creates a refresh token (modify for your implementation)
     auth_dict = {"sub": test_viewer.user_username}
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     username = test_viewer.user_username
     user_len = len(f".username:{username}")
     modified_token = token[:-user_len]
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(modified_token)
+        await JWTService.get_current_user(modified_token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -306,10 +304,10 @@ async def test_vaildate_refresh_token_inexistent_user():
     # Create a refresh token for a user
 
     user_dict = {"sub": "inexistent user"}
-    token_ = create_token(user_dict)
+    token_ = JWTService.create_token(user_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(token_)
+        await JWTService.get_current_user(token_)
 
     assert "Could not validate credentials" in str(excinfo.value)
 
@@ -319,12 +317,12 @@ async def test_validate_refresh_token_expired_token(test_user_repository, test_v
     # Simulate an expired refresh token by modifying the expiry in the payload
     custom_expiry = timedelta(seconds=0)
     auth_dict = {"sub": test_viewer.user_username}
-    token = create_token(auth_dict, custom_expiry)
+    token = JWTService.create_token(auth_dict, custom_expiry)
 
     await test_user_repository.update_user_refresh_token(test_viewer.user_username, token)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(token)
+        await JWTService.get_current_user(token)
 
     assert "This token has expired" in str(excinfo.value)
 
@@ -333,10 +331,10 @@ async def test_validate_refresh_token_expired_token(test_user_repository, test_v
 async def test_validate_refresh_token_nonexistent_user(test_viewer):
     # Create a refresh token with a username not in the test_users_db
     auth_dict = {"sub": "unknown_user"}
-    token = create_token(auth_dict)
+    token = JWTService.create_token(auth_dict)
 
     with pytest.raises(HTTPException) as excinfo:
-        await get_current_user_from_refresh_token(token)
+        await JWTService.get_current_user(token)
 
     assert "Could not validate credentials" in str(excinfo.value)
 

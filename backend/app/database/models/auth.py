@@ -35,24 +35,6 @@ class Permission(Base):
             "perm_roles": [rp.role.role_name for rp in self.perm_roles]  # Access role names through RolePermission
         }
 
-profiles_roles_association = Table(
-    'profiles_x_roles', Base.metadata,
-    Column('profile_id', UUID, ForeignKey('profiles.prof_id', ondelete='cascade')),
-    Column('role_id', UUID, ForeignKey('roles.role_id', ondelete='cascade'))
-)
-
-class Profile(Base):
-    __tablename__ = 'profiles'
-    prof_id = Column(UUID, primary_key=True, default=uuid4)
-    prof_name = Column(String, unique=True, nullable=False)
-    prof_roles = relationship(
-        'Role', secondary=profiles_roles_association, back_populates='role_profiles'
-    )
-    prof_users = relationship('User', back_populates='user_profile')
-
-    def __repr__(self):
-        return f"Profile({self.prof_name})"
-
 class Role(Base):
     __tablename__ = 'roles'
     role_id = Column(UUID, primary_key=True, default=uuid4)

@@ -61,8 +61,8 @@ class JWTService:
 
         return encoded_jwt
 
-
-    async def validate_refresh_token(self, token: tokenDependency):
+    @staticmethod
+    async def validate_refresh_token(token: tokenDependency):
         """
         Validates the refresh token and returns the current user and the token.
 
@@ -111,8 +111,8 @@ class JWTService:
 
         return current_user, token
 
-
-    async def get_current_user(self, token: tokenDependency) -> User:
+    @staticmethod
+    async def get_current_user(token: tokenDependency) -> User:
         """
         Retrieves the current user based on the provided token.
 

@@ -1,16 +1,15 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, APIRouter, Request
-from fastapi.security import OAuth2PasswordRequestForm
 
 from backend.app.base.auth import create_token
 from backend.app.models.users import Token
-from backend.app.dependencies.auth import RefreshTokenDependency
-from backend.app.dependencies.users import UsersRepositoryDepends
+from backend.app.dependencies.auth import RefreshTokenDependency, OAuthDependency
+from backend.app.dependencies.users import UsersRepositoryDependency
 from backend.app.repositories.users import UsersRepository
 from backend.app.database.models.users import User
 
-from backend.app.repositories.users import get_user_repository
+from backend.app.repositories.users import get_users_repository
 from backend.app.base.exceptions import (
     InexistentUsernameException, 
     CredentialsException,
@@ -20,8 +19,6 @@ from backend.app.base.config import settings
 # Create an instance of the FastAPI class
 router=APIRouter(prefix='/auth', tags=["Authorization"])
 
-OAuthDependency = Annotated[OAuth2PasswordRequestForm, Depends()]
-
 DEFAULT_ACCESS_TIMEOUT_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 DEFAULT_REFRESH_TIMEOUT_MINUTES=settings.REFRESH_TOKEN_EXPIRE_MINUTES
 
@@ -29,7 +26,7 @@ DEFAULT_REFRESH_TIMEOUT_MINUTES=settings.REFRESH_TOKEN_EXPIRE_MINUTES
 @router.post("/token")
 async def login_for_access_token(
     form_data: OAuthDependency,
-    user_repo: UsersRepositoryDepends
+    user_repo: UsersRepositoryDependency
 ) -> Token:
     try:
         username, password = form_data.username, form_data.password
@@ -62,7 +59,6 @@ async def login_for_access_token(
     await user_repo.update_user_refresh_token(username, refresh_token)
 
     token_obj=Token(access_token=access_token, refresh_token=refresh_token)
-    print(token_obj)
     return token_obj
 
 
@@ -70,13 +66,16 @@ async def login_for_access_token(
 @router.post("/refresh")
 async def refresh_access_token(
     token_data: RefreshTokenDependency,
-    user_repo: UsersRepositoryDepends
+    user_repo: UsersRepositoryDependency
 ):    
     user, token = token_data
 
-    auth_data = {"sub": user.user_username, "roles": [
-        role.to_dict() for role in user.user_roles
-    ]}
+    auth_data = {
+        "sub": user.user_username, 
+        "roles": [
+            role.to_dict() for role in user.user_roles
+        ]
+    }
 
     # Create new tokens
     access_token = create_token(data=auth_data, expires_delta=DEFAULT_ACCESS_TIMEOUT_MINUTES)

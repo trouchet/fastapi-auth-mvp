@@ -18,7 +18,7 @@ async def create_roles_and_permissions():
     async with role_repository_async_context_manager() as role_repository:
         for role_name, metadata in ROLES_METADATA.items():
             permissions=metadata['permissions']
-            rate_limit_dict=metadata['rate_policy'].to_dict()
+            rate_limit_dict=metadata['rate_policy']
 
             try:
                 await role_repository.create_role(

@@ -132,6 +132,7 @@ class Database:
             Database: A NamedTuple with engine and conn attributes for the database connection.
             None: If there was an error connecting to the database.
         """
+        print(self.uri)
         await self.create_database()
         await self.test_connection()
         await self.create_tables()

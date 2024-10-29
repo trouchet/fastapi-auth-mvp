@@ -8,8 +8,6 @@ services:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD    
     networks:
       - my_net
-    expose:
-      - "$POSTGRES_PORT"
     ports:
       - "$POSTGRES_PORT:5432"
     volumes:
@@ -44,29 +42,32 @@ services:
       test: ["CMD", "curl", "-f", "http://auth-app:$APP_PORT/api/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 3  
 
   redis-exporter:
     container_name: redis-exporter
     image: oliver006/redis_exporter
     restart: always
+    depends_on:
+      - auth-redis
     networks:
       - my_net
     ports:
       - "9121:9121"
-    environment:
-      - REDIS_URL=redis://auth-redis:6379  # Adjust based on your Redis configuration
+    command: ["-redis.addr=redis://auth-redis:6379"]
 
   auth-prometheus:
     container_name: prometheus
     image: prom/prometheus
     restart: always
+    depends_on:
+      - auth-redis
     networks:
       - my_net
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Path to your Prometheus config file
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
 
@@ -79,8 +80,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin  # Change the admin password as needed
-
+      - GF_SECURITY_ADMIN_PASSWORD=admin
 
 networks:
   my_net:

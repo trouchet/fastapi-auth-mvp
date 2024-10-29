@@ -15,7 +15,6 @@ from datetime import datetime
 from httpx import AsyncClient
 
 from backend.app.routes.auth import router as auth_router
-from backend.app.models.users import ValidationUser
 from backend.app.utils.throttling import get_minute_rate_limiter
 from backend.app.utils.security import hash_string
 from backend.app.database.core import Database
@@ -205,19 +204,19 @@ def test_dummy_data():
     }
 
 @pytest.fixture
-async def super_admin_role(test_role_repository):
+async def super_admin_role(test_role_repository: RoleRepository):
     super_admin_role = await test_role_repository.get_role_by_name("SuperAdmin")
     return super_admin_role
 
 
 @pytest.fixture
-async def admin_role(test_role_repository):
+async def admin_role(test_role_repository: RoleRepository):
     admin_role = await test_role_repository.get_role_by_name("Admin")
     return admin_role
 
 
 @pytest.fixture
-async def new_role(test_role_repository):
+async def new_role(test_role_repository: RoleRepository):
     permission_names = ["access_public_content"]
     rate_limit = get_minute_rate_limiter(1)
     rate_limit_dict=rate_limit.to_dict()
@@ -233,7 +232,7 @@ async def new_role(test_role_repository):
 
 
 @pytest.fixture
-async def viewer_role(test_role_repository):
+async def viewer_role(test_role_repository: RoleRepository):
     viewer_role = await test_role_repository.get_role_by_name("Viewer")
     return viewer_role
 

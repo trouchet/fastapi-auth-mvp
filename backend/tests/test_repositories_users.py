@@ -2,14 +2,15 @@ import pytest
 from uuid import uuid4
 
 from backend.app.base.config import settings
-from backend.app.models.users import UpdateUser
-from backend.app.services.auth import create_token
+from backend.app.models.users import UpdateUser, User
+from backend.app.services.auth import JWTService
+from backend.app.services.users import UsersRepository
 
 from .conftest import user_factory 
 
 
 @pytest.mark.asyncio
-async def test_get_user_by_username(test_user_repository):
+async def test_get_user_by_username(test_user_repository: UsersRepository):
     user_username = settings.FIRST_SUPER_ADMIN_USERNAME
     user_by_username = await test_user_repository.get_user_by_username(user_username)
     user_by_id = await test_user_repository.get_user_by_id(user_by_username.user_id)
@@ -17,7 +18,7 @@ async def test_get_user_by_username(test_user_repository):
     assert user_by_id == user_by_username
     
 @pytest.mark.asyncio
-async def test_get_user_id_by_username(test_user_repository):
+async def test_get_user_id_by_username(test_user_repository: UsersRepository):
     user_username = settings.FIRST_SUPER_ADMIN_USERNAME
     user_id_by_username = await test_user_repository.get_user_id_by_username(
         user_username
@@ -27,7 +28,7 @@ async def test_get_user_id_by_username(test_user_repository):
     assert user_by_id.user_id == user_id_by_username
 
 @pytest.mark.asyncio
-async def test_get_user_by_email(test_user_repository):
+async def test_get_user_by_email(test_user_repository: UsersRepository):
     user_email = settings.FIRST_SUPER_ADMIN_EMAIL
     user_by_email = await test_user_repository.get_user_by_email(user_email)
     user_by_id = await test_user_repository.get_user_by_id(user_by_email.user_id)
@@ -35,7 +36,7 @@ async def test_get_user_by_email(test_user_repository):
     assert user_by_id == user_by_email
 
 @pytest.mark.asyncio
-async def test_get_user_id_by_email(test_user_repository):
+async def test_get_user_id_by_email(test_user_repository: UsersRepository):
     user_email = settings.FIRST_SUPER_ADMIN_EMAIL
     user_id_by_email = await test_user_repository.get_user_id_by_email(user_email)
     user_by_id = await test_user_repository.get_user_by_id(user_id_by_email)
@@ -43,7 +44,10 @@ async def test_get_user_id_by_email(test_user_repository):
     assert user_by_id.user_id == user_id_by_email
     
 @pytest.mark.asyncio
-async def test_update_user(test_user_repository, test_viewer):
+async def test_update_user(
+    test_user_repository: UsersRepository, 
+    test_viewer: User
+):
     test_user_id = test_viewer.user_id
     update_user=UpdateUser(
         user_username=test_viewer.user_username,
@@ -56,7 +60,10 @@ async def test_update_user(test_user_repository, test_viewer):
     assert updated_user.user_email == update_user.user_email
 
 @pytest.mark.asyncio
-async def test_update_password(test_user_repository, test_viewer):
+async def test_update_password(
+    test_user_repository: UsersRepository, 
+    test_viewer: User
+):
     new_password='New_password_123'
     user=await test_user_repository.update_user_password(
         test_viewer.user_id, new_password
@@ -67,7 +74,10 @@ async def test_update_password(test_user_repository, test_viewer):
     )
 
 @pytest.mark.asyncio
-async def test_update_user_with_none_user(test_user_repository, test_viewer):
+async def test_update_user_with_none_user(
+    test_user_repository: UsersRepository, 
+    test_viewer: User
+):
     test_user_id = test_viewer.user_id
     update_user=None
 
@@ -212,7 +222,7 @@ async def test_is_user_credentials_authentic(test_user_repository):
 
 @pytest.mark.asyncio
 async def test_user_access_token(test_user_repository, test_viewer):
-    new_access_token=create_token({})
+    new_access_token=JWTService.create_token({})
     updated_user=await test_user_repository.update_user_access_token(
         test_viewer.user_username, new_access_token
     )
