@@ -231,6 +231,24 @@ class PermissionRepository:
         """
         await self.session.delete(permission)
         await self.session.commit()
+    
+    async def get_role_rate_limit(self, role_name: str) -> dict:
+        """
+        Retrieves the rate limit configuration for a role.
+    
+        Args:
+            role_name (str): The name of the role to retrieve the rate limit for.
+    
+        Returns:
+            dict: The rate limit configuration for the role.
+        """
+        query = select(Role).where(Role.role_name == role_name)
+        result = await self.session.execute(query)
+        role = result.scalars().first()
+        
+        if role:
+            return role.role_rate_limit
+        return None
 
 @asynccontextmanager
 async def get_permission_async_context_manager():

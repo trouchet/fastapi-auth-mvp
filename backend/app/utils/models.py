@@ -14,5 +14,6 @@ def userbd_to_user(user: User):
 def rolebd_to_role(role: Role):
     return {
         "role_id": role.role_id,
-        "role_name": role.role_name
+        "role_name": role.role_name,
+        "role_description": role.role_description,
     }

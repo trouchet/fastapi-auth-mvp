@@ -4,10 +4,10 @@ from backend.app.utils.throttling import (
 )
 
 # Rate limiter policies
-sloppy_rate=get_minute_rate_limiter(50)
-loose_rate=get_minute_rate_limiter(40)
-regular_rate=get_minute_rate_limiter(25)
-strict_rate=get_minute_rate_limiter(10)
+sloppy_rate=get_minute_rate_limiter(50).to_slowapi_format()
+loose_rate=get_minute_rate_limiter(40).to_slowapi_format()
+regular_rate=get_minute_rate_limiter(25).to_slowapi_format()
+strict_rate=get_minute_rate_limiter(10).to_slowapi_format()
 
 # System roles and associated permissions
 ROLES_METADATA = {

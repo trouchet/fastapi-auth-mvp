@@ -5,10 +5,11 @@ from asyncpg.exceptions import UniqueViolationError
 
 from typing import List, Dict, Annotated
 
-from backend.app.services.auth import role_checker
-from backend.app.dependencies.auth import CurrentUserDependency
 from backend.app.database.models.users import User
-from backend.app.repositories.users import UsersRepository
+from backend.app.database.models.auth import Role
+from backend.app.repositories.users import (
+    UsersRepository, get_users_repository
+)
 from backend.app.base.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
@@ -21,7 +22,7 @@ from backend.app.base.exceptions import (
 from backend.app.models.users import (
     User, UnhashedUpdateUser, CreateUser,
 )
-from backend.app.database.models.auth import Role
+
 from backend.app.utils.security import (
     is_password_valid, 
     apply_password_validity_dict, 
@@ -29,13 +30,13 @@ from backend.app.utils.security import (
     is_valid_uuid,
 )
 from backend.app.repositories.users import UsersRepository
-from backend.app.dependencies.users import UsersRepositoryDependency
-
 from backend.app.repositories.auth import RoleRepository
+from backend.app.dependencies.users import UsersRepositoryDepends
+from backend.app.dependencies.auth import RoleRepositoryDepends
 from backend.app.base.exceptions import (
     DuplicateEntryException, InternalDatabaseError,
 )
-
+from backend.app.utils.models import userbd_to_user, rolebd_to_role
 from backend.app.utils.security import hash_string
 from .roles_bundler import (
     user_management_roles,
@@ -45,22 +46,6 @@ from .roles_bundler import (
 
 router = APIRouter(prefix='/users', tags=["Users"])
 
-def userbd_to_user(user: User):
-    return {
-        "user_id": user.user_id,
-        "user_created_at": user.user_created_at,
-        "user_updated_at": user.user_updated_at,
-        "user_username": user.user_username,
-        "user_email": user.user_email,
-        "user_is_active": user.user_is_active,
-    }
-    
-def rolebd_to_role(role: Role):
-    return {
-        "role_id": role.role_id,
-        "role_name": role.role_name,
-        "role_description": role.role_description,
-    }
 
 class UserService:
     def __init__(
@@ -282,8 +267,7 @@ class UserService:
         return list(map(userbd_to_user, users))
     
 
-def get_users_service(user_repo: UsersRepositoryDependency) -> UserService:
-    return UserService(user_repo)
-
-
-UsersServiceDependency=Annotated[UserService, Depends(get_users_service)]
+def get_users_service(
+    user_repository: UsersRepositoryDepends, role_repository: RoleRepositoryDepends
+) -> UserService:
+    return UserService(user_repository, role_repository)

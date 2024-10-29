@@ -32,15 +32,16 @@ async def test_refresh_access_token(
     }
     
     route=f"{settings.API_V1_STR}/auth/token"
+    
     response = await auth_client.post(route, data=signup_data)
     
     token = Token(**response.json())
-    
     auth_data={"refresh_token": token.refresh_token}
     
     route=f"{settings.API_V1_STR}/auth/refresh"
+    
     response = await auth_client.post(route, json=auth_data)
-
+    print(response.json())
     assert response.status_code == 200
     token = Token(**response.json())
     

@@ -28,14 +28,14 @@ class LogRepository:
             relo_path=request.url.path,
             relo_query_params=dict(request.query_params),
         )
-
+        
         self.session.add(log)
         await self.session.commit()
         await self.session.refresh(log)
-
+        
         return log
-
-    async def delete_old_request_logs(self, retention_period_days: int = settings.RETENTION_PERIOD_DAYS):
+    
+    async def delete_old_logs(self, retention_period_days: int = settings.RETENTION_PERIOD_DAYS):
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_period_days)
         
         datetime_filter = RequestLog.relo_timestamp < cutoff_date

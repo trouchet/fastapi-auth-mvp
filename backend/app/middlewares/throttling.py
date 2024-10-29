@@ -1,95 +1,132 @@
 from fastapi import FastAPI, Request
-from fastapi_limiter import FastAPILimiter
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from typing import Callable, Awaitable
 from redis import asyncio as aioredis
-from typing import Union
+from typing import Union, Optional
+import traceback
 
 from backend.app.utils.throttling import ip_identifier
 from backend.app.utils.request import get_token, get_route
 from backend.app.base.auth import get_current_user
 from backend.app.database.models.users import User
+from backend.app.repositories.auth import role_repository_async_context_manager
+from backend.app.repositories.users import user_repository_async_context_manager
 from backend.app.base.exceptions import (
     MissingTokenException, TooManyRequestsException, RatePolicyException
 )
 from backend.app.base.config import settings
 from backend.app.base.logging import logger
-
-# Define rate limiting policy
-class RateLimiterPolicy:
-    def __init__(
-        self, 
-        times: int = 5,
-        hours: int = 0, 
-        minutes: int = 1, 
-        seconds: int = 0, 
-        milliseconds: int = 0
-    ):
-        self.times = times
-        self.interval_seconds = (
-            hours * 3600 + minutes * 60 + seconds + milliseconds / 1000
-        )
-
-    def throughput(self) -> float:
-        """Calculate the throughput based on policy."""
-        return self.times / self.interval_seconds if self.interval_seconds > 0 else float("inf")
-
-    def __repr__(self) -> str:
-        return f"RateLimiterPolicy({self.interval_seconds})"
-
-async def init_redis_pool():
-    """Initialize Redis connection pool asynchronously."""
-    return await aioredis.Redis.from_url(settings.redis_url)
+from backend.app.utils.throttling import RateLimiterPolicy
 
 
-async def init_rate_limiter():
-    """Initialize FastAPI rate limiter with Redis connection."""
-    redis = await init_redis_pool()
-    await FastAPILimiter.init(redis)
-    logger.info("Rate limiter initialized!")
+def get_user_rate_policy(user: User) -> Optional[RateLimiterPolicy]:
+    """Determine the most permissive rate policy based on user roles.
+    
+    Args:
+        user (User): The current user object.
 
+    Returns:
+        Optional[RateLimiterPolicy]: The most permissive rate limiter policy for the user, 
+        or None if the user has no roles.
+    """
+    if not user or not user.user_roles:
+        return None  # No roles or user found
 
-def get_rate_limiter(
-        policy: RateLimiterPolicy = RateLimiterPolicy()
-    ) -> RateLimiter:
-    """Get configured RateLimiter based on policy."""
-    return RateLimiter(
-        times=policy.times,
-        milliseconds=int(policy.interval_seconds * 1000)
-    )
-
-def get_user_rate_policy(user: User) -> RateLimiterPolicy:
-    """Determine the most permissive rate policy based on user roles."""
+    # Extract rate policies from user roles
     rate_policies = [
-        ROLES_METADATA[role.role_name]['rate_policy']
+        RateLimiterPolicy(**role.role_rate_limit)
         for role in user.user_roles
-        if role.role_name in ROLES_METADATA
     ]
-    return max(rate_policies, key=lambda p: p.throughput(), default=RateLimiterPolicy())
 
+    # Return the most permissive rate policy based on throughput
+    return max(rate_policies, key=lambda p: p.throughput(), default=None)
+
+async def fetch_current_user(request: Request) -> User:
+    """Fetch the current user from the request token.
+
+    Args:
+        request (Request): The FastAPI request object.
+
+    Returns:
+        User: The current user object.
+
+    Raises:
+        MissingTokenException: If the request token is missing.
+        RatePolicyException: If there is an error retrieving the user.
+    """
+    token = get_token(request)
+    if not token:
+        raise MissingTokenException("Missing authentication token.")
+
+    try:
+        return await get_current_user(token)
+    except Exception as e:
+        logger.error(f"Specific error retrieving current user: {e}")
+        raise RatePolicyException("Unable to retrieve user rate policy")
+    except Exception as e:
+        logger.error(f"Error retrieving current user: {e}\n{traceback.format_exc()}")
+        raise RatePolicyException("Unable to retrieve user rate policy")
+
+async def get_user_rate_policy(request: Request) -> Optional[RateLimiterPolicy]:
+    """Retrieve the user's rate limiting policy based on their roles.
+
+    Args:
+        request (Request): The FastAPI request object.
+
+    Returns:
+        Optional[RateLimiterPolicy]: The user's rate limiting policy or a default policy for non-authenticated users.
+    """
+    route = get_route(request)
+
+    if settings.route_requires_authentication(route):
+        current_user = await fetch_current_user(request)
+        return get_user_rate_policy(current_user)
+
+    # Default rate limit policy for unauthenticated users
+    return RateLimiterPolicy()  # Define this separately if there are common default values
+
+async def get_user_identifier(request: Request) -> Union[str, None]:
+    """Retrieve the user identifier based on the request.
+
+    Args:
+        request (Request): The FastAPI request object.
+
+    Returns:
+        Union[str, None]: A string identifier for the user or the remote IP address if unauthenticated.
+    """
+    route = get_route(request)
+
+    if settings.route_requires_authentication(route):
+        current_user = await fetch_current_user(request)
+        return f"user:{current_user.user_id}"
+
+    return get_remote_address(request)
+
+# Rate limiter instance
+limiter = Limiter(key_func=get_user_identifier, storage_uri=settings.redis_url)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        route = get_route(request)
+        rate_limit_policy = await get_user_rate_policy(request)
 
-        if settings.route_requires_authentication(route):
-            token = get_token(request)
-            if not token:
-                raise MissingTokenException()
+        if rate_limit_policy:
+            @limiter.limit(rate_limit_policy)
+            async def limited_call_next(request: Request):
+                return await call_next(request)
 
-            try:
-                current_user = await get_current_user(token)
-                rate_policy = get_user_rate_policy(current_user)
-            except Exception as e:
-                logger.error(f"Error retrieving current user: {e}")
-                raise RatePolicyException("Unable to retrieve user rate policy")
-        else:
-            rate_policy = RateLimiterPolicy()
+            return await limited_call_next(request)
 
-        limiter = get_rate_limiter(rate_policy)
-        
-        # Use RateLimiter dependency for rate limiting
-        await limiter(request)
-
+        logger.info("No rate limit applied, proceeding with request.")
         return await call_next(request)
+
+async def init_rate_limiter(app_: FastAPI):
+    """Initialize the SlowAPI rate limiter with Redis connection."""
+    # Initialize the limiter
+    limiter.slowapi_startup()
+    app_.add_middleware(RateLimitMiddleware)
+
+    logger.info("Rate limiter initialized!")
