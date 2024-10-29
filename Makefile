@@ -8,10 +8,10 @@ import re, sys
 regex_pattern = r'^([a-zA-Z_-]+):.*?## (.*)$$'
 
 for line in sys.stdin:
-	match = re.match(regex_pattern, line)
-	if match:
-		target, help = match.groups()
-		print("%-20s %s" % (target, help))
+        match = re.match(regex_pattern, line)
+        if match:
+                target, help = match.groups()
+                print("%-20s %s" % (target, help))
 endef
 export PRINT_HELP_PYSCRIPT
 
@@ -96,6 +96,9 @@ report: test ## Generate coverage report. Usage: make report
 
 ps: ## List all containers. Usage: make ps
 	docker ps -a
+
+logs: ## Show logs of all containers. Usage: make logs
+	docker-compose logs -f
 
 build: ## Build the application. Usage: make build
 	docker-compose build
