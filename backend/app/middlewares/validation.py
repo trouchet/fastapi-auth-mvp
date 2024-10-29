@@ -2,7 +2,6 @@ from fastapi import Request, FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-
 from backend.app.base.exceptions import InvalidRouteException
 
 class RouteValidationMiddleware(BaseHTTPMiddleware):
@@ -26,9 +25,9 @@ class RouteValidationMiddleware(BaseHTTPMiddleware):
         except (RequestValidationError, HTTPException) as e:
             if isinstance(e, HTTPException) and e.status_code == status.HTTP_404_NOT_FOUND:
                 # Handle specific cases like 404 Not Found (optional)
-                raise InvalidRouteException(normalized_route_path)
+                raise InvalidRouteException(normalized_route_path, e)
             else:
                 raise e  # Re-raise other exceptions
         except Exception as e:
             # Handle other exceptions
-            raise InvalidRouteException(normalized_route_path)
+            raise InvalidRouteException(normalized_route_path, e)

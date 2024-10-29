@@ -30,10 +30,12 @@ async def init_rate_limiter():
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        route, token = get_route_and_token(request)
-        
+        route = get_route(request)
+
         # Check if the route requires authentication
         if settings.route_requires_authentication(route):
+            token = get_token(request)
+
             if not token:
                 raise MissingTokenException()
 
@@ -47,8 +49,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             limiter = get_rate_limiter(user_identifier, rate_policy)
 
-            if not await limiter.check(request, route):
-                raise TooManyRequestsException()
+        if not await limiter.check(request, route):
+            raise TooManyRequestsException()
 
         response = await call_next(request)
         

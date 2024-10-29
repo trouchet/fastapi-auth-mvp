@@ -165,7 +165,7 @@ class InvalidUUIDException(HTTPException):
 
 
 class InvalidRouteException(HTTPException):
-    def __init__(self, route):
+    def __init__(self, route, e):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Route {route} is invalid",

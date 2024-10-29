@@ -1,8 +1,13 @@
 from typing import Dict
 import psutil
 import os
+from redis.exceptions import RedisError
+from typing import Tuple
 
-from backend.app.database.instance import database
+from backend.app.database.instance import Database, uri
+from backend.app.base.config import settings 
+
+HealthOutputType = Tuple[bool, str]
 
 def healthcheck_dict(is_healthy: bool, error_message: str) -> Dict:
     """
@@ -18,14 +23,15 @@ def healthcheck_dict(is_healthy: bool, error_message: str) -> Dict:
             - "message": The error message if the service is not healthy, otherwise an empty string.
     """
     status_str = 'healthy' if is_healthy else 'warning'
-    
+    message_str= '' if is_healthy else error_message
+
     return {
         "status": status_str,
-        "message": error_message if not is_healthy else '',
+        "message": message_str,
     }
 
 
-async def is_server_live() -> bool:
+async def is_server_live() -> HealthOutputType:
     """
     Check if the server is live and running.
 
@@ -40,7 +46,7 @@ async def is_server_live() -> bool:
 
 # Define a default memory threshold (GB)
 DEFAULT_MEMORY_THRESHOLD = 1
-async def is_memory_usage_within_limits() -> bool:
+async def is_memory_usage_within_limits() -> HealthOutputType:
     """
     Check if the memory usage is within the defined limits.
 
@@ -61,13 +67,13 @@ async def is_memory_usage_within_limits() -> bool:
             threshold = f"{DEFAULT_MEMORY_THRESHOLD} GB"
             return False, f"Memory usage ({usage}) exceeds threshold ({threshold})"
         else:
-            return True, None
+            return True, ''
 
-    except Exception:
-        return False
+    except Exception as e:
+        return False, str(e)
 
 
-async def is_database_healthy() -> bool:
+async def is_database_healthy() -> HealthOutputType:
     """
     Check if the database connection is healthy.
 
@@ -75,19 +81,26 @@ async def is_database_healthy() -> bool:
         bool: True if the database connection is healthy, False otherwise.
     """
     try:
-        database.test_connection()
+        database = Database(uri)
+        await database.test_connection()
         return True, None
     except Exception as e:
         return False, str(e)
 
-async def is_cache_healthy() -> bool:
+async def is_cache_healthy() -> HealthOutputType:
     """
-    Check the health of the cache.
+    Check the health of the Redis cache.
+
+    Args:
+        redis_client (aioredis.Redis): The Redis client instance.
 
     Returns:
         bool: True if the cache is healthy, False otherwise.
     """
     try:
-        raise NotImplementedError("Cache health check not implemented")
+        # Perform a simple ping command to check if Redis is reachable
+        result = await settings.redis_client.ping()
+        return result, ''
     except Exception as e:
-        return False, str(e)
+        # Catch any other unexpected exceptions
+        return False, f"An unexpected error occurred: {str(e)}"

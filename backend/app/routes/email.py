@@ -39,6 +39,6 @@ async def send_in_background(
         subtype="plain"
     )
 
-    background_tasks.add_task(email_service.send_message, message)
+    email_service.send_message(message, background_tasks)
 
     return {"message": "Email has been sent in the background"}

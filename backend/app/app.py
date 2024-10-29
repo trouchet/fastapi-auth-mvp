@@ -20,7 +20,7 @@ async def lifespan(app_: FastAPI):
     # Database initialization
     await init_database()
     await insert_initial_data()
-    
+
     # Rate limiter initialization
     if is_docker(settings.ENVIRONMENT): 
         await init_rate_limiter()

@@ -1,6 +1,8 @@
 from fastapi import Request, FastAPI
 from fastapi.routing import APIRoute
 
+def get_token(request: Request) -> str:
+    return request.headers.get('Authorization', '').replace('Bearer ', '')
 
 def get_route_and_token(request: Request):
     route = request.scope['path']

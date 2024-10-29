@@ -3,7 +3,8 @@ from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
-from backend.app.utils.request import get_route_and_token
+from backend.app.utils.request import get_token, get_route
+from backend.app.base.exceptions import MissingTokenException
 from backend.app.repositories.logging import get_log_repository
 from backend.app.services.auth import get_current_user
 from backend.app.base.config import settings
@@ -33,7 +34,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     current_user = await get_current_user(token)
                     user_id = current_user.user_id
                 else:
-                    user_id = None
+                    user_id = await ip_identifier(request)
 
                 await log_repository.create_request_log(user_id, request)
 
