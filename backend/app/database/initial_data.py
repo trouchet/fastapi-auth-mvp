@@ -32,6 +32,7 @@ async def create_roles_and_permissions():
                 # Rollback changes if an error occurs
                 await role_repository.session.rollback()
 
+
 # Insert initial users
 async def insert_initial_users():
     # Create the first admin user    

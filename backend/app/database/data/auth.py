@@ -2,12 +2,26 @@
 from backend.app.utils.throttling import (
     get_minute_rate_limiter
 )
+from typing import List
 
 # Rate limiter policies
 sloppy_rate=get_minute_rate_limiter(50).to_slowapi_format()
 loose_rate=get_minute_rate_limiter(40).to_slowapi_format()
 regular_rate=get_minute_rate_limiter(25).to_slowapi_format()
 strict_rate=get_minute_rate_limiter(10).to_slowapi_format()
+
+# Roles for business profiles 
+PROFILES_METADATA = {
+    "system_admin": {
+        "roles": ["SuperAdmin", "Admin"]
+    },
+    "c_level": {
+        "roles": ["Admin", "Moderator", "Editor", "Viewer"]
+    },
+    "recruiter": {
+        "roles": ["Moderator", "Editor"]
+    },
+}
 
 # System roles and associated permissions
 ROLES_METADATA = {
