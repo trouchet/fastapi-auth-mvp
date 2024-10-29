@@ -55,6 +55,26 @@ async def auth_client(auth_app):
         yield ac
 
 @pytest.fixture
+def utils_app():
+    # Create a FastAPI app instance for testing
+    app = FastAPI()
+
+    # Define some routes for the test app
+    @app.get("/test-route", name="Test Route")
+    def test_route():
+        return {"message": "Test"}
+
+    @app.post("/another-route", name="Another Route")
+    def another_route():
+        return {"message": "Another"}
+    
+    return app
+
+@pytest.fixture
+def utils_client(utils_app):    
+    return TestClient(utils_app)
+
+@pytest.fixture
 async def test_client():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac

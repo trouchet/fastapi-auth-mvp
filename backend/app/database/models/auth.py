@@ -75,5 +75,7 @@ class Role(Base):
         return {
             "role_id": str(self.role_id),
             "role_name": self.role_name,
-            "role_permissions": [rp.permission.perm_name for rp in self.role_permissions]  # Access permission names through RolePermission
+            "role_permissions": [
+                rp.permission.perm_name for rp in self.role_permissions
+            ]  # Access permission names through RolePermission
         }
