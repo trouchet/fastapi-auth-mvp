@@ -6,6 +6,7 @@ from typing import Callable
 from backend.app.utils.request import get_token, get_route
 from backend.app.base.exceptions import MissingTokenException
 from backend.app.repositories.logging import log_repository_context_manager
+from backend.app.utils.throttling import ip_identifier
 from backend.app.base.auth import get_current_user
 from backend.app.base.config import settings
 
@@ -27,10 +28,14 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
 
             if should_log_request(request, response):
+<<<<<<< HEAD
+                route, token = get_route_and_token(request)
+=======
                 
                 route = get_route(request)
 
                 if settings.route_requires_authentication(route):
+>>>>>>> baf6b8c (feat: improve implementation of rate limiter)
 
                 if settings.route_requires_authentication(route):
                     current_user = await get_current_user(token)
