@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s  # Adjust as needed
+
+scrape_configs:
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']  # Target for the Redis exporter
+
+  - job_name: 'auth-app'
+    static_configs:
+      - targets: ['auth-app:$APP_PORT']  # Target for your FastAPI app

@@ -46,9 +46,45 @@ services:
       timeout: 10s
       retries: 3
 
+  redis-exporter:
+    container_name: redis-exporter
+    image: oliver006/redis_exporter
+    restart: always
+    networks:
+      - my_net
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_URL=redis://auth-redis:6379  # Adjust based on your Redis configuration
+
+  auth-prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    restart: always
+    networks:
+      - my_net
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Path to your Prometheus config file
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  auth-grafana:
+    container_name: grafana
+    image: grafana/grafana
+    restart: always
+    networks:
+      - my_net
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Change the admin password as needed
+
+
 networks:
-    my_net:
-        driver: bridge
+  my_net:
+    driver: bridge
 
 volumes:
   postgres_data:
