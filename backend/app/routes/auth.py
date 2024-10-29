@@ -36,8 +36,12 @@ async def login_for_access_token(
         user: User = await user_repo.get_user_by_username(username)
 
         if not user:
+            print(f"User not found: {username}")
             raise InexistentUsernameException(username=username)
 
+    except InexistentUsernameException as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -65,6 +69,7 @@ async def login_for_access_token(
     print(token_obj)
     return token_obj
 
+    return token
 
 
 @router.post("/refresh")

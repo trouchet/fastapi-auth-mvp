@@ -7,6 +7,8 @@ from typing import List, Dict, Annotated
 from backend.app.services.auth import role_checker
 from backend.app.dependencies.auth import CurrentUserDependency
 
+from backend.app.base.auth import role_checker
+from backend.app.repositories.users import get_users_repository
 from backend.app.database.models.users import User
 from backend.app.repositories.users import UsersRepository
 from backend.app.base.exceptions import (
@@ -25,8 +27,8 @@ from backend.app.utils.security import (
     is_email_valid,
     is_valid_uuid,
 )
-from backend.app.dependencies.users_service import UsersServiceDependency
-from backend.app.services.auth import get_current_user
+from backend.app.services.users import UsersServiceDependency
+from backend.app.services.auth import CurrentUserDependency
 
 from backend.app.utils.security import hash_string
 from .roles_bundler import (
@@ -58,13 +60,12 @@ async def read_all_users(
 ) -> List[Dict]:
     return await user_service.get_users(limit=limit, offset=offset)
 
-
 @router.get("/me")
 async def get_me(current_user: CurrentUserDependency):
     return current_user
 
 @router.get("/{user_id}")
-@role_checker(user_viewer_roles)
+@'role_checker'(user_viewer_roles)
 async def read_user_by_id(
     user_id: str,
     user_service: UsersServiceDependency,
@@ -98,7 +99,7 @@ async def update_user(
 async def create_user(
     new_user: CreateUser,
     users_service: UsersServiceDependency,
-    current_user: CurrentUserDependency
+    current_user: User = Depends(get_current_user)
 ) -> Dict:
     return await users_service.create_user(new_user)
 
@@ -116,7 +117,7 @@ async def update_user(
     user_id: str,
     user: UnhashedUpdateUser,
     users_service: UsersServiceDependency,
-    current_user: CurrentUserDependency
+    current_user: User = Depends(get_current_user)
 ) -> Dict:
     return await users_service.update_user(user_id, user)
 
@@ -127,7 +128,7 @@ async def update_username(
     user_id: str,
     new_username: str,
     users_service: UsersServiceDependency,
-    current_user: CurrentUserDependency
+    current_user: User = Depends(get_current_user)
 ) -> Dict:
     return await users_service.update_user_username(user_id, new_username)
 
@@ -156,12 +157,12 @@ async def update_password(
 
 @router.get("/{user_id}/roles")
 @role_checker(user_viewer_roles)
-async def get_user_roles_by_id(
+async def get_user_roles(
     user_id: str,
     users_service: UsersServiceDependency,
     current_user: CurrentUserDependency
 ) -> List[str]:
-    return await users_service.get_user_roles_by_id(user_id)
+    return await users_service.get_user_roles(user_id)
 
 
 @router.patch("/{user_id}/activate")

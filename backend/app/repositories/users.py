@@ -56,8 +56,10 @@ class UsersRepository:
         statement = select(User).where(User.user_username == username)
         result = await self.session.execute(statement)
         user = result.scalars().first()
-
+        
         if user:
+            print(user)
+            print('---------------><-----------------')
             return user
 
     async def create_user(self, user: User):
@@ -122,6 +124,15 @@ class UsersRepository:
         result = await self.session.execute(query)
         users = result.scalars().all()
         return users
+
+    async def get_user_roles(self, user_id: str):
+        query = select(User).options(selectinload(User.user_roles))\
+            .where(User.user_id == user_id)
+        result = await self.session.execute(query)
+        user = result.scalars().first()
+        if user:
+            return [role for role in user.user_roles]
+        return []
 
     async def get_users_by_role(
         self, role: Role, limit: int = 10, offset: int = 0
@@ -296,12 +307,13 @@ class UsersRepository:
             await self.session.commit()
             await self.session.refresh(user)
 
-async def get_user_repository():
+async def get_users_repository():
     async with get_session() as session:
         try:
             yield UsersRepository(session)
         finally:
             pass
+
 
 @asynccontextmanager
 async def user_repository_async_context_manager():

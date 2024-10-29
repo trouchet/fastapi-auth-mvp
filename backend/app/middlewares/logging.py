@@ -28,14 +28,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
 
             if should_log_request(request, response):
-<<<<<<< HEAD
-                route, token = get_route_and_token(request)
-=======
                 
                 route = get_route(request)
 
                 if settings.route_requires_authentication(route):
->>>>>>> baf6b8c (feat: improve implementation of rate limiter)
 
                 if settings.route_requires_authentication(route):
                     current_user = await get_current_user(token)

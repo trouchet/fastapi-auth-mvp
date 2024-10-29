@@ -34,8 +34,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=settings.ACCESS_TOKEN_EXPIRE_MINUTES
 class JWTService:
     @staticmethod
     def create_token(
-        data: dict, 
-        expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES,
+        data: dict, expires_delta: timedelta | None = ACCESS_TOKEN_EXPIRE_MINUTES,
     ):
         """
         Create a JSON Web Token (JWT) with the provided data and expiration time.
@@ -163,6 +162,12 @@ class JWTService:
 
 def get_jwt_service() -> JWTService:
     return JWTService()
+
+CurrentUserDependency=Annotated[User, Depends(JWTService().get_current_user)]
+
+class AuthService:
+    def __init__(self):
+        pass
 
 
 def role_checker(required_roles: Tuple[str]):

@@ -1,10 +1,13 @@
 import pytest
-from backend.app.models.users import Token
+from backend.app.models.users import Token, User
+from backend.app.repositories.users import UsersRepository
+from backend.app.services.auth import JWTService, get_jwt_service
+from backend.app.base.auth import create_token
 from backend.app.base.config import settings
 
 @pytest.mark.asyncio
 async def test_login_for_access_token(
-    auth_client, test_super_admin_data
+    auth_client, test_super_admin_data, test_super_admin
 ):
     signup_data={
         "username": test_super_admin_data['username'], 

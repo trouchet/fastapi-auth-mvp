@@ -5,11 +5,9 @@ from asyncpg.exceptions import UniqueViolationError
 
 from typing import List, Dict, Annotated
 
+from backend.app.base.auth import role_checker
 from backend.app.database.models.users import User
-from backend.app.database.models.auth import Role
-from backend.app.repositories.users import (
-    UsersRepository, get_users_repository
-)
+from backend.app.repositories.users import UsersRepository
 from backend.app.base.exceptions import (
     InexistentUserIDException,
     InactiveUserException,
@@ -19,24 +17,22 @@ from backend.app.base.exceptions import (
     InvalidUUIDException,
     InvalidPasswordException,
 )
-from backend.app.models.users import (
-    User, UnhashedUpdateUser, CreateUser,
-)
-
+from backend.app.models.users import User, UnhashedUpdateUser, CreateUser
+from backend.app.database.models.auth import Role
+from backend.app.base.auth import get_current_user
 from backend.app.utils.security import (
     is_password_valid, 
     apply_password_validity_dict, 
     is_email_valid,
     is_valid_uuid,
 )
-from backend.app.repositories.users import UsersRepository
-from backend.app.repositories.auth import RoleRepository
-from backend.app.dependencies.users_repository import UsersRepositoryDependency
-from backend.app.dependencies.auth import CurrentUserDependency, RoleRepositoryDependency
+from backend.app.repositories.users import (
+    UsersRepository, UsersRepositoryDependency,
+)
 from backend.app.base.exceptions import (
     DuplicateEntryException, InternalDatabaseError,
 )
-from backend.app.utils.models import userbd_to_user, rolebd_to_role
+
 from backend.app.utils.security import hash_string
 from .roles_bundler import (
     user_management_roles,
@@ -46,15 +42,26 @@ from .roles_bundler import (
 
 router = APIRouter(prefix='/users', tags=["Users"])
 
+def userbd_to_user(user: User):
+    return {
+        "user_id": user.user_id,
+        "user_created_at": user.user_created_at,
+        "user_updated_at": user.user_updated_at,
+        "user_username": user.user_username,
+        "user_email": user.user_email,
+        "user_is_active": user.user_is_active,
+    }
+    
+def rolebd_to_role(role: Role):
+    return {
+        "role_id": role.role_id,
+        "role_name": role.role_name,
+        "role_description": role.role_description,
+    }
 
 class UserService:
-    def __init__(
-        self, 
-        user_repository: UsersRepository,
-        role_repository: RoleRepository
-    ) -> None:
+    def __init__(self, user_repository: UsersRepository) -> None:
         self.user_repository = user_repository
-        self.role_repository = role_repository
 
     async def read_all_users(self, limit: int = 10, offset: int = 0) -> List[Dict]:
         users = await self.user_repository.get_users(limit=limit, offset=offset)
@@ -224,11 +231,12 @@ class UserService:
 
         return userbd_to_user(user)
 
-    async def get_user_roles_by_id(self, user_id: str) -> List[str]:
+
+    async def get_user_roles(self, user_id: str) -> List[str]:
         if not is_valid_uuid(user_id): 
             raise InvalidUUIDException(user_id)
         
-        roles=await self.user_repository.get_user_roles_by_id(user_id)
+        roles=await self.user_repository.get_user_roles(user_id)
         
         if not roles:
             raise InexistentUserIDException(user_id) 
@@ -267,7 +275,8 @@ class UserService:
         return list(map(userbd_to_user, users))
     
 
-def get_users_service(
-    user_repository: UsersRepositoryDependency, role_repository: RoleRepositoryDependency
-) -> UserService:
-    return UserService(user_repository, role_repository)
+def get_users_service(user_repo: UsersRepositoryDependency) -> UserService:
+    return UserService(user_repo)
+
+
+UsersServiceDependency=Annotated[UserService, Depends(get_users_service)]

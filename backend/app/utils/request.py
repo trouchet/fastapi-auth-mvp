@@ -7,7 +7,7 @@ def get_token(request: Request) -> str:
 def get_route_and_token(request: Request):
     route = request.scope['path']
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
-    print(request.headers.raw)
+
     return route, token
 
 # List all routes
@@ -21,3 +21,6 @@ def list_routes(app: FastAPI):
                 "methods": route.methods,
             })
     return route_info
+
+def get_route(request: Request) -> str:
+    return request.scope['path']

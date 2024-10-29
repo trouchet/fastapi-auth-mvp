@@ -7,12 +7,15 @@ from backend.app.middlewares import (
     RequestLoggingMiddleware,
     RateLimitMiddleware
 )
+from backend.app.services.auth import JWTService
 from backend.app.base.config import settings
 
 # Response size in bytes to trigger GZip compression
 RESPONSE_MINIMUM_SIZE=1000
 
 def add_middlewares(app: FastAPI):
+    # Get current user handler
+    current_user_handler=JWTService().get_current_user
     
     # Add middlewares
     #app.add_middleware(RouteValidationMiddleware)

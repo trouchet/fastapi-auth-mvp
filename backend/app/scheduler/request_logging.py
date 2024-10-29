@@ -15,10 +15,8 @@ async def setup_log_cleanup():
         scheduler.add_listener(task_job_listener, event_at)
         
         async def delete_old_logs_wrapper():
-            await log_repo.delete_old_request_logs()
+            await log_repo.delete_old_logs()
 
-        scheduler.add_job(
-            delete_old_logs_wrapper, 'interval', days=LOGS_POLICY
-        )
+        scheduler.add_job(delete_old_logs_wrapper, 'interval', days=1)
         scheduler.start()
 
