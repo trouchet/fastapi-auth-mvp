@@ -1,5 +1,6 @@
 from fastapi import Depends
+from typing import Annotated
 
-from backend.app.repositories.users import get_user_repository
+from backend.app.repositories.users import UsersRepository, get_user_repository
 
-UsersRepositoryDepends = Depends(get_user_repository)
+UsersRepositoryDepends = Annotated[UsersRepository, Depends(get_user_repository)]

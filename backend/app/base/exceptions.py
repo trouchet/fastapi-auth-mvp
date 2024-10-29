@@ -117,6 +117,13 @@ class MalformedTokenException(HTTPException):
         )
 
 
+class RatePolicyException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Please try again later.",
+        )
+
 class TooManyRequestsException(HTTPException):
     def __init__(self):
         super().__init__(

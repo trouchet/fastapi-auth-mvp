@@ -16,7 +16,7 @@ from backend.app.base.exceptions import (
     MalformedTokenException,
     MissingRequiredClaimException,
 )
-from backend.app.repositories.users import get_user_repository
+from backend.app.repositories.users import user_repository_async_context_manager
 from backend.app.models.users import User
 from backend.app.database.models.users import User
 from backend.app.utils.misc import is_async
@@ -77,7 +77,7 @@ class JWTService:
             CredentialsException: If the token is invalid or the user credentials are incorrect.
             InactiveUserException: If the user is inactive.
         """
-        async with get_user_repository() as user_repository:
+        async with user_repository_async_context_manager() as user_repository:
             try:
                 user_has_token, user = await user_repository.refresh_token_exists(token)
                 
@@ -130,7 +130,7 @@ class JWTService:
             InexistentUsernameException: If the username does not exist in the database.
             InactiveUserException: If the user is inactive.
         """
-        async with get_user_repository() as user_repository:
+        async with user_repository_async_context_manager() as user_repository:
             try:
                 payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
                 

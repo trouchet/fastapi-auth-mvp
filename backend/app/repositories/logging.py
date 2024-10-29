@@ -18,7 +18,7 @@ class LogRepository:
             body = ''
         
         log = RequestLog(
-            relo_user_id=user_id,
+            relo_user_id=str(user_id),
             relo_client_host=request.client.host,
             relo_client_port=request.client.port,
             relo_headers=dict(request.headers),
@@ -63,6 +63,10 @@ class LogRepository:
 
 
 @asynccontextmanager
+async def log_repository_context_manager():
+    async with get_session() as session:
+        yield LogRepository(session)
+
 async def get_log_repository():
     async with get_session() as session:
         yield LogRepository(session)

@@ -124,6 +124,7 @@ class Settings(BaseSettings):
             f"{API_V1_STR}/openapi.json",
             f"{API_V1_STR}/docs",
             f"{API_V1_STR}/redoc",
+            f"{API_V1_STR}/auth/token",
             f"{API_V1_STR}/system",
             f"{API_V1_STR}/public/*",
             f"{API_V1_STR}/health",
@@ -152,10 +153,14 @@ class Settings(BaseSettings):
     
     @computed_field
     @property
-    def is_verbose(self) -> str:
+    def is_verbose(self) -> bool:
         # Use HTTPS for anything other than local development
         return not is_production(self.ENVIRONMENT)
     
+    @computed_field
+    @property
+    def is_development(self) -> bool:
+        return not is_production(self.ENVIRONMENT) 
     
     @computed_field
     @property

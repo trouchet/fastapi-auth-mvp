@@ -12,10 +12,11 @@ RESPONSE_MINIMUM_SIZE=1000
 
 def add_middlewares(app: FastAPI):
     # Add middlewares
-    app.add_middleware(RouteValidationMiddleware)
+    #app.add_middleware(RouteValidationMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     
-    #app.add_middleware(RateLimitMiddleware)
+    if settings.is_development:
+        app.add_middleware(RateLimitMiddleware)
     
     app.add_middleware(GZipMiddleware, minimum_size=RESPONSE_MINIMUM_SIZE)
     

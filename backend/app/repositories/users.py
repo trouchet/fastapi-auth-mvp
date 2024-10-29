@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
 from backend.app.database.models.users import User
-from backend.app.database.models.auth import Role
+from backend.app.database.models.auth import Role, Permission
 
 from backend.app.database.instance import get_session
 from backend.app.database.models.users import users_roles_association
@@ -237,11 +237,19 @@ class UsersRepository:
 
         return not set(roles_names).isdisjoint(set(user_roles_names))
 
-    async def refresh_token_exists(self, token: str) -> Tuple[bool | None, User | None]:
-        query = select(User).where(User.user_refresh_token == token)
-        result = await self.session.execute(query)
-
-        user = result.scalars().first()
+    async def refresh_token_exists(self, token: str):
+        query = await self.session.execute(
+            select(User).options(
+                selectinload(User.user_roles).options(
+                    selectinload(Role.role_permissions).options(
+                        selectinload(Permission.perm_roles)  # Eager load `perm_roles` inside `role_permissions`
+                    )
+                )
+            ).where(
+                User.user_refresh_token == token
+            )
+        )
+        user = query.scalar_one_or_none()
 
         return user is not None, user
 
@@ -276,8 +284,12 @@ class UsersRepository:
             await self.session.commit()
             await self.session.refresh(user)
 
-@asynccontextmanager
 async def get_user_repository():
+    async with get_session() as session:
+        yield UsersRepository(session)
+
+@asynccontextmanager
+async def user_repository_async_context_manager():
     async with get_session() as session:
         yield UsersRepository(session)
 
