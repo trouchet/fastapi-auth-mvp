@@ -1,7 +1,7 @@
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
-from typing import List, Union
+from typing import List
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import UUID
@@ -52,14 +52,12 @@ class UsersRepository:
         user = result.scalars().first()
         return user.user_id
 
-    async def get_user_by_username(self, username: str) -> Union[User, None]:
+    async def get_user_by_username(self, username: str) -> User:
         statement = select(User).where(User.user_username == username)
         result = await self.session.execute(statement)
         user = result.scalars().first()
-        
+
         if user:
-            print(user)
-            print('---------------><-----------------')
             return user
 
     async def create_user(self, user: User):
@@ -134,13 +132,9 @@ class UsersRepository:
             return [role for role in user.user_roles]
         return []
 
-    async def get_users_by_role(
-        self, role: Role, limit: int = 10, offset: int = 0
-    ):
+    async def get_users_by_role(self, role: Role):
         query = select(User).join(users_roles_association).join(Role)\
-            .filter(Role.role_name == role.role_name)\
-            .limit(limit)\
-            .offset(offset)
+            .filter(Role.role_name == role.role_name)
         result = await self.session.execute(query)
         users_with_role = result.scalars().all()
         
@@ -212,7 +206,7 @@ class UsersRepository:
         query = select(User).where(User.user_username == username)
         result = await self.session.execute(query)
         user = result.scalars().first()
-
+        
         if not user:
             return False
         
@@ -319,4 +313,3 @@ async def get_users_repository():
 async def user_repository_async_context_manager():
     async with get_session() as session:
         yield UsersRepository(session)
-

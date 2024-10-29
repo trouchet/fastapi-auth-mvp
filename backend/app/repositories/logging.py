@@ -2,9 +2,7 @@ from fastapi import Request
 from datetime import datetime, timezone, timedelta
 from contextlib import asynccontextmanager
 
-from backend.app.database.models.logging import (
-    RequestLog, TaskLog, AuthLog,
-)
+from backend.app.database.models.logging import RequestLog, TaskLog
 from backend.app.database.instance import get_session
 from backend.app.base.config import settings
 

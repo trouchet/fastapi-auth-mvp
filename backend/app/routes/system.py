@@ -34,4 +34,3 @@ async def get_credentials(
             settings_dict[key] = "********" 
 
     return settings_dict
-

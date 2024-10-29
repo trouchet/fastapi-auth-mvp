@@ -5,7 +5,8 @@ from asyncpg.exceptions import UniqueViolationError
 
 from typing import List, Dict, Annotated
 
-from backend.app.base.auth import role_checker
+from backend.app.services.auth import role_checker
+from backend.app.dependencies.auth import CurrentUserDependency
 from backend.app.database.models.users import User
 from backend.app.repositories.users import UsersRepository
 from backend.app.base.exceptions import (
@@ -17,18 +18,20 @@ from backend.app.base.exceptions import (
     InvalidUUIDException,
     InvalidPasswordException,
 )
-from backend.app.models.users import User, UnhashedUpdateUser, CreateUser
+from backend.app.models.users import (
+    User, UnhashedUpdateUser, CreateUser,
+)
 from backend.app.database.models.auth import Role
-from backend.app.base.auth import get_current_user
 from backend.app.utils.security import (
     is_password_valid, 
     apply_password_validity_dict, 
     is_email_valid,
     is_valid_uuid,
 )
-from backend.app.repositories.users import (
-    UsersRepository, UsersRepositoryDependency,
-)
+from backend.app.repositories.users import UsersRepository
+from backend.app.dependencies.users import UsersRepositoryDependency
+
+from backend.app.repositories.auth import RoleRepository
 from backend.app.base.exceptions import (
     DuplicateEntryException, InternalDatabaseError,
 )
@@ -60,8 +63,13 @@ def rolebd_to_role(role: Role):
     }
 
 class UserService:
-    def __init__(self, user_repository: UsersRepository) -> None:
+    def __init__(
+        self, 
+        user_repository: UsersRepository,
+        role_repository: RoleRepository
+    ) -> None:
         self.user_repository = user_repository
+        self.role_repository = role_repository
 
     async def read_all_users(self, limit: int = 10, offset: int = 0) -> List[Dict]:
         users = await self.user_repository.get_users(limit=limit, offset=offset)
@@ -231,12 +239,11 @@ class UserService:
 
         return userbd_to_user(user)
 
-
-    async def get_user_roles(self, user_id: str) -> List[str]:
+    async def get_user_roles_by_id(self, user_id: str) -> List[str]:
         if not is_valid_uuid(user_id): 
             raise InvalidUUIDException(user_id)
         
-        roles=await self.user_repository.get_user_roles(user_id)
+        roles=await self.user_repository.get_user_roles_by_id(user_id)
         
         if not roles:
             raise InexistentUserIDException(user_id) 

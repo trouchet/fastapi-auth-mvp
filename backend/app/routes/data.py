@@ -25,4 +25,3 @@ def admin_endpoint(
     current_user: CurrentUserDependency
 ):
     return {"message": "This is user data"}
-

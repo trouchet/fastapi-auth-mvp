@@ -11,9 +11,6 @@ class User(BaseUser):
 
 class CreateUser(User):
     user_password: str
-    
-class ValidationUser(User):
-    pass
 
 class UpdateUser(User):
     user_email: Optional[str] = None

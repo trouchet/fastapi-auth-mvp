@@ -249,5 +249,3 @@ async def role_repository_async_context_manager():
 async def get_role_repository():
     async with get_session() as session:
         yield RoleRepository(session)
-
-

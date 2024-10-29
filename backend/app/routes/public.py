@@ -48,4 +48,3 @@ async def cat_page(request: Request, status_code: int):
     }
     return templates.TemplateResponse("cat_page.html", context=context)
 
-

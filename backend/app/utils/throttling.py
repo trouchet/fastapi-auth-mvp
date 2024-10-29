@@ -1,4 +1,6 @@
 from typing import Union
+from fastapi import Request
+
 from fastapi_limiter.depends import RateLimiter
 
 from backend.app.models.throttling import RateLimiterPolicy
@@ -20,3 +22,10 @@ def get_rate_limiter(
         seconds=policy.seconds,
         milliseconds=policy.milliseconds
     )
+
+async def ip_identifier(request: Request):
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0]
+    
+    return request.client.host + ":" + request.scope["path"]

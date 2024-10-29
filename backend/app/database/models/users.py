@@ -54,4 +54,3 @@ class User(Base):
             return equal_username or equal_email
         else:
             return False
-

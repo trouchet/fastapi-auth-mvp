@@ -14,9 +14,6 @@ from backend.app.base.config import settings
 RESPONSE_MINIMUM_SIZE=1000
 
 def add_middlewares(app: FastAPI):
-    # Get current user handler
-    current_user_handler=JWTService().get_current_user
-    
     # Add middlewares
     #app.add_middleware(RouteValidationMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
@@ -31,10 +28,10 @@ def add_middlewares(app: FastAPI):
         app.add_middleware(
             CORSMiddleware,
             allow_origins=[
-                str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS
+                str(origin).strip("/") 
+                for origin in settings.BACKEND_CORS_ORIGINS
             ],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )
-

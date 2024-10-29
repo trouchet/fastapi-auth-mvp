@@ -32,8 +32,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 route = get_route(request)
 
                 if settings.route_requires_authentication(route):
-
-                if settings.route_requires_authentication(route):
                     current_user = await get_current_user(token)
                     user_id = current_user.user_id
                 else:
@@ -42,4 +40,3 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 await log_repository.create_request_log(user_id, request)
 
             return response
-

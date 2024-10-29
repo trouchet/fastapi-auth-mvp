@@ -27,25 +27,9 @@ class RequestLog(Base):
 class TaskLog(Base):
     __tablename__ = "task_logs"
     
-    lota_id = Column(Integer, primary_key=True, index=True)
-    lota_job_id = Column(String, index=True)
-    lota_task_name = Column(String, index=True)
-    lota_executed_at = Column(DateTime, default=datetime.now(timezone.utc))
-    lota_success = Column(Boolean)
-    lota_message = Column(String)
-    
-    
-class AuthLog(Base):
-    __tablename__ = "auth_logs"
-    
-    loau_id = Column(Integer, primary_key=True, index=True)
-    loau_user_id = Column(UUID, ForeignKey('users.user_id'))
-    loau_login_at = Column(DateTime(timezone), default=datetime.now(timezone.utc))
-    loau_success = Column(Boolean)
-    loau_message = Column(String)
-    loau_ip_address = Column(String)
-    loau_endpoint = Column(String)
-    loau_http_method = Column(String)
-    loau_headers = Column(String)
-    
-    loau_user = relationship('User', back_populates='user_loau_logs')
+    talo_id = Column(Integer, primary_key=True, index=True)
+    talo_job_id = Column(String, index=True)
+    talo_task_name = Column(String, index=True)
+    talo_executed_at = Column(DateTime, default=datetime.now(timezone.utc))
+    talo_success = Column(Boolean)
+    talo_message = Column(String)
