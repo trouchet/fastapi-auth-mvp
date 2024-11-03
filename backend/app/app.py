@@ -9,10 +9,8 @@ from backend.app.middlewares.bundler import add_middlewares
 from backend.app.routes.bundler import api_router
 from backend.app.base.logging import logger
 from backend.app.scheduler.bundler import start_schedulers
-
 from backend.app.database.instance import init_database
 from backend.app.database.initial_data import insert_initial_data
-
 from backend.app.base.config import settings, is_docker
 
 @asynccontextmanager
@@ -48,12 +46,12 @@ def create_app():
     
     return app
 
-def configure_app(app_: FastAPI):
-
+def setup_favicon(app_: FastAPI):
     # Add static files
     obj = StaticFiles(directory="backend/static")
     app_.mount("/static", obj, name="static")
 
+def setup_exceptions(app_: FastAPI):
     # Add exception handlers
     @app_.exception_handler(status.HTTP_404_NOT_FOUND)
     async def not_found_handler(request: Request, exc: HTTPException):
@@ -73,11 +71,11 @@ def configure_app(app_: FastAPI):
         # Return a generic error response to the client
         code=status.HTTP_500_INTERNAL_SERVER_ERROR
         return JSONResponse(f"An unexpected error occurred: {exc}.", status_code=code)
-    
-    # Include routers in the app
-    app_.include_router(api_router)
 
-    # Add middlewares
+def configure_app(app_: FastAPI):
+    setup_favicon(app_)    
+    setup_exceptions(app_)
+    app_.include_router(api_router)
     add_middlewares(app_)
     
 def init_app():
