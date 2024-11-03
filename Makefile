@@ -18,6 +18,10 @@ export PRINT_HELP_PYSCRIPT
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
+sanitize: # Remove dangling images and volumes
+	docker system prune --volumes -f
+	docker images --filter 'dangling=true' -q --no-trunc | xargs -r docker rmi
+
 clean-logs: # Removes log info. Usage: make clean-logs
 	rm -fr build/ dist/ .eggs/
 	find . -name '*.log' -o -name '*.log' -exec rm -fr {} +
