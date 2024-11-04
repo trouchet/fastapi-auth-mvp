@@ -5,24 +5,24 @@ from uuid import uuid4
 
 from .users import Base, users_roles_association
 
-class RolePermission(Base):
-    __tablename__ = 'roles_x_permissions'
-    rope_id = Column(UUID, primary_key=True, default=uuid4)
-    rope_role_id = Column(UUID, ForeignKey('roles.role_id', ondelete='CASCADE'))
-    rope_perm_id = Column(UUID, ForeignKey('permissions.perm_id', ondelete='CASCADE'))
-    
-    # Define relationships to Role and Permission for easier access
-    role = relationship('Role', back_populates='role_permissions')
-    permission = relationship('Permission', back_populates='perm_roles')
+
+# Define the association table for roles and permissions
+roles_permissions_association = Table(
+    'roles_x_permissions',
+    Base.metadata,
+    Column('rope_id', UUID, primary_key=True, default=uuid4),
+    Column('rope_role_id', UUID, ForeignKey('roles.role_id', ondelete='CASCADE')),
+    Column('rope_perm_id', UUID, ForeignKey('permissions.perm_id', ondelete='CASCADE'))
+)
 
 class Permission(Base):
     __tablename__ = 'permissions'
     perm_id = Column(UUID, primary_key=True, default=uuid4)
     perm_name = Column(String, unique=True, nullable=False)
 
-    # Relationship to RolePermission association table
+    # Relationship to roles via the association table
     perm_roles = relationship(
-        'RolePermission', back_populates='permission', cascade="all, delete-orphan"
+        'Role', secondary=roles_permissions_association, back_populates='role_permissions'
     )
 
     def __repr__(self):
@@ -32,7 +32,7 @@ class Permission(Base):
         return {
             "perm_id": str(self.perm_id),
             "perm_name": self.perm_name,
-            "perm_roles": [rp.role.role_name for rp in self.perm_roles]  # Access role names through RolePermission
+            "perm_roles": [role.role_name for role in self.perm_roles]  # Access role names directly
         }
 
 class Role(Base):
@@ -45,9 +45,9 @@ class Role(Base):
         'User', secondary=users_roles_association, back_populates='user_roles'
     )
 
-    # Relationship to RolePermission association table
+    # Relationship to permissions via the association table
     role_permissions = relationship(
-        'RolePermission', back_populates='role', cascade="all, delete-orphan"
+        'Permission', secondary=roles_permissions_association, back_populates='perm_roles'
     )
 
     def __repr__(self):
@@ -58,6 +58,6 @@ class Role(Base):
             "role_id": str(self.role_id),
             "role_name": self.role_name,
             "role_permissions": [
-                rp.permission.perm_name for rp in self.role_permissions
-            ]  # Access permission names through RolePermission
+                perm.perm_name for perm in self.role_permissions
+            ]  # Access permission names directly
         }

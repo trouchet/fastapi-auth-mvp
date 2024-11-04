@@ -23,7 +23,7 @@ async def lifespan(app_: FastAPI):
 
     # Rate limiter initialization
     if is_docker(settings.ENVIRONMENT): 
-        await init_rate_limiter()
+        await init_rate_limiter(app_)
     
     # Start the schedulers
     start_schedulers()

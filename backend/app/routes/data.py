@@ -24,4 +24,4 @@ def admin_endpoint(
 def admin_endpoint(
     current_user: CurrentUserDependency
 ):
-    return {"message": "This is user data"}
+    return {"message": "This is viewer data"}

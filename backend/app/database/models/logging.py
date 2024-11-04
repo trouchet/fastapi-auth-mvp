@@ -13,7 +13,7 @@ class RequestLog(Base):
     lore_id = Column(UUID, primary_key=True, index=True, unique=True, nullable=False, default=uuid4)
     lore_client_host = Column(String)
     lore_client_port = Column(Integer)
-    lore_user_id = Column(UUID, ForeignKey('users.user_id'))
+    lore_user_id = Column(String)
     lore_headers = Column(JSONB)
     lore_body = Column(Text, nullable=True)
     lore_query_params = Column(JSONB)
@@ -21,8 +21,6 @@ class RequestLog(Base):
     lore_method = Column(String, index=True)
     lore_path = Column(String, index=True)
     lore_timestamp = Column(DateTime(timezone=True), default=datetime.now(timezone.utc))
-
-    lore_user = relationship('User', back_populates='user_lore_logs')
 
 class TaskLog(Base):
     __tablename__ = "task_logs"

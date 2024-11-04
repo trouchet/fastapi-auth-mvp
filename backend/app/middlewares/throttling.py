@@ -60,18 +60,15 @@ async def fetch_current_user(request: Request) -> User:
     """
     token = get_token(request)
     if not token:
-        raise MissingTokenException("Missing authentication token.")
+        raise MissingTokenException()
 
     try:
         return await get_current_user(token)
     except Exception as e:
-        logger.error(f"Specific error retrieving current user: {e}")
-        raise RatePolicyException("Unable to retrieve user rate policy")
-    except Exception as e:
         logger.error(f"Error retrieving current user: {e}\n{traceback.format_exc()}")
-        raise RatePolicyException("Unable to retrieve user rate policy")
+        raise RatePolicyException()
 
-async def get_user_rate_policy(request: Request) -> Optional[RateLimiterPolicy]:
+async def get_request_rate_policy(request: Request) -> Optional[RateLimiterPolicy]:
     """Retrieve the user's rate limiting policy based on their roles.
 
     Args:
@@ -81,9 +78,9 @@ async def get_user_rate_policy(request: Request) -> Optional[RateLimiterPolicy]:
         Optional[RateLimiterPolicy]: The user's rate limiting policy or a default policy for non-authenticated users.
     """
     route = get_route(request)
-
     if settings.route_requires_authentication(route):
         current_user = await fetch_current_user(request)
+        print(current_user)
         return get_user_rate_policy(current_user)
 
     # Default rate limit policy for unauthenticated users
@@ -111,9 +108,11 @@ limiter = Limiter(key_func=get_user_identifier, storage_uri=settings.redis_url)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        rate_limit_policy = await get_user_rate_policy(request)
-
-        if rate_limit_policy:
+        rate_limit_policy = await get_request_rate_policy(request)
+        without_rate_limit='0/second'
+        has_rate_limit=rate_limit_policy and rate_limit_policy()!=without_rate_limit
+        if has_rate_limit:
+            
             @limiter.limit(rate_limit_policy)
             async def limited_call_next(request: Request):
                 return await call_next(request)
@@ -126,7 +125,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 async def init_rate_limiter(app_: FastAPI):
     """Initialize the SlowAPI rate limiter with Redis connection."""
     # Initialize the limiter
-    limiter.slowapi_startup()
-    app_.add_middleware(RateLimitMiddleware)
-
+    app_.state.limiter = limiter
+    app_.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     logger.info("Rate limiter initialized!")

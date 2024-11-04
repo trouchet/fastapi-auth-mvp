@@ -19,6 +19,7 @@ def hello_func():
 async def cat_by_status(status_code: int):
     try:
         image_url = get_cat_image_url(status_code)
+        print(image_url)
         image_bytes = await fetch_image(image_url)
 
         response = StreamingResponse(content=iter([image_bytes]), media_type="image/jpeg")

@@ -1,8 +1,9 @@
+from datetime import datetime, timezone
+from typing import Any, List
+from uuid import uuid4
+
 from sqlalchemy import Column, String, Boolean, DateTime, UUID, ForeignKey, Table
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
-from typing import Any
-from uuid import uuid4
 
 from . import Base
 
@@ -34,7 +35,6 @@ class User(Base):
     user_roles = relationship(
         'Role', secondary=users_roles_association, back_populates='role_users', cascade="all"
     )
-    user_lore_logs = relationship('RequestLog', back_populates='lore_user')
 
     def __repr__(self):
         return f"User({self.user_username})"
@@ -50,3 +50,32 @@ class User(Base):
             return equal_username or equal_email
         else:
             return False
+
+    def has_roles(self, roles_names: List[str]) -> bool:
+        """
+        Checks if the user has any of the roles specified in roles_names.
+        
+        Args:
+            roles_names (List[str]): List of role names to check against the user's roles.
+        
+        Returns:
+            bool: True if the user has any of the roles in roles_names, False otherwise.
+        """
+        user_roles_names = {role.role_name for role in self.user_roles}
+        return not set(roles_names).isdisjoint(user_roles_names)
+    
+    def has_permissions(self, permissions_names: List[str]) -> bool:
+        """
+        Checks if the user has any of the specified permissions.
+        
+        Args:
+            permissions_names (List[str]): List of permission names to check against the user's permissions.
+        
+        Returns:
+            bool: True if the user has any of the permissions in permissions_names, False otherwise.
+        """
+        user_permissions = {
+             permission.permission_name 
+             for role in self.user_roles for permission in role.role_permissions
+        }
+        return not set(permissions_names).isdisjoint(user_permissions)

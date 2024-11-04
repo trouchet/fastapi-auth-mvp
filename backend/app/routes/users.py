@@ -53,14 +53,15 @@ def userbd_to_user(user: User):
 
 @router.get("/")
 @role_checker(user_management_roles)
-def read_all_users(
+async def read_all_users(
     current_user: CurrentUserDependency,
     user_repo: UsersRepositoryDependency,
     limit: int = 10,
     offset: int = 0
 ) -> List[Dict]:
-    users = user_repo.get_users(limit=limit, offset=offset)
-
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    users = await user_repo.get_users(limit=limit, offset=offset)
+    
     return list(map(userbd_to_user, users))
 
 @router.get("/me")
@@ -69,7 +70,7 @@ async def get_me(current_user: CurrentUserDependency):
 
 @router.get("/{user_id}")
 @role_checker(user_viewer_roles)
-def read_user_by_id(
+async def read_user_by_id(
     current_user: CurrentUserDependency,
     user_id: str = Path(..., description="The ID of the user to retrieve"),
     user_repo: UsersRepository=Depends(get_users_repository)
@@ -77,7 +78,7 @@ def read_user_by_id(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
     
-    user = user_repo.get_user_by_id(user_id)
+    user = await user_repo.get_user_by_id(user_id)
     
     if not user:
         raise InexistentUserIDException(user_id)
@@ -87,7 +88,7 @@ def read_user_by_id(
 
 @router.delete("/{user_id}")
 @role_checker(user_management_roles)
-def delete_user(
+async def delete_user(
     user_id: str,
     current_user: CurrentUserDependency,
     user_repo: UsersRepository=Depends(get_users_repository)
@@ -95,12 +96,12 @@ def delete_user(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
     
-    user=user_repo.get_user_by_id(user_id)
+    user = await user_repo.get_user_by_id(user_id)
 
     if not user:
         raise InexistentUserIDException(user_id)
 
-    admin_users=user_repo.get_users_by_role("admin")
+    admin_users = await user_repo.get_users_by_role("admin")
     last_admin=len(admin_users)==1
     last_admin_candidate = admin_users[0]
     this_last_admin=str(last_admin_candidate.user_id)==user_id
@@ -110,7 +111,7 @@ def delete_user(
     if forbidden_remove_last_admin:
         raise LastAdminRemovalException()
 
-    user_repo.delete_user_by_id(user_id)
+    await user_repo.delete_user_by_id(user_id)
     
     message_dict={"message": f"User {user_id} deleted successfully"}
     return JSONResponse(
@@ -120,7 +121,7 @@ def delete_user(
 
 @router.patch("/{user_id}")
 @role_checker(user_management_roles)
-def update_user(
+async def update_user(
     user_id: str, 
     update_user_info: UnhashedUpdateUser, 
     user_repo: UsersRepositoryDependency
@@ -141,7 +142,7 @@ def update_user(
     if forbidden_remove_last_admin:
         raise LastAdminRemovalException()
 
-    updated_user=user_repo.update_user(update_user_info)
+    updated_user = await user_repo.update_user(update_user_info)
     
     return JSONResponse(
         content=jsonable_encoder(dict(updated_user)),
@@ -150,7 +151,7 @@ def update_user(
 
 @router.put("/")
 @role_checker(user_management_roles)
-def create_user(
+async def create_user(
     user: CreateUser,
     current_user: CurrentUserDependency,
     user_repo: UsersRepositoryDependency
@@ -161,7 +162,7 @@ def create_user(
         user_email=user.user_email,
     )
     
-    user_repo.create_user(new_user)
+    await user_repo.create_user(new_user)
 
 @router.post('/signup')
 async def signup(
@@ -179,7 +180,7 @@ async def signup(
 
 @router.patch("/{user_id}")
 @role_checker(user_editor_roles)
-def update_user(
+async def update_user(
     user_id: str,
     user: UnhashedUpdateUser,
     current_user: CurrentUserDependency,
@@ -188,7 +189,7 @@ def update_user(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
 
-    user = user_repo.update_user(user_id, user)
+    user = await user_repo.update_user(user_id, user)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -198,7 +199,7 @@ def update_user(
 
 @router.patch("/{user_id}/username")
 @role_checker(user_editor_roles)
-def update_username(
+async def update_username(
     user_id: str,
     new_username: str,
     user_repo: UsersRepositoryDependency,
@@ -207,7 +208,7 @@ def update_username(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
     
-    user = user_repo.update_user_username(user_id, new_username)
+    user = await user_repo.update_user_username(user_id, new_username)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -217,7 +218,7 @@ def update_username(
 
 @router.patch("/{user_id}/email")
 @role_checker(user_editor_roles)
-def update_email(
+async def update_email(
     user_id: str, 
     new_email: str,
     user_repo: UsersRepositoryDependency,
@@ -229,7 +230,7 @@ def update_email(
     if not is_email_valid(new_email):
         raise InvalidEmailException(new_email)
     
-    user = user_repo.update_user_email(user_id, new_email)
+    user = await user_repo.update_user_email(user_id, new_email)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -239,7 +240,7 @@ def update_email(
 
 @router.patch("/{user_id}/password")
 @role_checker(user_editor_roles)
-def update_password(
+async def update_password(
     user_id: str,
     old_password: str,
     new_password: str,
@@ -260,10 +261,12 @@ def update_password(
     if not user.user_is_active:
         raise InactiveUserException(user.user_username)
 
-    is_authentic=user_repo.is_user_credentials_authentic(user.user_username, old_password)
+    is_authentic = await user_repo.is_user_credentials_authentic(
+        user.user_username, old_password
+    )
 
     if(is_authentic):
-        user = user_repo.update_user_password(user_id, new_password)
+        user = await user_repo.update_user_password(user_id, new_password)
     else:
         raise IncorrectCurrentPasswordException()
 
@@ -290,7 +293,7 @@ def get_user_roles(
 
 @router.patch("/{user_id}/activate")
 @role_checker(user_editor_roles)
-def activate_user(
+async def activate_user(
     user_id: str,
     user_repo: UsersRepositoryDependency,
     current_user: CurrentUserDependency
@@ -298,7 +301,7 @@ def activate_user(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
 
-    user = user_repo.update_user_active_status(user_id, True)
+    user = await user_repo.update_user_active_status(user_id, True)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -308,7 +311,7 @@ def activate_user(
 
 @router.patch("/{user_id}/deactivate")
 @role_checker(user_editor_roles)
-def deactivate_user(
+async def deactivate_user(
     user_id: str,
     user_repo: UsersRepositoryDependency,
     current_user: CurrentUserDependency
@@ -316,7 +319,7 @@ def deactivate_user(
     if not is_valid_uuid(user_id): 
         raise InvalidUUIDException(user_id)
     
-    user = user_repo.update_user_active_status(user_id, False)
+    user = await user_repo.update_user_active_status(user_id, False)
 
     if not user:
         raise InexistentUserIDException(user_id)
@@ -324,13 +327,13 @@ def deactivate_user(
         return userbd_to_user(user)
 
 
-@router.get("/role/{role}")
+@router.get("/role/{role_name}")
 @role_checker(user_management_roles)
-def get_users_by_role(
-    role: str,
+async def get_users_by_role(
+    role_name: str,
     user_repo: UsersRepositoryDependency,
     current_user: CurrentUserDependency
 ) -> List[Dict]:
-    users = user_repo.get_users_by_role(role)
+    users = await user_repo.get_users_by_role_name(role_name)
 
     return list(map(userbd_to_user, users))

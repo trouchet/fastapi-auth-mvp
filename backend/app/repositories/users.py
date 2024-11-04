@@ -3,13 +3,14 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated, Tuple
 from typing import List
 from datetime import datetime
+from contextlib import asynccontextmanager
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.future import select
 from sqlalchemy import delete
-from contextlib import asynccontextmanager
 from sqlalchemy.orm import selectinload
-
+from sqlalchemy.orm import joinedload
 from backend.app.utils.throttling import RateLimiterPolicy
 from backend.app.utils.security import hash_string, is_hash_from_string
 from backend.app.models.users import UpdateUser
@@ -53,18 +54,19 @@ class UsersRepository:
         return user.user_id
 
     async def get_user_by_username(self, username: str) -> User:
-        statement = select(User).where(User.user_username == username)
+        # Load the user along with their associated roles
+        statement = select(User).options(selectinload(User.user_roles)).where(User.user_username == username)
         result = await self.session.execute(statement)
         user = result.scalars().first()
 
         if user:
             return user
 
+
     async def create_user(self, user: User):
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
-        
         return user
     
     async def create_users(self, users: List[User]):
@@ -132,12 +134,17 @@ class UsersRepository:
             return [role for role in user.user_roles]
         return []
 
-    async def get_users_by_role(self, role: Role):
-        query = select(User).join(users_roles_association).join(Role)\
-            .filter(Role.role_name == role.role_name)
-        result = await self.session.execute(query)
-        users_with_role = result.scalars().all()
+    async def get_users_by_role_name(self, role_name: str):
+        query = (
+            select(User)
+            .join(users_roles_association, User.user_id == users_roles_association.c.user_id)
+            .join(Role, Role.role_id == users_roles_association.c.role_id)
+            .filter(Role.role_name == role_name)
+            .options(joinedload(User.user_roles))  # Ensures roles are loaded with the user
+        )
         
+        result = await self.session.execute(query)
+        users_with_role = result.unique().scalars().all()    
         return users_with_role
 
     async def update_user_email(self, user_id: str, email: str):
@@ -254,21 +261,27 @@ class UsersRepository:
 
         return not set(roles_names).isdisjoint(set(user_roles_names))
 
-    async def refresh_token_exists(self, token: str):
-        query = await self.session.execute(
-            select(User).options(
-                selectinload(User.user_roles).options(
-                    selectinload(Role.role_permissions).options(
-                        selectinload(Permission.perm_roles)  # Eager load `perm_roles` inside `role_permissions`
+    async def refresh_token_exists(self, token: str) -> tuple[bool, User | None]:
+        try:
+            query = await self.session.execute(
+                select(User).options(
+                    selectinload(User.user_roles).options(
+                        selectinload(Role.role_permissions).options(
+                            selectinload(Permission.perm_roles)
+                        )
                     )
+                ).where(
+                    User.user_refresh_token == token
                 )
-            ).where(
-                User.user_refresh_token == token
             )
-        )
-        user = query.scalar_one_or_none()
+            user = query.scalar_one_or_none()
 
-        return user is not None, user
+            return user is not None, user
+
+        except Exception as e:
+            # Handle exceptions (e.g., log the error)
+            print(f"An error occurred while checking refresh token: {e}")
+            return False, None
 
     async def update_user_last_login(self, username: str):
         query = select(User).where(User.user_username == username)

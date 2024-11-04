@@ -1,15 +1,15 @@
 from typing import List
 from uuid import uuid4
 from contextlib import asynccontextmanager
+
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import SQLAlchemyError
 
-from backend.app.database.models.auth import (
-    RolePermission, Role, Permission
-)
+from backend.app.database.models.auth import Role, Permission, roles_permissions_association
 from backend.app.database.instance import get_session
-
+from backend.app.base.logging import logger
 
 class RoleRepository:
     def __init__(self, session: AsyncSession):
@@ -33,33 +33,48 @@ class RoleRepository:
         new_role = Role(role_id=role_id, role_name=role_name, role_rate_limit=rate_limit)
         
         try:
-            # Iterate through permission names and assign them to the role
+            permissions = []
             for perm_name in permission_names:
-                # Check if the permission exists
-                statement = select(Permission).filter(Permission.perm_name == perm_name)
-                result = await self.session.execute(statement)
-                permission = result.scalars().first()
+                permission = await self._get_or_create_permission(perm_name)
+                permissions.append(permission)
 
-                # Create permission if it does not exist
-                if not permission:
-                    permission = Permission(perm_id=str(uuid4()), perm_name=perm_name)
-                    self.session.add(permission)
-                    await self.session.flush()  # Make sure it's persisted
-
-                # Link the permission to the role via RolePermission
-                role_permission = RolePermission(rope_role_id=role_id, rope_perm_id=permission.perm_id)
-                new_role.role_permissions.append(role_permission)
-
-            # Add the new role with all permissions to the session
+            # Link permissions to the new role
+            new_role.role_permissions.extend(permissions)
             self.session.add(new_role)
             await self.session.commit()
             await self.session.refresh(new_role)
             
             return new_role
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             await self.session.rollback()
+            logger.error(f"Failed to create role '{role_name}': {e}")
             raise e
+    
+    async def _get_or_create_permission(self, perm_name: str) -> Permission:
+        """
+        Retrieves an existing permission by name or creates a new one if it doesn't exist.
+        
+        Args:
+            perm_name (str): The name of the permission.
+
+        Returns:
+            Permission: The existing or newly created Permission object.
+        """
+        statement = select(Permission).filter(Permission.perm_name == perm_name)
+        result = await self.session.execute(statement)
+        permission = result.scalars().first()
+
+        if not permission:
+            permission = Permission(
+                perm_id=str(uuid4()),
+                perm_name=perm_name
+            )
+            self.session.add(permission)
+            await self.session.flush()
+            logger.info(f"Permission '{perm_name}' created and added to database.")
+
+        return permission
 
     async def get_role_by_name(self, role_name: str) -> Role:
         """

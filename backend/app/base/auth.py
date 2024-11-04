@@ -184,7 +184,7 @@ async def get_current_user(token: OAuthDependency) -> User:
 def role_checker(required_roles: Tuple[str]):
     def wrapper(func):
         @wraps(func)
-        async def decorated_view(*args, current_user: User, **kwargs):
+        async def decorated_view(*args, current_user: UserDB, **kwargs):
             if not current_user.has_roles(required_roles):
                 raise PrivilegesException()
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy.exc import IntegrityError
-from psycopg2.errors import UniqueViolation
+from asyncpg.exceptions import UniqueViolationError
 
 from backend.app.database.models.users import User
 from backend.app.utils.security import hash_string
@@ -17,19 +17,20 @@ from backend.app.repositories.users import user_repository_async_context_manager
 async def create_roles_and_permissions():
     async with role_repository_async_context_manager() as role_repository:
         for role_name, metadata in ROLES_METADATA.items():
-            permissions=metadata['permissions']
-            rate_limit_dict=metadata['rate_policy']
+            permissions = metadata['permissions']
+            rate_limit_dict = metadata['rate_policy']
 
             try:
                 await role_repository.create_role(
                     role_name, rate_limit_dict, permissions
                 )
 
-            except (IntegrityError, UniqueViolation):
-                # Handle potential duplicate role errors
-                logger.warning(f"Duplicate entries found. Skipping role {role_name}...")
+            except (IntegrityError, UniqueViolationError) as e:
+                logger.warning(f"Unique violation for role '{role_name}'. Skipping...")
+                await role_repository.session.rollback()
 
-                # Rollback changes if an error occurs
+            except Exception as e:
+                logger.error(f"An error occurred while creating role '{role_name}': {e}")
                 await role_repository.session.rollback()
 
 
@@ -56,7 +57,7 @@ async def insert_initial_users():
             try:
                 await user_repository.create_user(user)
 
-            except (IntegrityError, UniqueViolation):
+            except (IntegrityError, UniqueViolationError):
                 # Handle potential duplicate user errors
                 if settings.ENVIRONMENT != 'testing':
                     logger.warning(f"Duplicate entries found. Skipping user {user}...")
